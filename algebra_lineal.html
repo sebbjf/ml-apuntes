@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Álgebra lineal para ML — apuntes animados</title>
+<style>
+:root{
+  --bg:#fbfaf7;--card:#ffffff;--ink:#1f2328;--muted:#5f6368;--line:#e6e2d8;--grid:#ece9e1;--axis:#a9a59b;--soft:#f3f1ec;
+  --hl:#fde68a;--hlink:#7a4b00;--hl2:#bfdbfe;--hl2ink:#1e3a8a;--ok:#bbf7d0;--okink:#14532d;--bad:#fecaca;--badink:#7f1d1d;
+  --accent:#2563eb;--code:#f4f2ed;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#18181a;--card:#222225;--ink:#ecebe7;--muted:#a8a69f;--line:#3a3a3e;--grid:#2e2e32;--axis:#6f6d68;--soft:#2a2a2e;
+  --hl:#5c4510;--hlink:#fde68a;--hl2:#1e3a6a;--hl2ink:#cfe0ff;--ok:#174d2c;--okink:#c9f7d8;--bad:#5a1d1d;--badink:#ffd6d6;
+  --accent:#7aa7ff;--code:#2a2a2e;
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:24px 18px 80px}
+h1{font-size:30px;line-height:1.2;margin:10px 0 6px;font-weight:650}
+h2{font-size:23px;margin:56px 0 8px;font-weight:650;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 6px;font-weight:600}
+p{margin:8px 0}
+.sub{color:var(--muted);margin:0 0 18px}
+.big{font-size:19px;padding:14px 18px;border-radius:12px;background:var(--soft);border-left:4px solid var(--accent);margin:16px 0}
+.idea{background:var(--soft);border-radius:10px;padding:10px 14px;margin:12px 0}
+.idea b{color:var(--accent)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+nav.toc a{font-size:14px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+nav.toc a:hover{border-color:var(--accent)}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+code{background:var(--code);padding:1px 5px;border-radius:5px}
+pre{background:var(--code);padding:10px 14px;border-radius:8px;overflow:auto;font-size:14px;line-height:1.5;margin:10px 0}
+.f{font-family:Georgia,"Times New Roman",serif;font-size:19px;text-align:center;margin:12px 0;padding:8px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+.w{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:16px 0}
+.w .hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+svg.plot{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+svg.plot text{fill:var(--ink);font:13px system-ui,sans-serif}
+svg.plot .tick{fill:var(--muted);font-size:11px}
+svg.plot .gr{stroke:var(--grid);stroke-width:1}
+svg.plot .ax{stroke:var(--axis);stroke-width:1.2}
+svg.plot .lbl{font-weight:600;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+button,select{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--axis);border-radius:8px;padding:5px 12px;cursor:pointer}
+button:hover{background:var(--soft)}
+button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.dots{font-size:13px;color:var(--muted);margin-left:4px}
+.msg{min-height:26px;font-size:15px;margin:6px 0}
+.calc{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14.5px;line-height:1.9;background:var(--soft);border-radius:8px;padding:8px 12px;margin:8px 0;min-height:44px;overflow-x:auto;white-space:nowrap}
+.sl{display:grid;grid-template-columns:auto 1fr 64px;gap:4px 10px;align-items:center;font-size:14px;margin:8px 0}
+.sl input{width:100%}
+.sl output{font-family:ui-monospace,monospace;text-align:right}
+.hy{background:var(--hl);color:var(--hlink);border-radius:4px;padding:0 3px}
+.hb{background:var(--hl2);color:var(--hl2ink);border-radius:4px;padding:0 3px}
+.hg{background:var(--ok);color:var(--okink);border-radius:4px;padding:0 3px}
+.hr{background:var(--bad);color:var(--badink);border-radius:4px;padding:0 3px}
+table.comp{border-collapse:separate;border-spacing:4px;font-family:ui-monospace,Menlo,monospace;font-size:14px;margin:4px 0}
+table.comp th{font-family:system-ui,sans-serif;font-weight:500;color:var(--muted);font-size:13px;text-align:right;padding:2px 8px}
+table.comp thead th{text-align:center}
+table.comp td{min-width:82px;text-align:center;padding:5px 8px;border-radius:6px;background:var(--soft);transition:background .3s,color .3s}
+table.comp td.hi{background:var(--hl);color:var(--hlink)}
+table.comp td.res{background:var(--ok);color:var(--okink)}
+.scroll{overflow-x:auto}
+.mx{display:inline-grid;gap:4px;padding:5px 8px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:7px;vertical-align:middle}
+.cell{min-width:50px;height:32px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:14.5px;border-radius:6px;padding:0 6px;transition:background .3s,color .3s,transform .3s}
+.cell.row{background:var(--soft)}
+.cell.hi{background:var(--hl);color:var(--hlink);transform:scale(1.08)}
+.cell.hi2{background:var(--hl2);color:var(--hl2ink);transform:scale(1.08)}
+.cell.done{background:var(--ok);color:var(--okink)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}
+.eq .op{font-size:20px}
+.eq .nm{font-size:13px;color:var(--muted);text-align:center;margin-top:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.list{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.list div{padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px}
+.list div.cur{background:var(--soft);font-weight:600}
+.sw{width:11px;height:11px;border-radius:50%;flex:none}
+.tp{position:relative;margin:10px 0}
+.tp .c{position:absolute;width:74px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;transition:left .9s cubic-bezier(.6,0,.3,1),top .9s cubic-bezier(.6,0,.3,1)}
+.tp .h{position:absolute;font-size:12px;white-space:nowrap;color:var(--muted);display:flex;align-items:center;transition:left .9s,top .9s,opacity .4s}
+table.heat{border-collapse:separate;border-spacing:3px;font-family:ui-monospace,monospace;font-size:13.5px}
+table.heat td{width:86px;height:46px;text-align:center;border-radius:6px;cursor:pointer;transition:outline .2s}
+table.heat td.sel{outline:3px solid #f59e0b}
+table.heat th{font-family:system-ui;font-weight:500;font-size:12px;color:var(--muted);padding:2px 6px}
+table.sum{border-collapse:collapse;width:100%;font-size:14.5px;margin:12px 0}
+table.sum th,table.sum td{border-bottom:1px solid var(--line);padding:8px 8px;text-align:left;vertical-align:top}
+table.sum th{color:var(--muted);font-weight:500;font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.err{color:#dc2626;font-weight:600}
+.good{color:#16a34a;font-weight:600}
+footer{color:var(--muted);font-size:13px;margin-top:50px}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Álgebra lineal para machine learning</h1>
+<p class="sub">Apuntes directos y animados del cuaderno <i>MA_01 · L'àlgebra lineal que ja feu servir</i>. Todos los gráficos se mueven: dale a <b>Reproducir</b> o avanza paso a paso.</p>
+
+<div class="big">La frase que tienes que entender al final: <b>un modelo entrenado es una lista de números (un vector), y predecir es multiplicar.</b></div>
+
+<nav class="toc">
+<a href="#s1">1 · Vector</a><a href="#s2">2 · Norma</a><a href="#s3">3 · Distancia</a><a href="#s4">4 · Producto escalar</a><a href="#s5">5 · Proyección</a><a href="#s6">6 · Matriz</a><a href="#s7">7 · El modelo</a><a href="#s8">8 · Transpuesta</a><a href="#res">Resumen</a>
+</nav>
+
+<p>Los datos de todo el cuaderno son las <b>150 flores de Iris</b>. Cada flor tiene 4 medidas: largo y ancho del sépalo, largo y ancho del pétalo. En numpy eso es una tabla <code>X</code> de <b>150 filas × 4 columnas</b>.</p>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1">1 · Un vector es un punto… y una flecha</h2>
+<div class="idea"><b>Idea:</b> un vector es una lista de números. Lo puedes ver como un <b>punto</b> (dónde está) o como una <b>flecha</b> desde el origen hasta ese punto.</div>
+<p>La flor 0 es <code>X[0] = [5.1, 3.5, 1.4, 0.2]</code>: un punto en un espacio de 4 dimensiones. No se puede dibujar, pero sí se puede calcular con él. Para verlo, dibujamos solo 2 medidas (las del pétalo). <b>Haz clic en cualquier flor</b> para ver su vector.</p>
+<div class="w" id="w1a"></div>
+<p>Ojo con los índices: en mates se cuenta desde 1 (<i>v</i>₁) y en numpy desde 0 (<code>v[0]</code>).</p>
+
+<h3>Dos cosas que se pueden hacer con flechas</h3>
+<p><b>Sumar</b> <code>a + b</code>: pones la flecha <i>b</i> al final de la <i>a</i>. Numpy suma componente a componente.</p>
+<div class="w" id="w1b"></div>
+<p><b>Multiplicar por un número</b> <code>c * a</code>: la flecha se alarga, se encoge o se da la vuelta, pero <b>siempre se queda en la misma recta</b>.</p>
+<div class="w" id="w1c"></div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2">2 · La norma: cuánto mide un vector</h2>
+<div class="idea"><b>Idea:</b> la norma ‖v‖ es la <b>longitud de la flecha</b>. Es el teorema de Pitágoras, con tantos sumandos como componentes.</div>
+<div class="f">‖v‖ = √( v₁² + v₂² + … + vₙ² )</div>
+<p>Receta: eleva cada número al cuadrado, súmalo todo y haz la raíz.</p>
+<div class="w" id="w2a"></div>
+<p>Con la flor 0, que tiene 4 componentes, es exactamente lo mismo con dos sumandos más:</p>
+<div class="w" id="w2b"></div>
+<pre>np.sqrt(np.sum(v ** 2))   # a mano
+np.linalg.norm(v)         # numpy  → 6.345077 en los dos casos</pre>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3">3 · Distancia = norma de una resta</h2>
+<div class="idea"><b>Idea:</b> la distancia entre dos puntos es la longitud de la flecha que va de uno al otro. Esa flecha es <b>a − b</b>. Así que distancia = <b>‖a − b‖</b>.</div>
+<div class="f">d(a, b) = ‖a − b‖ = √( (a₁−b₁)² + … + (aₙ−bₙ)² )</div>
+<p>Es la misma fórmula que usaste en <b>k-NN</b> para ver cuánto se parecen dos flores. Aquí: flor 0 (setosa) y flor 50 (versicolor).</p>
+<div class="w" id="w3a"></div>
+<p>Con las 4 medidas sale el <b>4.00</b> del cuaderno de k-NN:</p>
+<div class="w" id="w3b"></div>
+<pre>np.linalg.norm(X[0] - X[50])   # → 4.003748</pre>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4">4 · El producto escalar</h2>
+<div class="idea"><b>Idea:</b> el producto escalar <code>a @ b</code> da <b>un solo número</b>: multiplicas componente a componente y lo sumas todo. Su <b>signo</b> te dice hacia dónde apuntan las flechas.</div>
+<div class="f">a · b = a₁b₁ + a₂b₂ + … + aₙbₙ &nbsp;&nbsp;=&nbsp;&nbsp; ‖a‖ ‖b‖ cos θ</div>
+<p>Dos formas de verlo: la de la izquierda es la que se programa; la de la derecha explica qué significa (θ es el ángulo entre las flechas).</p>
+<div class="w" id="w4a"></div>
+<p>Las normas siempre son positivas, así que <b>el signo del producto escalar es el signo del coseno</b>:</p>
+<ul>
+<li><span class="hg">positivo</span> → apuntan hacia el mismo lado (ángulo agudo, &lt; 90°)</li>
+<li><span class="hy">cero</span> → son perpendiculares (90°)</li>
+<li><span class="hr">negativo</span> → apuntan hacia lados opuestos (ángulo obtuso, &gt; 90°)</li>
+</ul>
+<p><b>Arrastra la flecha naranja</b> (o usa los controles) y mira cómo cambia el signo. La zona verde es donde <i>a · b</i> &gt; 0.</p>
+<div class="w" id="w4b"></div>
+<p>Si despejas el coseno sale la <b>similitud del coseno</b> (se usa muchísimo para comparar textos): <code>cos θ = (a @ b) / (‖a‖ ‖b‖)</code>. Para las flores 0 y 50 da un ángulo de <b>21.8°</b>.</p>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5">5 · La proyección: la sombra de una flecha sobre otra</h2>
+<div class="idea"><b>Idea:</b> proyectar <i>a</i> sobre <i>b</i> responde a <b>¿cuánto de <i>a</i> va en la dirección de <i>b</i>?</b> Es la sombra de <i>a</i> sobre la recta de <i>b</i>, con la luz cayendo en perpendicular.</div>
+<div class="f">sombra (número) = (a · b) / ‖b‖ &nbsp;&nbsp;&nbsp; sombra (flecha) = (a · b) / (b · b) · b</div>
+<p>Arrastra la flecha azul. Cuando el ángulo pasa de 90°, la sombra cae al otro lado y el número sale <b>negativo</b>.</p>
+<div class="w" id="w5"></div>
+<p><b>¿Por qué importa?</b> Porque todo lo que viene es proyectar: la frontera de la regresión logística, el margen del SVM y el PCA son proyecciones sobre una dirección.</p>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6">6 · Una matriz es una tabla… y una máquina</h2>
+<div class="idea"><b>Idea:</b> una matriz es una tabla de números. Pero también es una <b>máquina</b>: le metes un vector y te devuelve otro. Cada número del resultado es <b>una fila de la matriz · el vector</b> (un producto escalar).</div>
+<div class="f">(X w)ᵢ = fila i de X · w</div>
+<h3>6.1 · Matriz por vector, fila a fila</h3>
+<p>Cogemos 6 flores (una tabla de 6 × 4) y un vector de pesos <i>w</i> de 4 números. El resultado es <b>una puntuación por flor</b>.</p>
+<div class="w" id="w6a"></div>
+<p><b>Regla de las formas</b> (apréndetela): <code>(150, 4) @ (4,) → (150,)</code>. El número del medio tiene que coincidir y desaparece. Si numpy da error, casi siempre falta una transpuesta.</p>
+<p><code>X @ w</code> hace exactamente las mismas multiplicaciones que un doble bucle <code>for</code>; solo que mucho más rápido.</p>
+
+<h3>6.2 · La matriz como máquina que mueve puntos</h3>
+<p>Con una matriz de 2 × 2 se ve en un dibujo. Un punto <code>(x, y)</code> entra y sale otro:</p>
+<div class="f">nueva x = fila 1 · (x, y) &nbsp;&nbsp;&nbsp; nueva y = fila 2 · (x, y)</div>
+<p>El cuadrado gris <b>no es nada especial</b>: son 4 puntos (sus esquinas). La matriz mueve cada esquina con ese cálculo y, al unir las esquinas nuevas, sale la figura azul. Lo mismo con la flecha <i>v</i> = (1, 0.5).</p>
+<div class="w" id="w6b"></div>
+<pre>quadrat = np.array([[0,0],[1,0],[1,1],[0,1],[0,0]])  # 5 puntos (el último repite el primero para cerrar)
+transformat = quadrat @ A.T   # aplica A a cada fila (cada esquina) de golpe
+imatge_v = A @ v_exemple      # aplica A a la flecha v</pre>
+<p>¿Por qué <code>A.T</code>? Porque los puntos están en <b>filas</b>. Para un punto suelto se hace <code>A @ p</code>; con todos apilados en filas, lo mismo se escribe <code>quadrat @ A.T</code>.</p>
+
+<h3>6.3 · Juega con la matriz</h3>
+<p>Los 4 controles son las 4 casillas de <i>A</i>. Fíjate en un truco: <b>las columnas de la matriz son a dónde van (1, 0) y (0, 1)</b> (flechas roja y verde). Si el <b>determinante</b> <i>ad − bc</i> vale 0, el plano se aplasta en una recta.</p>
+<div class="w" id="w6c"></div>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7">7 · Un modelo entrenado es un vector y una multiplicación</h2>
+<div class="idea"><b>Idea:</b> la regresión logística calcula una puntuación <b>z = w · x + b</b> (un producto escalar más un número). Si <b>z &gt; 0</b> dice "sí"; si <b>z &lt; 0</b>, dice "no". Ya está.</div>
+<p>Pregunta de sí o no: <b>¿es virginica?</b> Tras <code>model.fit</code>, el modelo entero son <b>5 números</b>:</p>
+<pre>coef_      = [-0.3927, -0.5144, 2.9306, 2.4161]   # w: un peso por medida
+intercept_ = -14.4360                             # b: una constante</pre>
+<p>Los pesos del pétalo son grandes y positivos: <b>pétalo grande empuja hacia "virginica"</b>. Elige una flor y mira la predicción paso a paso:</p>
+<div class="w" id="w7a"></div>
+<p>Haciendo esto a mano para las 150 flores, el resultado coincide con <code>model.predict</code> en <b>150 de 150</b>. <code>model.decision_function(X)</code> <b>es</b> <code>X @ w + b</code>. (Coincidir no quiere decir acertar: el modelo acierta el 97.3 %.)</p>
+
+<h3>La frontera de decisión</h3>
+<p>Con solo las 2 medidas del pétalo se puede dibujar. La <b>frontera</b> es la recta donde z = 0, y la flecha <b>w es perpendicular</b> a ella y apunta hacia el lado "sí". <b>Entrena tú a mano:</b> mueve w₁, w₂ y b hasta tener pocos errores. Eso es lo que hace <code>fit</code>: buscar unos números.</p>
+<div class="w" id="w7b"></div>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8">8 · La transpuesta</h2>
+<div class="idea"><b>Idea:</b> transponer es <b>cambiar filas por columnas</b>. <code>X</code> (150 × 4) tiene una fila por flor; <code>X.T</code> (4 × 150) tiene una fila por medida.</div>
+<div class="w" id="w8a"></div>
+<p>Aparece por todas partes porque <b>arregla las formas</b> para poder multiplicar. El caso más típico:</p>
+<div class="f">Xᵀ X : (4 × 150) @ (150 × 4) → 4 × 4</div>
+<p>Sale una tabla de 4 × 4, una casilla por cada pareja de medidas. Cada casilla es <b>columna i · columna j</b>. Es <b>simétrica</b> (el espejo de la diagonal es igual) y la diagonal son sumas de cuadrados. Pasa el ratón por las casillas:</p>
+<div class="w" id="w8b"></div>
+<p>Centrando los datos y dividiendo entre el número de flores, esta tabla se convierte en la <b>matriz de covarianza</b>, el punto de partida del PCA.</p>
+
+<!-- ============ RESUMEN ============ -->
+<h2 id="res">Resumen en una tabla</h2>
+<div class="scroll">
+<table class="sum">
+<tr><th>Concepto</th><th>Qué es</th><th>Numpy</th><th>Número para comprobar</th></tr>
+<tr><td><b>Vector</b></td><td>Lista de números = punto = flecha</td><td><code>X[0]</code></td><td>[5.1, 3.5, 1.4, 0.2]</td></tr>
+<tr><td><b>Norma</b></td><td>Longitud de la flecha (Pitágoras)</td><td><code>np.linalg.norm(v)</code></td><td>6.345077 (flor 0)</td></tr>
+<tr><td><b>Distancia</b></td><td>Norma de la resta</td><td><code>np.linalg.norm(a - b)</code></td><td>4.003748 (flores 0 y 50)</td></tr>
+<tr><td><b>Producto escalar</b></td><td>Multiplica y suma → 1 número. Signo = hacia dónde apuntan</td><td><code>a @ b</code></td><td>53.76 · ángulo 21.8°</td></tr>
+<tr><td><b>Proyección</b></td><td>Sombra de <i>a</i> sobre <i>b</i></td><td><code>(a @ b) / np.linalg.norm(b)</code></td><td>5.890645 (4D)</td></tr>
+<tr><td><b>Matriz · vector</b></td><td>Cada fila · el vector → un número por fila</td><td><code>X @ w</code></td><td>(150,4) @ (4,) → (150,)</td></tr>
+<tr><td><b>Modelo</b></td><td>z = w·x + b; el signo decide</td><td><code>X @ coef_[0] + intercept_[0]</code></td><td>150 de 150 = <code>predict</code></td></tr>
+<tr><td><b>Transpuesta</b></td><td>Filas ↔ columnas</td><td><code>X.T</code>, <code>X.T @ X</code></td><td>(4, 4), simétrica</td></tr>
+</table>
+</div>
+<div class="big">Cuando haces <code>fit</code>, se buscan unos números. Cuando haces <code>predict</code>, se multiplica. No hay nada más dentro.</div>
+
+<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
+<ul>
+<li><b>Manhattan vs euclídea</b> (flores 0 y 50): Manhattan <code>np.sum(np.abs(a - b))</code> = <b>6.7</b>; euclídea = <b>4.003748</b>. Manhattan es más grande porque va "por las calles" en vez de en línea recta.</li>
+<li><b>Las dos flores más lejanas</b>: distancia <b>7.085196</b>, flores <b>13</b> y <b>118</b>. La matriz de distancias tiene que ser simétrica y con la diagonal a cero.</li>
+<li><b>Desigualdad triangular</b> (<code>seed(0)</code>): ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖+‖q‖ = <b>5.358619</b>. Con <code>q = 3 * p</code> salen iguales.</li>
+<li><b>Bucle vs @</b> (<code>seed(1)</code>, 200 × 5): <code>np.allclose</code> → <b>True</b>, diferencia del orden de 10⁻¹⁵.</li>
+</ul>
+<p>Siguiente cuaderno: <b>de dónde salen los pesos</b> (descenso del gradiente).</p>
+<footer>Apuntes generados a partir del cuaderno MA_01. Funciona sin conexión: todo está en este archivo.</footer>
+</main>
+
+<script>
+const IRIS={"X":[[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4],[4.6,3.4,1.4,0.3],[5.0,3.4,1.5,0.2],[4.4,2.9,1.4,0.2],[4.9,3.1,1.5,0.1],[5.4,3.7,1.5,0.2],[4.8,3.4,1.6,0.2],[4.8,3.0,1.4,0.1],[4.3,3.0,1.1,0.1],[5.8,4.0,1.2,0.2],[5.7,4.4,1.5,0.4],[5.4,3.9,1.3,0.4],[5.1,3.5,1.4,0.3],[5.7,3.8,1.7,0.3],[5.1,3.8,1.5,0.3],[5.4,3.4,1.7,0.2],[5.1,3.7,1.5,0.4],[4.6,3.6,1.0,0.2],[5.1,3.3,1.7,0.5],[4.8,3.4,1.9,0.2],[5.0,3.0,1.6,0.2],[5.0,3.4,1.6,0.4],[5.2,3.5,1.5,0.2],[5.2,3.4,1.4,0.2],[4.7,3.2,1.6,0.2],[4.8,3.1,1.6,0.2],[5.4,3.4,1.5,0.4],[5.2,4.1,1.5,0.1],[5.5,4.2,1.4,0.2],[4.9,3.1,1.5,0.2],[5.0,3.2,1.2,0.2],[5.5,3.5,1.3,0.2],[4.9,3.6,1.4,0.1],[4.4,3.0,1.3,0.2],[5.1,3.4,1.5,0.2],[5.0,3.5,1.3,0.3],[4.5,2.3,1.3,0.3],[4.4,3.2,1.3,0.2],[5.0,3.5,1.6,0.6],[5.1,3.8,1.9,0.4],[4.8,3.0,1.4,0.3],[5.1,3.8,1.6,0.2],[4.6,3.2,1.4,0.2],[5.3,3.7,1.5,0.2],[5.0,3.3,1.4,0.2],[7.0,3.2,4.7,1.4],[6.4,3.2,4.5,1.5],[6.9,3.1,4.9,1.5],[5.5,2.3,4.0,1.3],[6.5,2.8,4.6,1.5],[5.7,2.8,4.5,1.3],[6.3,3.3,4.7,1.6],[4.9,2.4,3.3,1.0],[6.6,2.9,4.6,1.3],[5.2,2.7,3.9,1.4],[5.0,2.0,3.5,1.0],[5.9,3.0,4.2,1.5],[6.0,2.2,4.0,1.0],[6.1,2.9,4.7,1.4],[5.6,2.9,3.6,1.3],[6.7,3.1,4.4,1.4],[5.6,3.0,4.5,1.5],[5.8,2.7,4.1,1.0],[6.2,2.2,4.5,1.5],[5.6,2.5,3.9,1.1],[5.9,3.2,4.8,1.8],[6.1,2.8,4.0,1.3],[6.3,2.5,4.9,1.5],[6.1,2.8,4.7,1.2],[6.4,2.9,4.3,1.3],[6.6,3.0,4.4,1.4],[6.8,2.8,4.8,1.4],[6.7,3.0,5.0,1.7],[6.0,2.9,4.5,1.5],[5.7,2.6,3.5,1.0],[5.5,2.4,3.8,1.1],[5.5,2.4,3.7,1.0],[5.8,2.7,3.9,1.2],[6.0,2.7,5.1,1.6],[5.4,3.0,4.5,1.5],[6.0,3.4,4.5,1.6],[6.7,3.1,4.7,1.5],[6.3,2.3,4.4,1.3],[5.6,3.0,4.1,1.3],[5.5,2.5,4.0,1.3],[5.5,2.6,4.4,1.2],[6.1,3.0,4.6,1.4],[5.8,2.6,4.0,1.2],[5.0,2.3,3.3,1.0],[5.6,2.7,4.2,1.3],[5.7,3.0,4.2,1.2],[5.7,2.9,4.2,1.3],[6.2,2.9,4.3,1.3],[5.1,2.5,3.0,1.1],[5.7,2.8,4.1,1.3],[6.3,3.3,6.0,2.5],[5.8,2.7,5.1,1.9],[7.1,3.0,5.9,2.1],[6.3,2.9,5.6,1.8],[6.5,3.0,5.8,2.2],[7.6,3.0,6.6,2.1],[4.9,2.5,4.5,1.7],[7.3,2.9,6.3,1.8],[6.7,2.5,5.8,1.8],[7.2,3.6,6.1,2.5],[6.5,3.2,5.1,2.0],[6.4,2.7,5.3,1.9],[6.8,3.0,5.5,2.1],[5.7,2.5,5.0,2.0],[5.8,2.8,5.1,2.4],[6.4,3.2,5.3,2.3],[6.5,3.0,5.5,1.8],[7.7,3.8,6.7,2.2],[7.7,2.6,6.9,2.3],[6.0,2.2,5.0,1.5],[6.9,3.2,5.7,2.3],[5.6,2.8,4.9,2.0],[7.7,2.8,6.7,2.0],[6.3,2.7,4.9,1.8],[6.7,3.3,5.7,2.1],[7.2,3.2,6.0,1.8],[6.2,2.8,4.8,1.8],[6.1,3.0,4.9,1.8],[6.4,2.8,5.6,2.1],[7.2,3.0,5.8,1.6],[7.4,2.8,6.1,1.9],[7.9,3.8,6.4,2.0],[6.4,2.8,5.6,2.2],[6.3,2.8,5.1,1.5],[6.1,2.6,5.6,1.4],[7.7,3.0,6.1,2.3],[6.3,3.4,5.6,2.4],[6.4,3.1,5.5,1.8],[6.0,3.0,4.8,1.8],[6.9,3.1,5.4,2.1],[6.7,3.1,5.6,2.4],[6.9,3.1,5.1,2.3],[5.8,2.7,5.1,1.9],[6.8,3.2,5.9,2.3],[6.7,3.3,5.7,2.5],[6.7,3.0,5.2,2.3],[6.3,2.5,5.0,1.9],[6.5,3.0,5.2,2.0],[6.2,3.4,5.4,2.3],[5.9,3.0,5.1,1.8]],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]};
+const X=IRIS.X, Y=IRIS.y;
+const SPECIES=['setosa','versicolor','virginica'];
+const NS='http://www.w3.org/2000/svg';
+const C={blue:'#2563eb',orange:'#ea580c',green:'#16a34a',purple:'#7c3aed',red:'#dc2626',gray:'#8a877f',pink:'#db2777',teal:'#0d9488',amber:'#d97706',ink:'currentColor'};
+const SPC=[C.blue,C.orange,C.green];
+function E(tag,attrs,parent){const e=document.createElementNS(NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function H(tag,attrs,parent,html){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e}
+function f(x,d=4){const r=+(+x).toFixed(d);return (Object.is(r,-0)?0:r).toString()}
+const ease=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+function tween(o,dur,fn,done){cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
+const dot=(a,b)=>a.reduce((s,ai,i)=>s+ai*b[i],0);
+const norm=a=>Math.sqrt(dot(a,a));
+const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];
+
+class Plot{
+  constructor(host,o){
+    const W=o.w||680,pad=o.pad??34,[x0,x1]=o.x,[y0,y1]=o.y;
+    this.sx=(W-2*pad)/(x1-x0);
+    let Hh;
+    if(o.h){Hh=o.h;this.sy=o.free?(Hh-2*pad)/(y1-y0):this.sx}else{this.sy=this.sx;Hh=Math.round((y1-y0)*this.sy+2*pad)}
+    Object.assign(this,{x0,x1,y0,y1,pad,W,H:Hh});
+    this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
+    this.grid=E('g',{},this.svg);
+    const gx=o.gx||1,gy=o.gy||gx;
+    const yAx=(y0<=0&&y1>=0)?this.Y(0):this.Y(y0), xAx=(x0<=0&&x1>=0)?this.X(0):this.X(x0);
+    for(let x=Math.ceil(x0/gx-1e-9)*gx;x<=x1+1e-9;x+=gx){const X=this.X(x);E('line',{x1:X,y1:this.Y(y1),x2:X,y2:this.Y(y0),class:Math.abs(x)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(x)>1e-9&&o.ticks!==false)E('text',{x:X,y:Math.min(yAx+14,Hh-4),'text-anchor':'middle',class:'tick'},this.grid).textContent=f(x,2)}
+    for(let y=Math.ceil(y0/gy-1e-9)*gy;y<=y1+1e-9;y+=gy){const Yp=this.Y(y);E('line',{x1:this.X(x0),y1:Yp,x2:this.X(x1),y2:Yp,class:Math.abs(y)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(y)>1e-9&&o.ticks!==false)E('text',{x:Math.max(xAx-5,22),y:Yp+4,'text-anchor':'end',class:'tick'},this.grid).textContent=f(y,2)}
+    if(o.xl)E('text',{x:this.X(x1),y:Hh-6,'text-anchor':'end',class:'tick'},this.grid).textContent=o.xl;
+    if(o.yl)E('text',{x:this.X(x0)+4,y:pad-12,class:'tick'},this.grid).textContent=o.yl;
+  }
+  X(x){return this.pad+(x-this.x0)*this.sx}
+  Y(y){return this.pad+(this.y1-y)*this.sy}
+  P(p){return [this.X(p[0]),this.Y(p[1])]}
+  g(){return E('g',{},this.svg)}
+  toWorld(ev){const pt=this.svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(this.svg.getScreenCTM().inverse());return [(q.x-this.pad)/this.sx+this.x0,this.y1-(q.y-this.pad)/this.sy]}
+  arrow(g,color,w=2.6,dash){const grp=E('g',{},g);const l=E('line',{stroke:color,'stroke-width':w,'stroke-linecap':'round'},grp);if(dash)l.setAttribute('stroke-dasharray',dash);const h=E('polygon',{fill:color},grp);const self=this;
+    return {el:grp,set(a,b){const [X1,Y1]=self.P(a),[X2,Y2]=self.P(b);const dx=X2-X1,dy=Y2-Y1,L=Math.hypot(dx,dy);if(L<2){grp.style.display='none';return}grp.style.display='';const hl=Math.min(10+w*1.6,L*.6),hw=hl*.45,ux=dx/L,uy=dy/L,bx=X2-ux*hl,by=Y2-uy*hl;
+      l.setAttribute('x1',X1);l.setAttribute('y1',Y1);l.setAttribute('x2',bx);l.setAttribute('y2',by);h.setAttribute('points',`${X2},${Y2} ${bx-uy*hw},${by+ux*hw} ${bx+uy*hw},${by-ux*hw}`)},
+      show(v){grp.style.opacity=v?1:0}}}
+  label(g,color,cls='lbl'){const t=E('text',{class:cls},g);if(color)t.style.fill=color;const self=this;return {el:t,set(p,s,dx=6,dy=-6,anchor='start'){const [X,Yp]=self.P(p);t.setAttribute('x',X+dx);t.setAttribute('y',Yp+dy);t.setAttribute('text-anchor',anchor);t.textContent=s},show(v){t.style.opacity=v?1:0}}}
+  line(g,a,b,attrs){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);return E('line',Object.assign({x1,y1,x2,y2},attrs),g)}
+  setLine(el,a,b){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2)}
+  poly(g,pts,attrs){return E('polygon',Object.assign({points:pts.map(p=>this.P(p).join(',')).join(' ')},attrs),g)}
+  setPoly(el,pts){el.setAttribute('points',pts.map(p=>this.P(p).join(',')).join(' '))}
+  dot(g,p,r,color,attrs){const [cx,cy]=this.P(p);return E('circle',Object.assign({cx,cy,r,fill:color},attrs||{}),g)}
+  setDot(el,p){const [cx,cy]=this.P(p);el.setAttribute('cx',cx);el.setAttribute('cy',cy)}
+}
+
+function stepper(host,n,render,o={}){
+  const bar=H('div',{class:'bar'},host);
+  const prev=H('button',{},bar,'← Anterior');
+  const play=H('button',{},bar,'▶ Reproducir');
+  const next=H('button',{},bar,'Siguiente →');
+  const rst=H('button',{title:'Volver al principio'},bar,'↺');
+  const dots=H('span',{class:'dots'},bar);
+  let step=0,timer=null;
+  const draw=()=>{render(step);dots.textContent=`Paso ${step+1} de ${n}`};
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  prev.onclick=()=>{stop();step=Math.max(0,step-1);draw()};
+  next.onclick=()=>{stop();step=Math.min(n-1,step+1);draw()};
+  rst.onclick=()=>{stop();step=0;draw()};
+  play.onclick=()=>{if(timer){stop();return}if(step>=n-1)step=0;draw();play.textContent='❚❚ Pausa';timer=setInterval(()=>{step++;draw();if(step>=n-1)stop()},o.interval||1800)};
+  return {bar,draw,reset(){stop();step=0;draw()},get step(){return step}};
+}
+
+/* Tabla de componentes animada: norma, distancia, producto escalar */
+function compTable(host,o){
+  const n=o.cols.length;
+  const msg=H('div',{class:'msg'},host);
+  const wrap=H('div',{class:'scroll'},host);
+  const t=H('table',{class:'comp'},wrap);
+  const th=H('thead',{},t),hr=H('tr',{},th);H('th',{},hr,'');o.cols.forEach(c=>H('th',{},hr,c));
+  const tb=H('tbody',{},t);const cells=[];
+  o.rows.forEach(r=>{const tr=H('tr',{},tb);H('th',{},tr,r.name);cells.push(r.vals.map(v=>H('td',{},tr,f(v))))});
+  const trO=H('tr',{},tb);H('th',{},trO,o.opName);const opC=o.cols.map(()=>H('td',{},trO,''));
+  const trS=H('tr',{},tb);H('th',{},trS,'suma acumulada');const sC=o.cols.map(()=>H('td',{},trS,''));
+  const out=H('div',{class:'calc'},host);
+  const vals=o.cols.map((_,i)=>o.op(i));const total=vals.reduce((a,b)=>a+b,0);
+  const N=n+2+(o.finals?o.finals.length:0);
+  const sp=stepper(host,N,s=>{
+    let run=0;
+    for(let i=0;i<n;i++){run+=vals[i];[...cells.map(r=>r[i]),opC[i],sC[i]].forEach(c=>c.classList.remove('hi','res'));
+      opC[i].textContent=s>i?f(vals[i]):'';sC[i].textContent=s>i?f(run):'';
+      if(s===i+1){cells.forEach(r=>r[i].classList.add('hi'));opC[i].classList.add('hi')}}
+    if(s>=n+1)sC[n-1].classList.add('res');
+    if(s===0){msg.innerHTML=o.intro;out.innerHTML='&nbsp;'}
+    else if(s<=n){msg.innerHTML=`Columna <b>${s}</b> (${o.cols[s-1]}): ${o.stepText||'se calcula'}`;out.innerHTML=o.opText(s-1)+' = <span class="hg">'+f(vals[s-1])+'</span>'}
+    else if(s===n+1){msg.innerHTML='Se suma todo:';out.innerHTML=vals.map(v=>f(v)).join(' + ')+' = <span class="hg">'+f(total)+'</span>'}
+    else{const k=s-n-2;msg.innerHTML=o.finals[k].msg;out.innerHTML=o.finals[k].html(total)}
+  },{interval:1500});
+  sp.draw();
+  return sp;
+}
+
+/* ================= 1a: flores como puntos/flechas ================= */
+(function(){
+  const host=document.getElementById('w1a');
+  const P=new Plot(host,{x:[0,7.5],y:[0,2.8],gx:1,gy:.5,xl:'largo del pétalo (cm) →',yl:'↑ ancho del pétalo (cm)',label:'Las 150 flores en el plano del pétalo'});
+  const g=P.g();
+  X.forEach((r,i)=>{const c=P.dot(g,[r[2],r[3]],4.2,SPC[Y[i]],{opacity:.6})});
+  const ga=P.g();const ar=P.arrow(ga,'currentColor',2.4);ar.el.style.color='var(--ink)';ar.el.querySelectorAll('*').forEach(e=>{e.setAttribute('stroke',getComputedStyle(document.body).color);if(e.tagName==='polygon')e.setAttribute('fill',getComputedStyle(document.body).color)});
+  const sel=P.dot(ga,[0,0],7,'none',{stroke:getComputedStyle(document.body).color,'stroke-width':2.5});
+  const leg=H('div',{class:'legend'},host);SPECIES.forEach((s,i)=>H('span',{},leg,`<i class="sw" style="background:${SPC[i]}"></i>${s}`));
+  const info=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Haz clic en una flor. Varias flores comparten el mismo punto porque tienen las mismas medidas.');
+  let cur=0;
+  function show(i,anim){const r=X[i],to=[r[2],r[3]];const from=anim?[X[cur][2],X[cur][3]]:to;cur=i;
+    tween(P,anim?500:1,u=>{const p=[from[0]+u*(to[0]-from[0]),from[1]+u*(to[1]-from[1])];ar.set([0,0],p);P.setDot(sel,p)});
+    info.innerHTML=`Flor ${i} (${SPECIES[Y[i]]}) → <b>X[${i}]</b> = [${r.map(v=>f(v)).join(', ')}] &nbsp;·&nbsp; en el dibujo: <span class="hy">(${f(r[2])}, ${f(r[3])})</span> = X[${i}, 2:]`}
+  P.svg.addEventListener('click',ev=>{const [x,y]=P.toWorld(ev);let best=0,bd=1e9;X.forEach((r,i)=>{const d=(r[2]-x)**2+(r[3]-y)**2;if(d<bd){bd=d;best=i}});show(best,true)});
+  show(0,false);
+})();
+
+/* ================= 1b: suma ================= */
+(function(){
+  const host=document.getElementById('w1b');
+  const msg=H('div',{class:'msg'},host);
+  const P=new Plot(host,{x:[-0.5,3.4],y:[-0.5,3.4],w:520,maxw:440,label:'Suma de vectores'});
+  const g=P.g();const a=[2,1],b=[.5,2],s=[2.5,3];
+  const para=P.poly(g,[[0,0],a,s,b],{fill:'#8a877f',opacity:0});
+  const aA=P.arrow(g,C.blue),aB=P.arrow(g,C.orange),aB2=P.arrow(g,C.orange,2.4,'6 4'),aS=P.arrow(g,getComputedStyle(document.body).color,3);
+  const la=P.label(g,C.blue),lb=P.label(g,C.orange),ls=P.label(g,null);
+  const calc=H('div',{class:'calc'},host);
+  const sp=stepper(host,4,st=>{
+    aA.set([0,0],a);la.set(a,'a = (2, 1)',8,14);
+    aB.show(st>=1);lb.show(st>=1);if(st>=1){aB.set([0,0],b);lb.set(b,'b = (0.5, 2)',-6,-8,'end')}
+    aB2.show(st>=2);aS.show(st>=3);ls.show(st>=3);para.setAttribute('opacity',st>=3?.12:0);
+    if(st===2)tween(P,900,u=>aB2.set([u*a[0],u*a[1]],[b[0]+u*a[0],b[1]+u*a[1]]));else if(st>2)aB2.set(a,s);
+    if(st>=3){aS.set([0,0],s);ls.set(s,'a + b = (2.5, 3)',8,4)}
+    msg.innerHTML=['Tenemos la flecha <b style="color:'+C.blue+'">a</b>.','Y la flecha <b style="color:'+C.orange+'">b</b>.','Movemos <b style="color:'+C.orange+'">b</b> hasta la punta de <b style="color:'+C.blue+'">a</b> (sin girarla).','La suma va del origen hasta la punta final: es la diagonal del paralelogramo.'][st];
+    calc.innerHTML=st<3?'&nbsp;':'a + b = (2 + 0.5, 1 + 2) = <span class="hg">(2.5, 3)</span> &nbsp;&nbsp;# numpy: a + b';
+  },{interval:1700});sp.draw();
+})();
+
+/* ================= 1c: producto por número ================= */
+(function(){
+  const host=document.getElementById('w1c');
+  const P=new Plot(host,{x:[-4.6,5.4],y:[-2.4,2.9],gx:1,label:'Producto por un número'});
+  const g=P.g();const a=[2,1];
+  P.line(g,[-4.6,-2.3],[5.4,2.7],{stroke:'#8a877f','stroke-dasharray':'3 5'});
+  const aA=P.arrow(g,C.blue,2,'');aA.el.style.opacity=.45;aA.set([0,0],a);
+  const ac=P.arrow(g,C.green,3.2);const lc=P.label(g,C.green);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'número c');const inp=H('input',{type:'range',min:-2,max:2.5,step:.05,value:2},sl);const out=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);const pb=H('button',{},bar,'▶ Animar c de −2 a 2.5');
+  const calc=H('div',{class:'calc'},host);
+  function draw(c){const v=[c*a[0],c*a[1]];const col=c<0?C.red:(c<1?C.purple:C.green);
+    ac.el.querySelector('line').setAttribute('stroke',col);ac.el.querySelector('polygon').setAttribute('fill',col);lc.el.style.fill=col;
+    ac.set([0,0],v);lc.set(v,`${f(c,2)}·a`,8,c<0?16:-8);out.textContent=f(c,2);
+    const what=c<0?'<span class="hr">se da la vuelta</span>':(Math.abs(c)<1?'<span class="hb">se encoge</span>':(c===1?'igual':'<span class="hg">se alarga</span>'));
+    calc.innerHTML=`${f(c,2)} · (2, 1) = (${f(2*c,2)}, ${f(c,2)}) → la flecha ${what}, pero sigue en la misma recta`}
+  inp.oninput=()=>{cancelAnimationFrame(P._raf);draw(+inp.value)};
+  pb.onclick=()=>tween(P,3200,u=>{const c=-2+4.5*u;inp.value=c;draw(c)});
+  draw(2);
+})();
+
+/* ================= 2a: Pitágoras ================= */
+(function(){
+  const host=document.getElementById('w2a');
+  const msg=H('div',{class:'msg'},host);
+  const P=new Plot(host,{x:[-0.6,6],y:[-0.6,4.6],w:560,maxw:520,label:'Pitágoras'});
+  const g=P.g();
+  const sq1=P.poly(g,[[0,0],[3,0],[3,-0.001],[0,-0.001]],{fill:C.green,opacity:0});
+  const lx=P.line(g,[0,0],[0,0],{stroke:C.green,'stroke-width':4,'stroke-linecap':'round'});
+  const ly=P.line(g,[3,0],[3,0],{stroke:C.purple,'stroke-width':4,'stroke-linecap':'round'});
+  const right=P.poly(g,[[2.75,0],[2.75,.25],[3,.25],[3,0]],{fill:'none',stroke:'#8a877f',opacity:0});
+  const au=P.arrow(g,getComputedStyle(document.body).color,3);
+  const l1=P.label(g,C.green),l2=P.label(g,C.purple),lu=P.label(g,null);
+  const calc=H('div',{class:'calc'},host);
+  const T=['La flecha u = (3, 4). ¿Cuánto mide?','Su primera componente: 3 pasos a la derecha.','Su segunda componente: 4 pasos hacia arriba. Sale un triángulo rectángulo.','Pitágoras: cada lado al cuadrado y se suman.','Raíz cuadrada: esa es la longitud de la flecha, ‖u‖.'];
+  const sp=stepper(host,5,st=>{
+    au.set([0,0],[3,4]);msg.textContent=T[st];
+    lx.style.opacity=st>=1?1:0;ly.style.opacity=st>=2?1:0;right.setAttribute('opacity',st>=2?1:0);
+    l1.show(st>=1);l2.show(st>=2);
+    if(st===1)tween(P,700,u=>P.setLine(lx,[0,0],[3*u,0]));else P.setLine(lx,[0,0],[3,0]);
+    if(st===2)tween(P,700,u=>P.setLine(ly,[3,0],[3,4*u]));else P.setLine(ly,[3,0],[3,4]);
+    l1.set([1.5,0],'u₁ = 3',0,20,'middle');l2.set([3,2],'u₂ = 4',10,4);
+    lu.show(st>=4);lu.set([1.5,2],'‖u‖ = 5',-10,-6,'end');
+    calc.innerHTML=st<3?'&nbsp;':(st===3?'3² + 4² = 9 + 16 = <span class="hy">25</span>':'‖u‖ = √(3² + 4²) = √25 = <span class="hg">5</span> &nbsp;&nbsp;# np.linalg.norm([3, 4])');
+  },{interval:1700});sp.draw();
+})();
+
+/* ================= 2b: norma flor 0 ================= */
+(function(){
+  const v=X[0];
+  compTable(document.getElementById('w2b'),{
+    cols:['sépalo largo','sépalo ancho','pétalo largo','pétalo ancho'],
+    rows:[{name:'v = X[0]',vals:v}],opName:'vᵢ²',op:i=>v[i]**2,stepText:'se eleva al cuadrado.',
+    opText:i=>`${f(v[i])}²`,intro:'La norma de la flor 0, con sus 4 medidas. Mismo método: cuadrados, suma, raíz.',
+    finals:[{msg:'Y la raíz cuadrada:',html:s=>`√${f(s)} = <span class="hg">${f(Math.sqrt(s),6)}</span> &nbsp;&nbsp;# np.linalg.norm(X[0])`}]
+  });
+})();
+
+/* ================= 3a: distancia en el plano ================= */
+(function(){
+  const host=document.getElementById('w3a');
+  const msg=H('div',{class:'msg'},host);
+  const P=new Plot(host,{x:[-3.8,7.5],y:[-1.6,2.8],gx:1,gy:1,xl:'largo pétalo →',label:'Distancia entre dos flores'});
+  const bg=P.g();X.forEach((r,i)=>P.dot(bg,[r[2],r[3]],3.5,SPC[Y[i]],{opacity:.18}));
+  const g=P.g();const a=[1.4,.2],b=[4.7,1.4],d=[a[0]-b[0],a[1]-b[1]];
+  const ink=getComputedStyle(document.body).color;
+  const ab=P.arrow(g,ink,2.6);const dd=P.arrow(g,C.red,2.6,'7 4');
+  P.dot(g,a,7,C.blue,{stroke:ink,'stroke-width':1});P.dot(g,b,7,C.orange,{stroke:ink,'stroke-width':1});
+  const la=P.label(g,C.blue),lb=P.label(g,C.orange),ld=P.label(g,C.red);
+  la.set(a,'a = flor 0 (1.4, 0.2)',-12,-12,'end');lb.set(b,'b = flor 50 (4.7, 1.4)',0,-12,'middle');
+  const calc=H('div',{class:'calc'},host);
+  const T=['Dos flores: a (setosa) y b (versicolor), solo con las medidas del pétalo.','La distancia es la longitud de la flecha que va de b hasta a.','Esa flecha es justo la resta a − b.','Si la llevamos al origen, es el vector a − b (la misma flecha, solo movida).','Su longitud es su norma: distancia = ‖a − b‖.'];
+  const sp=stepper(host,5,st=>{
+    msg.textContent=T[st];ab.show(st>=1);dd.show(st>=3);ld.show(st>=3);
+    if(st===1)tween(P,800,u=>ab.set(b,[b[0]+u*d[0],b[1]+u*d[1]]));else ab.set(b,a);
+    if(st===3)tween(P,1000,u=>{const o=[b[0]*(1-u),b[1]*(1-u)];dd.set(o,[o[0]+d[0],o[1]+d[1]]);ld.set([o[0]+d[0]/2,o[1]+d[1]/2],'a − b',-10,-6,'end')});
+    else if(st>3){dd.set([0,0],d);ld.set([d[0]/2,d[1]/2],'a − b = (−3.3, −1.2)',-10,-8,'end')}
+    calc.innerHTML=st<2?'&nbsp;':(st<4?'a − b = (1.4 − 4.7, 0.2 − 1.4) = <span class="hy">(−3.3, −1.2)</span>':'‖a − b‖ = √((−3.3)² + (−1.2)²) = √(10.89 + 1.44) = √12.33 = <span class="hg">3.511</span>');
+  },{interval:1800});sp.draw();
+  H('p',{class:'hint'},host,'Aquí sale 3.511 porque solo usamos 2 de las 4 medidas.');
+})();
+
+/* ================= 3b: distancia 4D ================= */
+(function(){
+  const a=X[0],b=X[50];
+  compTable(document.getElementById('w3b'),{
+    cols:['sépalo largo','sépalo ancho','pétalo largo','pétalo ancho'],
+    rows:[{name:'a = X[0]',vals:a},{name:'b = X[50]',vals:b}],opName:'(aᵢ − bᵢ)²',op:i=>(a[i]-b[i])**2,stepText:'se restan y se eleva al cuadrado.',
+    opText:i=>`(${f(a[i])} − ${f(b[i])})² = (${f(a[i]-b[i])})²`,intro:'Las mismas dos flores con sus 4 medidas: restar, cuadrado, sumar y raíz.',
+    finals:[{msg:'Raíz cuadrada: esta es la distancia de k-NN.',html:s=>`√${f(s)} = <span class="hg">${f(Math.sqrt(s),6)}</span> ≈ 4.00 &nbsp;&nbsp;# np.linalg.norm(a - b)`}]
+  });
+})();
+
+/* ================= 4a: producto escalar 4D ================= */
+(function(){
+  const a=X[0],b=X[50];
+  compTable(document.getElementById('w4a'),{
+    cols:['sépalo largo','sépalo ancho','pétalo largo','pétalo ancho'],
+    rows:[{name:'a = X[0]',vals:a},{name:'b = X[50]',vals:b}],opName:'aᵢ · bᵢ',op:i=>a[i]*b[i],stepText:'se multiplican los dos números.',
+    opText:i=>`${f(a[i])} · ${f(b[i])}`,intro:'Producto escalar de la flor 0 y la flor 50: multiplicar cada pareja y sumar.',
+    finals:[{msg:'Un solo número. En numpy se escribe con @:',html:s=>`a @ b = np.dot(a, b) = <span class="hg">${f(s)}</span>`}]
+  });
+})();
+
+/* ================= 4b: signo del producto escalar ================= */
+(function(){
+  const host=document.getElementById('w4b');
+  const P=new Plot(host,{x:[-2.7,2.7],y:[-2.7,2.7],w:520,maxw:470,label:'Signo del producto escalar'});
+  const a=[2,.5];const na=norm(a);const ua=[a[0]/na,a[1]/na],perp=[-ua[1],ua[0]];
+  const g0=P.g();
+  const big=8;const pos=P.poly(g0,[[perp[0]*big,perp[1]*big],[perp[0]*big+ua[0]*big,perp[1]*big+ua[1]*big],[-perp[0]*big+ua[0]*big,-perp[1]*big+ua[1]*big],[-perp[0]*big,-perp[1]*big]],{fill:C.green,opacity:.09});
+  const neg=P.poly(g0,[[perp[0]*big,perp[1]*big],[perp[0]*big-ua[0]*big,perp[1]*big-ua[1]*big],[-perp[0]*big-ua[0]*big,-perp[1]*big-ua[1]*big],[-perp[0]*big,-perp[1]*big]],{fill:C.red,opacity:.07});
+  const clip=E('clipPath',{id:'cl4b'},P.svg);E('rect',{x:P.X(-2.7),y:P.Y(2.7),width:P.X(2.7)-P.X(-2.7),height:P.Y(-2.7)-P.Y(2.7)},clip);g0.setAttribute('clip-path','url(#cl4b)');
+  P.line(g0,[perp[0]*4,perp[1]*4],[-perp[0]*4,-perp[1]*4],{stroke:'#8a877f','stroke-dasharray':'4 4'});
+  const g=P.g();const arc=E('path',{fill:'none',stroke:C.amber,'stroke-width':2},g);
+  const aA=P.arrow(g,C.blue,3);aA.set([0,0],a);const la=P.label(g,C.blue);la.set(a,'a',6,-6);
+  const aB=P.arrow(g,C.orange,3);const lb=P.label(g,C.orange);
+  const handle=P.dot(g,[0,0],12,C.orange,{opacity:.18,style:'cursor:grab'});
+  const sl=H('div',{class:'sl'},host);
+  H('label',{},sl,'ángulo de b');const iA=H('input',{type:'range',min:0,max:360,step:1,value:60},sl);const oA=H('output',{},sl);
+  H('label',{},sl,'longitud ‖b‖');const iL=H('input',{type:'range',min:.3,max:2.5,step:.05,value:1.8},sl);const oL=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);const pb=H('button',{},bar,'▶ Dar una vuelta completa');
+  const calc=H('div',{class:'calc'},host);
+  function draw(){const th=+iA.value*Math.PI/180,L=+iL.value;const b=[L*Math.cos(th),L*Math.sin(th)];
+    aB.set([0,0],b);lb.set(b,'b',6,-6);P.setDot(handle,b);oA.textContent=iA.value+'°';oL.textContent=f(L,2);
+    const p=dot(a,b),cs=p/(na*L);const ang=Math.acos(Math.max(-1,Math.min(1,cs)))*180/Math.PI;
+    const t0=Math.atan2(a[1],a[0]);let t1=Math.atan2(b[1],b[0]);let dt=t1-t0;while(dt>Math.PI)dt-=2*Math.PI;while(dt<-Math.PI)dt+=2*Math.PI;
+    const r=.55,pts=[];for(let k=0;k<=24;k++){const t=t0+dt*k/24;pts.push(P.P([r*Math.cos(t),r*Math.sin(t)]))}arc.setAttribute('d','M'+pts.map(q=>q.join(',')).join('L'));
+    const cls=Math.abs(p)<.05?'hy':(p>0?'hg':'hr'),word=Math.abs(p)<.05?'cero → perpendiculares (90°)':(p>0?'positivo → ángulo agudo':'negativo → ángulo obtuso');
+    calc.innerHTML=`a · b = 2·(${f(b[0],2)}) + 0.5·(${f(b[1],2)}) = <span class="${cls}">${f(p,2)}</span> &nbsp; ${word}<br>ángulo θ = ${f(ang,1)}° &nbsp;·&nbsp; cos θ = ${f(cs,2)}`}
+  iA.oninput=iL.oninput=()=>{cancelAnimationFrame(P._raf);draw()};
+  let drag=false;
+  P.svg.addEventListener('pointerdown',ev=>{drag=true;P.svg.setPointerCapture(ev.pointerId);move(ev)});
+  P.svg.addEventListener('pointermove',ev=>{if(drag)move(ev)});
+  P.svg.addEventListener('pointerup',()=>drag=false);
+  function move(ev){cancelAnimationFrame(P._raf);const [x,y]=P.toWorld(ev);let L=Math.hypot(x,y);L=Math.max(.3,Math.min(2.5,L));let th=Math.atan2(y,x)*180/Math.PI;if(th<0)th+=360;iA.value=Math.round(th);iL.value=L;draw()}
+  pb.onclick=()=>tween(P,6000,u=>{iA.value=Math.round(u*360);draw()});
+  draw();
+  H('p',{class:'hint'},host,'Pista: busca dos posiciones donde a · b valga 0. Las dos están sobre la línea discontinua (perpendicular a a).');
+})();
+
+/* ================= 5: proyección ================= */
+(function(){
+  const host=document.getElementById('w5');
+  const P=new Plot(host,{x:[-4.5,6],y:[-3.2,4],label:'Proyección'});
+  const b=[5,1],nb=norm(b),ub=[b[0]/nb,b[1]/nb];
+  const g=P.g();
+  P.line(g,[-4.5*ub[0]/ub[0],-4.5*ub[1]/ub[0]],[6,6*ub[1]/ub[0]],{stroke:'#8a877f','stroke-dasharray':'2 5'});
+  const perpL=P.line(g,[0,0],[0,0],{stroke:getComputedStyle(document.body).color,'stroke-dasharray':'5 4','stroke-width':1.3});
+  const rightA=E('polyline',{fill:'none',stroke:'#8a877f'},g);
+  const aB=P.arrow(g,C.orange,3);aB.set([0,0],b);P.label(g,C.orange).set(b,'b',6,-6);
+  const sh=P.arrow(g,C.green,5);const ls=P.label(g,C.green);
+  const aA=P.arrow(g,C.blue,3);const la=P.label(g,C.blue);
+  const handle=P.dot(g,[0,0],12,C.blue,{opacity:.18,style:'cursor:grab'});
+  const sl=H('div',{class:'sl'},host);
+  H('label',{},sl,'ángulo de a');const iA=H('input',{type:'range',min:0,max:360,step:1,value:60},sl);const oA=H('output',{},sl);
+  H('label',{},sl,'longitud ‖a‖');const iL=H('input',{type:'range',min:.5,max:4,step:.05,value:3},sl);const oL=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);const pb=H('button',{},bar,'▶ Dar una vuelta completa');
+  const calc=H('div',{class:'calc'},host);
+  function draw(){const th=+iA.value*Math.PI/180,L=+iL.value;const a=[L*Math.cos(th),L*Math.sin(th)];
+    const pe=dot(a,b)/nb;const pr=[pe*ub[0],pe*ub[1]];
+    aA.set([0,0],a);la.set(a,'a',6,-6);sh.set([0,0],pr);ls.set(pr,'sombra',0,20,'middle');P.setDot(handle,a);P.setLine(perpL,a,pr);
+    const s=.22;const dir=[a[0]-pr[0],a[1]-pr[1]];const dl=Math.hypot(...dir);
+    if(dl>.3){const n=[dir[0]/dl,dir[1]/dl];const sgn=pe>=0?-1:1;const p1=[pr[0]+sgn*ub[0]*s,pr[1]+sgn*ub[1]*s];const p2=[p1[0]+n[0]*s,p1[1]+n[1]*s];const p3=[pr[0]+n[0]*s,pr[1]+n[1]*s];rightA.setAttribute('points',[p1,p2,p3].map(q=>P.P(q).join(',')).join(' '));rightA.style.opacity=1}else rightA.style.opacity=0;
+    oA.textContent=iA.value+'°';oL.textContent=f(L,2);
+    calc.innerHTML=`sombra = (a · b) / ‖b‖ = (${f(a[0],2)}·5 + ${f(a[1],2)}·1) / ${f(nb,3)} = <span class="${pe>=0?'hg':'hr'}">${f(pe,2)}</span>${pe<0?' &nbsp;← negativa: la sombra cae al otro lado':''}`}
+  iA.oninput=iL.oninput=()=>{cancelAnimationFrame(P._raf);draw()};
+  let drag=false;
+  P.svg.addEventListener('pointerdown',ev=>{drag=true;P.svg.setPointerCapture(ev.pointerId);move(ev)});
+  P.svg.addEventListener('pointermove',ev=>{if(drag)move(ev)});
+  P.svg.addEventListener('pointerup',()=>drag=false);
+  function move(ev){cancelAnimationFrame(P._raf);const [x,y]=P.toWorld(ev);let L=Math.max(.5,Math.min(4,Math.hypot(x,y)));let th=Math.atan2(y,x)*180/Math.PI;if(th<0)th+=360;iA.value=Math.round(th);iL.value=L;draw()}
+  pb.onclick=()=>tween(P,6000,u=>{iA.value=Math.round(u*360);draw()});
+  draw();
+})();
+
+/* ================= 6a: X @ w fila a fila ================= */
+(function(){
+  const host=document.getElementById('w6a');
+  const idx=[0,1,50,51,100,101];const M=idx.map(i=>X[i]);
+  const presets={'Solo el largo del pétalo  w = (0, 0, 1, 0)':[0,0,1,0],'La media de las 4 medidas  w = (0.25, 0.25, 0.25, 0.25)':[.25,.25,.25,.25],'Los pesos del modelo (apartado 7)':[-0.3927,-0.5144,2.9306,2.4161]};
+  const bar0=H('div',{class:'bar'},host);H('span',{class:'dots'},bar0,'Vector de pesos w:');const sel=H('select',{},bar0);Object.keys(presets).forEach(k=>H('option',{value:k},sel,k));
+  const msg=H('div',{class:'msg'},host);
+  const sc=H('div',{class:'scroll'},host);const eq=H('div',{class:'eq'},sc);
+  const mW=H('div',{},eq);const mx=H('div',{class:'mx',style:'grid-template-columns:repeat(4,auto)'},mW);H('div',{class:'nm'},mW,'X (6 × 4) · 6 flores');
+  const mc=M.map(r=>r.map(v=>H('div',{class:'cell'},mx,f(v))));
+  H('span',{class:'op'},eq,'@');
+  const wW=H('div',{},eq);const wx=H('div',{class:'mx',style:'grid-template-columns:auto'},wW);H('div',{class:'nm'},wW,'w (4,)');const wc=[0,1,2,3].map(()=>H('div',{class:'cell'},wx,''));
+  H('span',{class:'op'},eq,'=');
+  const rW=H('div',{},eq);const rx=H('div',{class:'mx',style:'grid-template-columns:auto'},rW);H('div',{class:'nm'},rW,'X @ w (6,)');const rc=M.map(()=>H('div',{class:'cell'},rx,'?'));
+  const calc=H('div',{class:'calc'},host);
+  let w=presets[sel.value];
+  const sp=stepper(host,8,st=>{
+    w=presets[sel.value];wc.forEach((c,j)=>c.textContent=f(w[j]));
+    document.querySelectorAll('#w6a .cell').forEach(c=>c.classList.remove('row','hi','hi2','done'));
+    M.forEach((r,i)=>{rc[i].textContent=(st>i&&st>0)?f(dot(r,w),3):'?'});
+    if(st===0){msg.innerHTML='Cada flor (fila) se va a multiplicar por el mismo vector de pesos <i>w</i>.';calc.innerHTML='&nbsp;'}
+    else if(st<=6){const i=st-1,r=M[i];mc[i].forEach(c=>c.classList.add('hi'));wc.forEach(c=>c.classList.add('hi2'));rc[i].classList.add('done');
+      msg.innerHTML=`Fila ${i+1} (flor ${idx[i]}, ${SPECIES[Y[idx[i]]]}) · w → un número.`;
+      calc.innerHTML=r.map((v,j)=>`${f(v)}·${f(w[j])}`).join(' + ')+` = <span class="hg">${f(dot(r,w),3)}</span>`}
+    else{rc.forEach(c=>c.classList.add('done'));msg.innerHTML='Hecho: <b>una puntuación por flor</b>. Con las 150 flores sería <code>(150, 4) @ (4,) → (150,)</code>.';calc.innerHTML='(6, <span class="hy">4</span>) @ (<span class="hy">4</span>,) → (6,) &nbsp;&nbsp; el 4 del medio coincide y desaparece'}
+  },{interval:1600});
+  sel.onchange=()=>sp.reset();sp.draw();
+})();
+
+/* ================= 6b: cuadrado + v, cálculo animado ================= */
+(function(){
+  const host=document.getElementById('w6b');
+  const c30=Math.cos(Math.PI/6),s30=Math.sin(Math.PI/6);
+  const Ms={'Cizallar':[[1,.8],[0,1]],'Escalar':[[1.5,0],[0,.5]],'Girar 30°':[[c30,-s30],[s30,c30]]};
+  const PTS=[[0,0],[1,0],[1,1],[0,1],[1,.5]];
+  const cols=['#d85a30','#1d9e75','#7f77dd','#d4537e',C.blue];
+  const names=['Esquina 1','Esquina 2','Esquina 3','Esquina 4','La flecha v'];
+  const bar0=H('div',{class:'bar'},host);H('span',{class:'dots'},bar0,'Matriz A:');const sel=H('select',{},bar0);Object.keys(Ms).forEach(k=>H('option',{value:k},sel,k));
+  const msg=H('div',{class:'msg'},host);
+  const sc=H('div',{class:'scroll'},host);const eq=H('div',{class:'eq'},sc);
+  H('span',{class:'op'},eq,'A');const mx=H('div',{class:'mx',style:'grid-template-columns:repeat(2,auto)'},eq);const ac=[0,1,2,3].map(()=>H('div',{class:'cell'},mx));
+  H('span',{class:'op'},eq,'·');const px=H('div',{class:'mx',style:'grid-template-columns:auto'},eq);const pc=[0,1].map(()=>H('div',{class:'cell'},px));
+  H('span',{class:'op'},eq,'=');const rx=H('div',{class:'mx',style:'grid-template-columns:auto'},eq);const rc=[0,1].map(()=>H('div',{class:'cell'},rx));
+  const calc=H('div',{class:'calc'},host);
+  const two=H('div',{class:'two'},host);const left=H('div',{},two);const list=H('div',{class:'list'},two);
+  const P=new Plot(left,{x:[-0.7,2.1],y:[-0.4,1.7],gx:.5,gy:.5,w:600,label:'Cuadrado transformado'});
+  const ink=getComputedStyle(document.body).color;
+  const g=P.g();
+  P.poly(g,PTS.slice(0,4),{fill:'#8a877f','fill-opacity':.3,stroke:'#8a877f'});
+  const np=P.poly(g,PTS.slice(0,4),{fill:C.blue,'fill-opacity':0,stroke:C.blue,'stroke-width':0});
+  const gx=P.line(g,[0,0],[0,0],{stroke:C.amber,'stroke-dasharray':'5 4',opacity:0});
+  const gy=P.line(g,[0,0],[0,0],{stroke:C.amber,'stroke-dasharray':'5 4',opacity:0});
+  const vA=P.arrow(g,'#8a877f',2.4);vA.set([0,0],PTS[4]);P.label(g,'#8a877f').set(PTS[4],'v',8,16);
+  const avA=P.arrow(g,C.blue,3);const lav=P.label(g,C.blue);
+  const gm=P.g(),gp=P.g();
+  const rows=PTS.map((p,i)=>{const d=H('div',{},list);H('i',{class:'sw',style:'background:'+cols[i]},d);const s=H('span',{},d);return {d,s}});
+  let A,Q;const N=17;
+  function info(s){if(s===0)return{k:-1,ph:0};if(s<=12)return{k:Math.floor((s-1)/3),ph:(s-1)%3+1};if(s===13)return{k:-2,ph:0};return{k:4,ph:s-13}}
+  const moved=(k,s)=>k<4?s>=3*k+3:s>=16;
+  const sp=stepper(host,N,st=>{
+    cancelAnimationFrame(P._raf);
+    A=Ms[sel.value];Q=PTS.map(p=>mul(A,p));
+    ac.forEach((c,i)=>c.textContent=f(A[i>>1][i&1],2));
+    const {k,ph}=info(st);const p=k>=0?PTS[k]:null,q=k>=0?Q[k]:null;
+    [...ac,...pc,...rc].forEach(c=>c.classList.remove('row','hi','hi2','done'));
+    pc[0].textContent=p?f(p[0]):'x';pc[1].textContent=p?f(p[1]):'y';px.style.borderColor=k>=0?cols[k]:'';
+    rc[0].textContent=ph>=1?f(q[0],2):'?';rc[1].textContent=ph>=2?f(q[1],2):'?';
+    if(ph===1){ac[0].classList.add('hi');pc[0].classList.add('hi');ac[1].classList.add('hi2');pc[1].classList.add('hi2');rc[0].classList.add('done')}
+    if(ph===2){ac[2].classList.add('hi');pc[0].classList.add('hi');ac[3].classList.add('hi2');pc[1].classList.add('hi2');rc[1].classList.add('done')}
+    if(ph===3){rc[0].classList.add('done');rc[1].classList.add('done')}
+    const line=i=>`<span class="hy">${f(A[i][0],2)}·${f(p[0])}</span> + <span class="hb">${f(A[i][1],2)}·${f(p[1])}</span> = <span class="hg">${f(q[i],2)}</span>`;
+    calc.innerHTML=k<0?(k===-1?`A = [[${f(A[0][0],2)}, ${f(A[0][1],2)}], [${f(A[1][0],2)}, ${f(A[1][1],2)}]]`:'Esquinas nuevas: '+Q.slice(0,4).map(q=>`(${f(q[0],2)}, ${f(q[1],2)})`).join('  ')):
+      ((ph>=1?'nueva x = fila 1 · punto = '+line(0):'')+(ph>=2?'<br>nueva y = fila 2 · punto = '+line(1):''));
+    const M2=['','<b>Fila 1</b> de A · el punto → <b>nueva x</b>.','<b>Fila 2</b> de A · el punto → <b>nueva y</b>.','El punto se mueve a (nueva x, nueva y).'];
+    msg.innerHTML=k===-1?'Vamos a aplicar A a cada esquina del cuadrado y después a la flecha v. Siempre el mismo cálculo.':(k===-2?'Unimos las 4 esquinas nuevas en el mismo orden: <b>esa es la figura azul</b>.':`<b style="color:${cols[k]}">${names[k]}</b> (${f(p[0])}, ${f(p[1])}). ${M2[ph]}`);
+    if(k>=0&&(ph===1||ph===2)){const X0=q[0];P.setLine(gx,[X0,-0.4],[X0,1.7]);gx.setAttribute('opacity',.9)}else gx.setAttribute('opacity',0);
+    if(k>=0&&ph===2){P.setLine(gy,[-0.7,q[1]],[2.1,q[1]]);gy.setAttribute('opacity',.9)}else gy.setAttribute('opacity',0);
+    gm.innerHTML='';gp.innerHTML='';
+    for(let i=0;i<4;i++){const dn=moved(i,st),cur=i===k;
+      P.dot(gp,PTS[i],cur?8:5,cols[i],{opacity:dn&&!cur?.35:1,stroke:'var(--card)','stroke-width':1.5});
+      if(dn&&!(cur&&ph===3)){const o=P.arrow(gm,cols[i],1.4,'4 3');o.set(PTS[i],Q[i]);P.dot(gp,Q[i],6,cols[i],{stroke:'var(--card)','stroke-width':1.5})}}
+    P.setPoly(np,Q.slice(0,4));np.setAttribute('stroke-width',st>=13?2:0);np.setAttribute('fill-opacity',st>=13?.25:0);
+    avA.show(st>=16);lav.show(st>=16);if(st>=16){avA.set([0,0],Q[4]);lav.set(Q[4],'Av',6,-8)}
+    rows.forEach((r,i)=>{const dn=moved(i,st)||(i===k&&ph===3);r.d.classList.toggle('cur',i===k);r.s.textContent=(i===4?'v ':'')+`(${f(PTS[i][0])}, ${f(PTS[i][1])}) → `+(dn?`(${f(Q[i][0],2)}, ${f(Q[i][1],2)})`:'?')});
+    if(ph===3){
+      if(k<4){const o=P.arrow(gm,cols[k],1.6,'4 3');const d=P.dot(gp,PTS[k],9,cols[k],{stroke:'var(--card)','stroke-width':2});
+        tween(P,900,u=>{const c=[p[0]+u*(q[0]-p[0]),p[1]+u*(q[1]-p[1])];P.setDot(d,c);o.set(p,c)})}
+      else{avA.show(true);lav.show(true);tween(P,900,u=>{const c=[p[0]+u*(q[0]-p[0]),p[1]+u*(q[1]-p[1])];avA.set([0,0],c);lav.set(c,'Av',6,-8)})}
+    }
+  },{interval:1900});
+  sel.onchange=()=>sp.reset();sp.draw();
+})();
+
+/* ================= 6c: matriz interactiva ================= */
+(function(){
+  const host=document.getElementById('w6c');
+  const bar0=H('div',{class:'bar'},host);
+  const pres={'Identidad':[1,0,0,1],'Escalar':[1.5,0,0,.5],'Girar 45°':[.71,-.71,.71,.71],'Cizallar':[1,.8,0,1],'Reflejar':[-1,0,0,1],'Aplastar (det 0)':[1,2,.5,1]};
+  const btns=Object.keys(pres).map(k=>{const b=H('button',{},bar0,k);b.onclick=()=>{const from=get(),to=pres[k];tween(P,800,u=>{set(from.map((v,i)=>v+u*(to[i]-v)))})};return b});
+  const two=H('div',{class:'two',style:'grid-template-columns:minmax(0,1fr) minmax(0,290px)'},host);const left=H('div',{},two);const right=H('div',{},two);
+  const P=new Plot(left,{x:[-3,3],y:[-3,3],w:560,label:'Transformación del plano'});
+  const g=P.g();const lines=[];
+  for(let k=-4;k<=4;k++){lines.push([P.line(g,[0,0],[0,0],{stroke:'#60a5fa','stroke-width':k===0?1.6:.9,opacity:.7}),k,0]);lines.push([P.line(g,[0,0],[0,0],{stroke:'#60a5fa','stroke-width':k===0?1.6:.9,opacity:.7}),k,1])}
+  P.poly(g,[[0,0],[1,0],[1,1],[0,1]],{fill:'#8a877f','fill-opacity':.3});
+  const sq=P.poly(g,[[0,0],[1,0],[1,1],[0,1]],{fill:C.blue,'fill-opacity':.3,stroke:C.blue,'stroke-width':1.5});
+  const c1=P.arrow(g,C.red,3),c2=P.arrow(g,C.green,3);const l1=P.label(g,C.red),l2=P.label(g,C.green);
+  const sl=H('div',{class:'sl',style:'grid-template-columns:auto 1fr 52px'},right);const ins=[];
+  [['a',1],['b',0],['c',0],['d',1]].forEach(([n,v])=>{H('label',{},sl,n);const i=H('input',{type:'range',min:-2,max:2,step:.05,value:v},sl);const o=H('output',{},sl);ins.push([i,o]);i.oninput=()=>{cancelAnimationFrame(P._raf);draw()}});
+  H('div',{class:'hint'},right,'A = [[a, b], [c, d]]');const mat=H('div',{class:'calc',style:'white-space:normal'},right);
+  const animB=H('button',{},right,'▶ Animar desde la identidad');
+  animB.onclick=()=>{const to=get();tween(P,1500,u=>set([1,0,0,1].map((v,i)=>v+u*(to[i]-v))),()=>set(to))};
+  function get(){return ins.map(([i])=>+i.value)}
+  function set(v){v.forEach((x,i)=>ins[i][0].value=x);draw(v)}
+  function draw(v){v=v||get();const A=[[v[0],v[1]],[v[2],v[3]]];ins.forEach(([i,o],k)=>o.textContent=f(v[k],2));
+    lines.forEach(([el,k,dir])=>{const p=dir?[[k,-4],[k,4]]:[[-4,k],[4,k]];P.setLine(el,mul(A,p[0]),mul(A,p[1]))});
+    P.setPoly(sq,[[0,0],[1,0],[1,1],[0,1]].map(p=>mul(A,p)));
+    const col1=[v[0],v[2]],col2=[v[1],v[3]];c1.set([0,0],col1);c2.set([0,0],col2);l1.set(col1,'columna 1',6,14);l2.set(col2,'columna 2',6,-6);
+    const det=v[0]*v[3]-v[1]*v[2];
+    mat.innerHTML=`A = [[${f(v[0],2)}, ${f(v[1],2)}],<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[${f(v[2],2)}, ${f(v[3],2)}]]<br>A·(1,0) = <span style="color:${C.red}">(${f(v[0],2)}, ${f(v[2],2)})</span> = columna 1<br>A·(0,1) = <span style="color:${C.green}">(${f(v[1],2)}, ${f(v[3],2)})</span> = columna 2<br>det = ad − bc = <span class="${Math.abs(det)<.06?'hr':'hg'}">${f(det,2)}</span>${Math.abs(det)<.06?'<br>⚠ el plano se aplasta en una recta':''}`}
+  draw();
+})();
+
+/* ================= 7a: predicción de una flor ================= */
+(function(){
+  const host=document.getElementById('w7a');
+  const w=[-0.392707,-0.51443,2.930641,2.416088],b=-14.435983;
+  const Z=X.map(r=>dot(r,w)+b);
+  const bar0=H('div',{class:'bar'},host);H('span',{class:'dots'},bar0,'Flor:');
+  const sel=H('select',{},bar0);[[0,'0 · setosa'],[50,'50 · versicolor'],[70,'70 · versicolor (dudosa)'],[83,'83 · versicolor (error del modelo)'],[100,'100 · virginica'],[119,'119 · virginica'],[133,'133 · virginica (error del modelo)']].forEach(([i,t])=>H('option',{value:i},sel,t));
+  const msg=H('div',{class:'msg'},host);
+  const sc=H('div',{class:'scroll'},host);const t=H('table',{class:'comp'},sc);
+  const hd=H('tr',{},H('thead',{},t));H('th',{},hd,'');['sépalo largo','sépalo ancho','pétalo largo','pétalo ancho'].forEach(c=>H('th',{},hd,c));
+  const tb=H('tbody',{},t);const rX=H('tr',{},tb);H('th',{},rX,'x (la flor)');const cx=[0,1,2,3].map(()=>H('td',{},rX));
+  const rW=H('tr',{},tb);H('th',{},rW,'w (el modelo)');const cw=w.map(v=>H('td',{},rW,f(v)));
+  const rP=H('tr',{},tb);H('th',{},rP,'xᵢ · wᵢ');const cp=[0,1,2,3].map(()=>H('td',{},rP,''));
+  const calc=H('div',{class:'calc'},host);
+  const P=new Plot(host,{x:[-3,153],y:[Math.floor(Math.min(...Z))-1,Math.ceil(Math.max(...Z))+1],h:250,free:true,gx:25,gy:5,xl:'índice de la flor →',yl:'↑ z',label:'Puntuación z de las 150 flores'});
+  const g=P.g();
+  P.line(g,[-3,0],[153,0],{stroke:getComputedStyle(document.body).color,'stroke-width':2});
+  P.label(g,null,'tick').set([-3,0],'frontera z = 0',6,-6,'start');
+  Z.forEach((z,i)=>P.dot(g,[i,z],3.6,Y[i]===2?C.orange:C.blue,{opacity:.75}));
+  const ring=P.dot(g,[0,0],9,'none',{stroke:getComputedStyle(document.body).color,'stroke-width':2.5});
+  const leg=H('div',{class:'legend'},host);H('span',{},leg,`<i class="sw" style="background:${C.blue}"></i>no virginica (real)`);H('span',{},leg,`<i class="sw" style="background:${C.orange}"></i>virginica (real)`);H('span',{},leg,'Arriba de la línea → el modelo dice "virginica"');
+  const sp=stepper(host,7,st=>{
+    const i=+sel.value,x=X[i],z=Z[i];cx.forEach((c,j)=>c.textContent=f(x[j]));
+    [...cx,...cw,...cp].forEach(c=>c.classList.remove('hi','res'));
+    cp.forEach((c,j)=>c.textContent=st>j?f(x[j]*w[j],3):'');
+    if(st>=1&&st<=4){cx[st-1].classList.add('hi');cw[st-1].classList.add('hi');cp[st-1].classList.add('hi')}
+    const s=dot(x,w);
+    P.setDot(ring,[i,z]);ring.style.opacity=st>=6?1:0;
+    if(st===0){msg.innerHTML=`Flor ${i}: es <b>${SPECIES[Y[i]]}</b> de verdad. ¿Qué dice el modelo?`;calc.innerHTML='z = x · w + b'}
+    else if(st<=4){msg.innerHTML=`Medida ${st}: multiplica la medida por su peso.`;calc.innerHTML=`${f(x[st-1])} · ${f(w[st-1])} = <span class="hy">${f(x[st-1]*w[st-1],3)}</span>`}
+    else if(st===5){msg.innerHTML='Se suma todo (producto escalar) y se añade la constante b.';calc.innerHTML=`z = ${x.map((v,j)=>f(v*w[j],3)).join(' + ')} + (${f(b,3)}) = <span class="hg">${f(z,3)}</span>`}
+    else{const pred=z>0?1:0,real=Y[i]===2?1:0;msg.innerHTML=`Mira el <b>signo</b> de z: ${z>0?'positivo':'negativo'} → el modelo dice <b>${pred?'"sí, virginica"':'"no es virginica"'}</b>. `+(pred===real?'<span class="good">Acierta ✓</span>':'<span class="err">Se equivoca ✗</span> (está cerca de la frontera)');
+      calc.innerHTML=`z = ${f(z,3)} ${z>0?'&gt;':'&lt;'} 0 → predicción = ${pred} &nbsp;&nbsp;# (X @ w + b > 0)`}
+  },{interval:1500});
+  sel.onchange=()=>sp.reset();sp.draw();
+})();
+
+/* ================= 7b: frontera ================= */
+(function(){
+  const host=document.getElementById('w7b');
+  const yb=Y.map(v=>v===2?1:0);
+  const P=new Plot(host,{x:[.5,7.5],y:[0,2.8],gx:1,gy:.5,xl:'largo del pétalo →',yl:'↑ ancho del pétalo',label:'Frontera de decisión'});
+  const g0=P.g();const R=[[.5,0],[7.5,0],[7.5,2.8],[.5,2.8]];
+  const posP=P.poly(g0,R,{fill:C.orange,opacity:.14}),negP=P.poly(g0,R,{fill:C.blue,opacity:.1});
+  const bl=P.line(g0,[0,0],[0,0],{stroke:getComputedStyle(document.body).color,'stroke-width':2.5});
+  const gp=P.g();const dots=X.map((r,i)=>P.dot(gp,[r[2],r[3]],4.2,yb[i]?C.orange:C.blue,{stroke:'var(--card)','stroke-width':.8}));
+  const ge=P.g();
+  const wA=P.arrow(P.g(),getComputedStyle(document.body).color,3);const lw=P.label(wA.el.parentNode,null);
+  const sl=H('div',{class:'sl'},host);const ins=[];
+  [['w₁ (peso largo)',-3,3,.05,1],['w₂ (peso ancho)',-3,3,.05,1],['b (constante)',-20,5,.1,-7]].forEach(([n,mn,mx,st,v])=>{H('label',{},sl,n);const i=H('input',{type:'range',min:mn,max:mx,step:st,value:v},sl);const o=H('output',{},sl);ins.push([i,o]);i.oninput=()=>{cancelAnimationFrame(P._raf);draw()}});
+  const bar=H('div',{class:'bar'},host);const sk=H('button',{},bar,'▶ Usar los pesos de scikit-learn');const r0=H('button',{},bar,'↺ Empezar de nuevo');
+  const calc=H('div',{class:'calc'},host);
+  const leg=H('div',{class:'legend'},host);H('span',{},leg,`<i class="sw" style="background:${C.orange}"></i>virginica`);H('span',{},leg,`<i class="sw" style="background:${C.blue}"></i>no virginica`);H('span',{},leg,'<i class="sw" style="border:2px solid #dc2626"></i>error');
+  function clip(poly,gf){const out=[];for(let i=0;i<poly.length;i++){const A=poly[i],B=poly[(i+1)%poly.length],ga=gf(A),gb=gf(B);if(ga>=0)out.push(A);if((ga>=0)!==(gb>=0)){const t=ga/(ga-gb);out.push([A[0]+t*(B[0]-A[0]),A[1]+t*(B[1]-A[1])])}}return out}
+  function anim(to){const from=ins.map(([i])=>+i.value);tween(P,1400,u=>{ins.forEach(([i],k)=>i.value=from[k]+u*(to[k]-from[k]));draw()})}
+  sk.onclick=()=>anim([2.7798,2.3839,-17.5562]);r0.onclick=()=>anim([1,1,-7]);
+  function draw(){const [w1,w2,b]=ins.map(([i])=>+i.value);ins.forEach(([i,o])=>o.textContent=f(+i.value,2));
+    const z=p=>w1*p[0]+w2*p[1]+b;
+    const pp=clip(R,z),nn=clip(R,p=>-z(p));P.setPoly(posP,pp.length?pp:[[0,0]]);P.setPoly(negP,nn.length?nn:[[0,0]]);
+    const ints=[];for(let i=0;i<4;i++){const A=R[i],B=R[(i+1)%4],ga=z(A),gb=z(B);if((ga>=0)!==(gb>=0)){const t=ga/(ga-gb);ints.push([A[0]+t*(B[0]-A[0]),A[1]+t*(B[1]-A[1])])}}
+    if(ints.length>=2){P.setLine(bl,ints[0],ints[1]);bl.style.opacity=1}else bl.style.opacity=0;
+    const nw=Math.hypot(w1,w2);
+    if(nw>1e-6&&ints.length>=2){const c=[4,1.4];const k=z(c)/(nw*nw);let p0=[c[0]-k*w1,c[1]-k*w2];
+      p0=[Math.max(.9,Math.min(7.1,p0[0])),Math.max(.2,Math.min(2.6,p0[1]))];
+      const tip=[p0[0]+.8*w1/nw,p0[1]+.8*w2/nw];wA.set(p0,tip);wA.show(true);lw.set(tip,'w',6,-4);lw.show(true)}else{wA.show(false);lw.show(false)}
+    ge.innerHTML='';let errs=0;
+    X.forEach((r,i)=>{const pr=z([r[2],r[3]])>0?1:0;if(pr!==yb[i]){errs++;P.dot(ge,[r[2],r[3]],7.5,'none',{stroke:'#dc2626','stroke-width':2})}});
+    calc.innerHTML=`z = ${f(w1,2)}·largo + ${f(w2,2)}·ancho + (${f(b,2)}) &nbsp;&nbsp; errores: <span class="${errs<=6?'hg':'hr'}">${errs} de 150</span> &nbsp;(scikit-learn: 5)`}
+  draw();
+  H('p',{class:'hint'},host,'Fíjate: la flecha w siempre forma 90° con la frontera. Al cambiar b la recta se desplaza sin girar; al cambiar w₁ y w₂ gira.');
+})();
+
+/* ================= 8a: transpuesta ================= */
+(function(){
+  const host=document.getElementById('w8a');
+  const rowsI=[0,50,100];const M=rowsI.map(i=>X[i]);const meas=['sép. largo','sép. ancho','pét. largo','pét. ancho'];
+  const tint=['rgba(37,99,235,.22)','rgba(234,88,12,.22)','rgba(22,163,74,.22)'];
+  const msg=H('div',{class:'msg'},host);
+  const box=H('div',{class:'tp'},H('div',{class:'scroll'},host));
+  const CW=80,CH=40,LX=96,LY=30;box.style.height=(LY+4*CH+10)+'px';box.style.minWidth=(LX+4*CW+10)+'px';
+  const cells=[];M.forEach((r,i)=>r.forEach((v,j)=>{const c=H('div',{class:'c'},box,f(v));c.style.background=tint[i];cells.push([c,i,j])}));
+  const rh=rowsI.map((fi,i)=>H('div',{class:'h'},box,'flor '+fi));
+  const ch=meas.map(m=>H('div',{class:'h',style:'justify-content:center;width:'+(CW-6)+'px'},box,m));
+  const bar=H('div',{class:'bar'},host);const tb=H('button',{},bar,'⇄ Transponer');
+  const calc=H('div',{class:'calc'},host);
+  let T=false;
+  function draw(){
+    cells.forEach(([c,i,j])=>{const r=T?j:i,k=T?i:j;c.style.left=(LX+k*CW)+'px';c.style.top=(LY+r*CH)+'px'});
+    rh.forEach((h,i)=>{if(T){h.style.left=(LX+i*CW)+'px';h.style.top='4px';h.style.width=(CW-6)+'px';h.style.justifyContent='center'}else{h.style.left='0px';h.style.top=(LY+i*CH+10)+'px';h.style.width='';h.style.justifyContent=''}});
+    ch.forEach((h,j)=>{if(T){h.style.left='0px';h.style.top=(LY+j*CH+10)+'px';h.style.justifyContent='flex-start'}else{h.style.left=(LX+j*CW)+'px';h.style.top='4px';h.style.justifyContent='center'}});
+    msg.innerHTML=T?'Ahora <b>cada fila es una medida</b> y cada columna una flor. Los colores te dicen de qué flor era cada número.':'Original: <b>cada fila es una flor</b> (3 flores × 4 medidas).';
+    calc.innerHTML=T?'X.T &nbsp;→ forma (4, 3) &nbsp;&nbsp;# lo que era la fila i ahora es la columna i':'X &nbsp;→ forma (3, 4)';
+    tb.textContent=T?'⇄ Volver':'⇄ Transponer'}
+  tb.onclick=()=>{T=!T;draw()};draw();
+})();
+
+/* ================= 8b: X.T @ X ================= */
+(function(){
+  const host=document.getElementById('w8b');
+  const n=['sépalo largo','sépalo ancho','pétalo largo','pétalo ancho'];
+  const G=[0,1,2,3].map(i=>[0,1,2,3].map(j=>X.reduce((s,r)=>s+r[i]*r[j],0)));
+  const mx=Math.max(...G.flat());
+  const sc=H('div',{class:'scroll'},host);const t=H('table',{class:'heat'},sc);
+  const hr=H('tr',{},t);H('th',{},hr,'');n.forEach(c=>H('th',{},hr,c));
+  const cells=G.map((row,i)=>{const tr=H('tr',{},t);H('th',{style:'text-align:right'},tr,n[i]);return row.map((v,j)=>{const a=.12+.75*v/mx;const td=H('td',{},tr,f(v,2));td.style.background=`rgba(37,99,235,${a})`;if(a>.5)td.style.color='#fff';td.onmouseenter=td.onclick=()=>pick(i,j);return td})});
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function pick(i,j){cells.flat().forEach(c=>c.classList.remove('sel'));cells[i][j].classList.add('sel');cells[j][i].classList.add('sel');
+    calc.innerHTML=`G[${i}, ${j}] = columna "${n[i]}" · columna "${n[j]}" = suma de las 150 flores de X[k,${i}]·X[k,${j}] = <span class="hg">${f(G[i][j],2)}</span>`+(i===j?'<br>Diagonal: es la <b>suma de cuadrados</b> de esa medida.':`<br>Su espejo G[${j}, ${i}] vale lo mismo → la matriz es <b>simétrica</b>.`)}
+  pick(2,3);
+  H('p',{class:'hint'},host,'G = X.T @ X · forma (4, 4). Pasa el ratón o toca una casilla: se marca también su casilla espejo.');
+})();
+</script>
+</body>
+</html>
