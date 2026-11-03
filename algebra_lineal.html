@@ -92,6 +92,13 @@ table.sum th{color:var(--muted);font-weight:500;font-size:13px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .err{color:#dc2626;font-weight:600}
 .good{color:#16a34a;font-weight:600}
+.f sub,.f sup{font-size:.65em}
+.f .sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 3px}
+.f .sum b{font-size:1.6em;font-weight:400}
+.f .sum small{font-size:.6em}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:14px;margin:-4px 0 14px;padding:8px 12px;background:var(--card);border:1px dashed var(--line);border-radius:8px}
+.leg dt{font-family:Georgia,"Times New Roman",serif;text-align:right;white-space:nowrap}
+.leg dd{margin:0;color:var(--muted)}
 footer{color:var(--muted);font-size:13px;margin-top:50px}
 .back{margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:14px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:6px 14px;border-radius:999px}
 .back:hover{border-color:var(--accent);color:var(--accent)}
@@ -107,7 +114,7 @@ footer{color:var(--muted);font-size:13px;margin-top:50px}
 <div class="big">La frase que tienes que entender al final: <b>un modelo entrenado es una lista de números (un vector), y predecir es multiplicar.</b></div>
 
 <nav class="toc">
-<a href="#s1">1 · Vector</a><a href="#s2">2 · Norma</a><a href="#s3">3 · Distancia</a><a href="#s4">4 · Producto escalar</a><a href="#s5">5 · Proyección</a><a href="#s6">6 · Matriz</a><a href="#s7">7 · El modelo</a><a href="#s8">8 · Transpuesta</a><a href="#res">Resumen</a>
+<a href="#s1">1 · Vector</a><a href="#s2">2 · Norma</a><a href="#s3">3 · Distancia</a><a href="#s4">4 · Producto escalar</a><a href="#s5">5 · Proyección</a><a href="#s6">6 · Matriz</a><a href="#s7">7 · El modelo</a><a href="#s8">8 · Transpuesta</a><a href="#s9">9 · Manhattan</a><a href="#s10">10 · Matriz de distancias</a><a href="#s11">11 · Desigualdad triangular</a><a href="#s12">12 · Bucle vs @</a><a href="#res">Resumen</a>
 </nav>
 
 <p>Los datos de todo el cuaderno son las <b>150 flores de Iris</b>. Cada flor tiene 4 medidas: largo y ancho del sépalo, largo y ancho del pétalo. En numpy eso es una tabla <code>X</code> de <b>150 filas × 4 columnas</b>.</p>
@@ -217,6 +224,138 @@ intercept_ = -14.4360                             # b: una constante</pre>
 <p>Sale una tabla de 4 × 4, una casilla por cada pareja de medidas. Cada casilla es <b>columna i · columna j</b>. Es <b>simétrica</b> (el espejo de la diagonal es igual) y la diagonal son sumas de cuadrados. Pasa el ratón por las casillas:</p>
 <div class="w" id="w8b"></div>
 <p>Centrando los datos y dividiendo entre el número de flores, esta tabla se convierte en la <b>matriz de covarianza</b>, el punto de partida del PCA.</p>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9">9 · Otra distancia: Manhattan</h2>
+<div class="idea"><b>Idea:</b> hay más de una forma de medir distancias. La <b>euclídea</b> va en línea recta (cruzando las manzanas). La de <b>Manhattan</b> va por las calles: solo se mueve en horizontal o en vertical y suma lo que anda en cada dirección.</div>
+<div class="f">d<sub>1</sub>(a, b) = <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> |a<sub>i</sub> − b<sub>i</sub>| &nbsp;&nbsp;&nbsp;&nbsp; d<sub>2</sub>(a, b) = √( <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (a<sub>i</sub> − b<sub>i</sub>)<sup>2</sup> )</div>
+<dl class="leg">
+<dt>d<sub>1</sub>, d<sub>2</sub></dt><dd>distancia de Manhattan (también "norma L1") y euclídea ("norma L2")</dd>
+<dt>a, b</dt><dd>los dos vectores que comparas (aquí, las flores <code>X[0]</code> y <code>X[50]</code>)</dd>
+<dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>la componente número <i>i</i> de cada vector (una medida de la flor)</dd>
+<dt>n</dt><dd>cuántas componentes tiene cada vector (4 medidas)</dd>
+<dt>Σ<sub>i=1</sub><sup>n</sup></dt><dd>"suma desde <i>i</i> = 1 hasta <i>n</i>": repite lo de la derecha para cada componente y súmalo</dd>
+<dt>| x |</dt><dd>valor absoluto: quita el signo (|−3| = 3), porque una distancia nunca es negativa</dd>
+</dl>
+<p>La diferencia: la euclídea <b>eleva al cuadrado y hace raíz</b>; Manhattan solo <b>quita el signo y suma</b>. Arrastra el punto <b>B</b> y compara los dos caminos:</p>
+<div class="w" id="wE1a"></div>
+<p><b>¿Por qué Manhattan siempre es mayor o igual?</b> En 2D es el triángulo rectángulo: Manhattan recorre los dos catetos y la euclídea la hipotenusa, que siempre es más corta. En general, si elevas Manhattan al cuadrado aparecen los mismos cuadrados que en la euclídea <b>más</b> unos productos cruzados que nunca son negativos:</p>
+<div class="f">(|x<sub>1</sub>| + |x<sub>2</sub>|)<sup>2</sup> = x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> + 2|x<sub>1</sub>||x<sub>2</sub>| &nbsp;≥&nbsp; x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; d<sub>2</sub> ≤ d<sub>1</sub> ≤ √n · d<sub>2</sub></div>
+<dl class="leg">
+<dt>x<sub>i</sub></dt><dd>la diferencia en la componente <i>i</i>: x<sub>i</sub> = a<sub>i</sub> − b<sub>i</sub></dd>
+<dt>⟹</dt><dd>"por lo tanto"</dd>
+<dt>√n · d<sub>2</sub></dt><dd>el tope: Manhattan nunca pasa de √n veces la euclídea (con n = 4, el doble)</dd>
+</dl>
+<p>Solo son iguales cuando los puntos se diferencian en <b>una única</b> componente (B en la misma fila o columna que A). Con las flores 0 y 50, en 4 dimensiones:</p>
+<div class="w" id="wE1b"></div>
+<p><b>Las dos son casos de una sola fórmula</b>, la de Minkowski. Es la que usa <code>KNeighborsClassifier</code> por defecto (<code>metric='minkowski'</code>, <code>p=2</code>); con <code>p=1</code> pasa a ser Manhattan:</p>
+<div class="f">d<sub>p</sub>(a, b) = ( <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> |a<sub>i</sub> − b<sub>i</sub>|<sup>p</sup> )<sup>1/p</sup></div>
+<dl class="leg">
+<dt>p</dt><dd>un número ≥ 1 que eliges tú: <i>p</i> = 1 es Manhattan, <i>p</i> = 2 es la euclídea</dd>
+<dt>( … )<sup>1/p</sup></dt><dd>la raíz <i>p</i>-ésima (con <i>p</i> = 2, la raíz cuadrada de siempre)</dd>
+</dl>
+<pre>np.sum(np.abs(X[0] - X[50]))      # Manhattan → 6.7
+np.linalg.norm(X[0] - X[50])      # euclídea  → 4.003748
+np.linalg.norm(X[0] - X[50], ord=1)  # Manhattan también: la "norma 1"</pre>
+
+<h2 id="s10">10 · La matriz de distancias: las dos flores más lejanas</h2>
+<div class="idea"><b>Idea:</b> para encontrar la pareja más lejana hay que medir <b>todas</b> las parejas. Lo ordenado es guardarlas en una <b>matriz de distancias</b>: una tabla donde la casilla (<i>i</i>, <i>j</i>) es la distancia entre la flor <i>i</i> y la flor <i>j</i>. Luego solo hay que buscar la casilla más grande.</div>
+<div class="f">D<sub>ij</sub> = ‖x<sub>i</sub> − x<sub>j</sub>‖ = √( <span class="sum"><small>d</small><b>Σ</b><small>k=1</small></span> (x<sub>ik</sub> − x<sub>jk</sub>)<sup>2</sup> ) &nbsp;&nbsp;&nbsp;&nbsp; (i*, j*) = argmax<sub>i, j</sub> D<sub>ij</sub></div>
+<dl class="leg">
+<dt>D</dt><dd>la matriz de distancias, de tamaño <i>n</i> × <i>n</i> (150 × 150)</dd>
+<dt>D<sub>ij</sub></dt><dd>la casilla de la fila <i>i</i>, columna <i>j</i>: la distancia entre la flor <i>i</i> y la flor <i>j</i></dd>
+<dt>x<sub>i</sub></dt><dd>la flor número <i>i</i> (la fila <i>i</i> de <code>X</code>)</dd>
+<dt>x<sub>ik</sub></dt><dd>la medida <i>k</i> de la flor <i>i</i> (<code>X[i, k]</code>)</dd>
+<dt>n, d</dt><dd><i>n</i> = 150 flores, <i>d</i> = 4 medidas</dd>
+<dt>‖ · ‖</dt><dd>la norma (la longitud de la flecha, apartado 2)</dd>
+<dt>argmax</dt><dd>"el argumento del máximo": no devuelve el valor más grande, sino <b>dónde está</b> (los índices <i>i*</i>, <i>j*</i>)</dd>
+</dl>
+<p>Dos propiedades que te sirven para comprobar que la matriz está bien:</p>
+<div class="f">D<sub>ii</sub> = 0 &nbsp;&nbsp;(diagonal a cero) &nbsp;&nbsp;&nbsp;&nbsp; D<sub>ij</sub> = D<sub>ji</sub> &nbsp;&nbsp;(simétrica: D = D<sup>T</sup>)</div>
+<dl class="leg">
+<dt>D<sub>ii</sub></dt><dd>una flor contra sí misma: distancia 0</dd>
+<dt>D<sup>T</sup></dt><dd>la transpuesta (apartado 8): de <i>i</i> a <i>j</i> hay lo mismo que de <i>j</i> a <i>i</i></dd>
+</dl>
+<p>Mira cómo se va llenando la matriz con 7 puntos inventados. Cada pareja rellena <b>dos</b> casillas (la suya y su espejo), y se guarda la más lejana vista hasta ahora:</p>
+<div class="w" id="wE2"></div>
+<p><b>Cuántas cuentas son.</b> La tabla tiene <i>n</i>² = 22 500 casillas, pero las parejas distintas son la mitad sin la diagonal:</p>
+<div class="f">n(n − 1) / 2 = 150 · 149 / 2 = 11 175 parejas</div>
+<p><b>La versión sin bucles (broadcasting).</b> <code>X[:, None, :]</code> tiene forma (150, 1, 4) y <code>X[None, :, :]</code> tiene forma (1, 150, 4). Al restarlas, numpy estira los 1 y sale (150, 150, 4): <b>todas las restas x<sub>i</sub> − x<sub>j</sub> de golpe</b>. La norma sobre el último eje (<code>axis=2</code>, las 4 medidas) deja la tabla (150, 150).</p>
+<p><b>De índice plano a fila y columna.</b> <code>np.argmax</code> recorre la tabla como si fuera una sola fila larga y da una posición <i>p</i>. Para volver a (fila, columna):</p>
+<div class="f">i = ⌊ p / n ⌋ &nbsp;&nbsp;&nbsp;&nbsp; j = p mod n</div>
+<dl class="leg">
+<dt>p</dt><dd>la posición en la tabla aplanada (de 0 a <i>n</i>² − 1)</dd>
+<dt>⌊ · ⌋</dt><dd>redondear hacia abajo: es la división entera <code>p // n</code></dd>
+<dt>mod</dt><dd>el resto de la división: <code>p % n</code>. Es justo lo que hace <code>np.unravel_index(p, D.shape)</code></dd>
+</dl>
+<pre>D = np.linalg.norm(X[:, None, :] - X[None, :, :], axis=2)   # (150, 150)
+np.allclose(D, D.T), np.all(np.diag(D) == 0)                 # True, True
+i, j = np.unravel_index(np.argmax(D), D.shape)               # → 13, 118 · distancia 7.085196</pre>
+<p>Tiene lógica: la flor 13 es una <b>setosa</b> diminuta (pétalo de 1.1 × 0.1 cm) y la 118 una <b>virginica</b> enorme (6.9 × 2.3 cm). Los extremos opuestos del dataset.</p>
+
+<h2 id="s11">11 · La desigualdad triangular</h2>
+<div class="idea"><b>Idea:</b> ir directo nunca es más largo que hacer una parada por el camino. En vectores: la flecha <i>p</i> + <i>q</i> nunca mide más que <i>p</i> y <i>q</i> puestas una detrás de otra.</div>
+<div class="f">‖p + q‖ ≤ ‖p‖ + ‖q‖</div>
+<dl class="leg">
+<dt>p, q</dt><dd>dos vectores cualesquiera, con el mismo número de componentes</dd>
+<dt>p + q</dt><dd>la suma: el camino directo (apartado 1)</dd>
+<dt>‖p‖ + ‖q‖</dt><dd>la longitud del camino con parada: primero <i>p</i>, luego <i>q</i></dd>
+<dt>≤</dt><dd>"menor o igual": nunca mayor</dd>
+</dl>
+<p>Arrastra las puntas de <b style="color:#2563eb">p</b> y <b style="color:#ea580c">q</b>. El triángulo solo se aplana (y los dos lados de la desigualdad se igualan) cuando <i>q</i> apunta en la misma dirección que <i>p</i>:</p>
+<div class="w" id="wE3"></div>
+<p><b>Por qué es cierta</b> (sale del producto escalar del apartado 4). Desarrolla el cuadrado de la norma:</p>
+<div class="f">‖p + q‖<sup>2</sup> = (p + q) · (p + q) = ‖p‖<sup>2</sup> + 2 p·q + ‖q‖<sup>2</sup></div>
+<div class="f">p·q = ‖p‖ ‖q‖ cos θ &nbsp;≤&nbsp; ‖p‖ ‖q‖ &nbsp;&nbsp;⟹&nbsp;&nbsp; ‖p + q‖<sup>2</sup> ≤ ‖p‖<sup>2</sup> + 2‖p‖ ‖q‖ + ‖q‖<sup>2</sup> = (‖p‖ + ‖q‖)<sup>2</sup></div>
+<dl class="leg">
+<dt>p·q</dt><dd>producto escalar: multiplicar componente a componente y sumar (<code>p @ q</code>)</dd>
+<dt>‖p‖<sup>2</sup></dt><dd>la norma al cuadrado, que es p·p</dd>
+<dt>θ</dt><dd>el ángulo entre las flechas <i>p</i> y <i>q</i></dd>
+<dt>cos θ</dt><dd>el coseno, siempre entre −1 y 1; vale 1 solo si θ = 0° (misma dirección)</dd>
+</dl>
+<p>La única desigualdad usada es cos θ ≤ 1. Por eso <b>la igualdad se da solo cuando θ = 0°</b>, por ejemplo con <code>q = 3 * p</code>: ‖p + 3p‖ = ‖4p‖ = 4‖p‖ = ‖p‖ + 3‖p‖.</p>
+<p><b>¿Para qué sirve?</b> Escrita con distancias, es la regla que tiene que cumplir cualquier distancia "de verdad":</p>
+<div class="f">d(a, c) ≤ d(a, b) + d(b, c)</div>
+<dl class="leg">
+<dt>a, b, c</dt><dd>tres puntos (tres flores): ir de <i>a</i> a <i>c</i> pasando por <i>b</i> nunca es un atajo</dd>
+</dl>
+<p>Los buscadores rápidos de vecinos de k-NN (<code>KDTree</code>, <code>BallTree</code>) se apoyan en ella para descartar flores sin medirlas.</p>
+<div class="idea"><b>Trampa típica:</b> <code>np.abs(p)</code> <b>no</b> es ‖p‖. <code>np.abs</code> quita el signo a cada componente y devuelve 4 números; la norma es <b>un solo número</b>: <code>np.linalg.norm(p)</code>. Con <code>seed(0)</code>: ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖ + ‖q‖ = 3.041634 + 2.316986 = <b>5.358619</b> (el ángulo entre <i>p</i> y <i>q</i> es de unos 60°). Con <code>q = 3 * p</code>, los dos lados dan <b>12.166536</b>.</div>
+
+<h2 id="s12">12 · El bucle que hay dentro de A @ w</h2>
+<div class="idea"><b>Idea:</b> <code>A @ w</code> no es magia: es un doble bucle. El de fuera recorre las filas; el de dentro multiplica cada número de la fila por su peso y lo va sumando. Cada fila acaba siendo <b>un</b> número.</div>
+<div class="f">(A w)<sub>i</sub> = <span class="sum"><small>d</small><b>Σ</b><small>j=1</small></span> A<sub>ij</sub> w<sub>j</sub> &nbsp;&nbsp;&nbsp;&nbsp; para i = 1, …, m</div>
+<dl class="leg">
+<dt>A</dt><dd>la matriz de datos, con <i>m</i> filas y <i>d</i> columnas (200 × 5)</dd>
+<dt>A<sub>ij</sub></dt><dd>el número de la fila <i>i</i>, columna <i>j</i> (<code>A[i, j]</code>)</dd>
+<dt>w, w<sub>j</sub></dt><dd>el vector de pesos (5 números) y su componente <i>j</i></dd>
+<dt>(A w)<sub>i</sub></dt><dd>la casilla <i>i</i> del resultado: la puntuación de la fila <i>i</i></dd>
+<dt>i, j</dt><dd><i>i</i> = bucle de fuera (filas, 1…<i>m</i>); <i>j</i> = bucle de dentro (columnas, 1…<i>d</i>)</dd>
+</dl>
+<p>Sigue el doble bucle multiplicación a multiplicación con una matriz pequeña:</p>
+<div class="w" id="wE4"></div>
+<p><b>La regla de las formas</b>, escrita en mates:</p>
+<div class="f">A ∈ ℝ<sup>m×d</sup>, &nbsp; w ∈ ℝ<sup>d</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; A w ∈ ℝ<sup>m</sup> &nbsp;&nbsp;&nbsp;&nbsp; (200, <u>5</u>) @ (<u>5</u>,) → (200,)</div>
+<dl class="leg">
+<dt>∈</dt><dd>"pertenece a" / "es un…"</dd>
+<dt>ℝ<sup>m×d</sup></dt><dd>tabla de números reales con <i>m</i> filas y <i>d</i> columnas</dd>
+<dt>ℝ<sup>d</sup></dt><dd>vector de <i>d</i> números reales</dd>
+</dl>
+<p><b>¿Por qué <code>np.allclose</code> y no <code>==</code>?</b> El ordenador guarda los decimales con unos 16 dígitos, así que cada suma redondea un poquito. El bucle y <code>@</code> suman en distinto orden (numpy agrupa las operaciones para ir más rápido), y el redondeo sale ligeramente distinto. Pasa hasta con <code>0.1 + 0.2 == 0.3</code>, que da <code>False</code>. Por eso se compara con margen:</p>
+<div class="f">|a<sub>i</sub> − b<sub>i</sub>| ≤ atol + rtol · |b<sub>i</sub>| &nbsp;&nbsp; para todo i</div>
+<dl class="leg">
+<dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>los dos resultados que comparas (el del bucle y el de <code>@</code>)</dd>
+<dt>atol</dt><dd>tolerancia absoluta: un margen fijo (por defecto 10<sup>−8</sup>)</dd>
+<dt>rtol</dt><dd>tolerancia relativa: un margen proporcional al tamaño del número (por defecto 10<sup>−5</sup>)</dd>
+<dt>ε ≈ 2.2·10<sup>−16</sup></dt><dd>la precisión de un <code>float64</code>: por eso la diferencia máxima sale del orden de 10<sup>−16</sup> o 10<sup>−15</sup></dd>
+</dl>
+<pre>np.random.seed(1); A = np.random.randn(200, 5); w = np.random.randn(5)
+bucle = np.zeros(200)
+for i in range(200):          # filas
+    for j in range(5):        # columnas
+        bucle[i] += A[i, j] * w[j]
+np.allclose(bucle, A @ w)     # True
+np.max(np.abs(bucle - A @ w)) # ~1e-16 / 1e-15, nunca un número grande</pre>
 
 <!-- ============ RESUMEN ============ -->
 <h2 id="res">Resumen en una tabla</h2>
@@ -792,6 +931,137 @@ function compTable(host,o){
     calc.innerHTML=`G[${i}, ${j}] = columna "${n[i]}" · columna "${n[j]}" = suma de las 150 flores de X[k,${i}]·X[k,${j}] = <span class="hg">${f(G[i][j],2)}</span>`+(i===j?'<br>Diagonal: es la <b>suma de cuadrados</b> de esa medida.':`<br>Su espejo G[${j}, ${i}] vale lo mismo → la matriz es <b>simétrica</b>.`)}
   pick(2,3);
   H('p',{class:'hint'},host,'G = X.T @ X · forma (4, 4). Pasa el ratón o toca una casilla: se marca también su casilla espejo.');
+})();
+
+/* ================= E1a: Manhattan vs euclídea en la cuadrícula ================= */
+(function(){
+  const host=document.getElementById('wE1a');
+  const P=new Plot(host,{x:[0,7],y:[0,5],w:600,maxw:560,label:'Manhattan contra euclídea'});
+  const g=P.g();const A=[1,1];let B=[5,4];
+  const pm=E('polyline',{fill:'none',stroke:C.orange,'stroke-width':4,'stroke-linejoin':'round'},g);
+  const pe=P.line(g,A,B,{stroke:getComputedStyle(document.body).color,'stroke-width':3});
+  P.dot(g,A,6,C.blue);const dB=P.dot(g,B,8,C.red,{style:'cursor:grab'});
+  const lA=P.label(g,C.blue),lB=P.label(g,C.red);lA.set(A,'A',-14,16);
+  const leg=H('div',{class:'legend'},host);leg.innerHTML=`<span><i class="sw" style="background:${C.orange}"></i>Manhattan: por las calles</span><span><i class="sw" style="background:currentColor"></i>euclídea: en línea recta</span>`;
+  const calc=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Arrastra el punto rojo B. Se mueve por los cruces de la cuadrícula.');
+  function draw(){const dx=Math.abs(B[0]-A[0]),dy=Math.abs(B[1]-A[1]);
+    pm.setAttribute('points',[A,[B[0],A[1]],B].map(p=>P.P(p).join(',')).join(' '));P.setLine(pe,A,B);P.setDot(dB,B);lB.set(B,`B = (${B[0]}, ${B[1]})`,10,-8);
+    const d1=dx+dy,d2=Math.hypot(dx,dy);
+    calc.innerHTML=`d₁ = |${B[0]}−1| + |${B[1]}−1| = ${dx} + ${dy} = <span class="hy">${f(d1)}</span><br>d₂ = √(${dx}² + ${dy}²) = √${dx*dx+dy*dy} = <span class="hb">${f(d2,3)}</span> &nbsp;→ `+(d1===d2?'<span class="hg">iguales: solo cambia una componente</span>':`Manhattan es ${f(d1/d2,2)} veces más larga`)}
+  let drag=false;
+  P.svg.addEventListener('pointerdown',ev=>{drag=true;P.svg.setPointerCapture(ev.pointerId);move(ev)});
+  P.svg.addEventListener('pointermove',ev=>{if(drag)move(ev)});
+  P.svg.addEventListener('pointerup',()=>drag=false);
+  function move(ev){const [x,y]=P.toWorld(ev);B=[Math.max(0,Math.min(7,Math.round(x))),Math.max(0,Math.min(5,Math.round(y)))];draw()}
+  draw();
+})();
+
+/* ================= E1b: Manhattan con las flores 0 y 50 ================= */
+(function(){
+  const a=X[0],b=X[50];
+  compTable(document.getElementById('wE1b'),{
+    cols:['sépalo largo','sépalo ancho','pétalo largo','pétalo ancho'],
+    rows:[{name:'a = X[0]',vals:a},{name:'b = X[50]',vals:b}],opName:'|aᵢ − bᵢ|',op:i=>Math.abs(a[i]-b[i]),stepText:'se restan y se quita el signo (sin cuadrado).',
+    opText:i=>`|${f(a[i])} − ${f(b[i])}| = |${f(a[i]-b[i])}|`,intro:'Manhattan con las 4 medidas: restar, valor absoluto y sumar. Sin cuadrados ni raíz.',
+    finals:[{msg:'Esta es la distancia de Manhattan. Compárala con la euclídea de las mismas flores:',html:s=>`d₁ = <span class="hy">${f(s)}</span> &nbsp;≥&nbsp; d₂ = <span class="hb">4.003748</span> &nbsp;&nbsp;(y d₁ ≤ √4 · d₂ = 8.007)`}]
+  });
+})();
+
+/* ================= E2: matriz de distancias de 7 puntos ================= */
+(function(){
+  const host=document.getElementById('wE2');
+  const pts=[[1,2],[2.5,4],[3,1],[4.5,3.5],[5,.5],[6.5,2.5],[2,3]],k=pts.length;
+  const D=pts.map(p=>pts.map(q=>Math.hypot(p[0]-q[0],p[1]-q[1])));
+  const pairs=[];for(let i=0;i<k;i++)for(let j=i+1;j<k;j++)pairs.push([i,j]);
+  const msg=H('div',{class:'msg'},host);
+  const two=H('div',{class:'two',style:'grid-template-columns:minmax(0,1fr) minmax(0,1fr)'},host);
+  const left=H('div',{},two),right=H('div',{class:'scroll'},two);
+  const P=new Plot(left,{x:[0,7],y:[0,4.6],w:520,label:'Siete puntos y sus parejas'});
+  const gl=P.g(),gt=P.g();
+  const segs=pairs.map(([i,j])=>P.line(gl,pts[i],pts[j],{stroke:'#8a877f','stroke-width':1,opacity:0}));
+  const best=P.line(gt,pts[0],pts[0],{stroke:C.red,'stroke-width':4,opacity:0});
+  const cur=P.line(gt,pts[0],pts[0],{stroke:C.amber,'stroke-width':3,'stroke-dasharray':'6 4',opacity:0});
+  pts.forEach((p,i)=>{P.dot(gt,p,6,C.blue);P.label(gt,null).set(p,String(i),8,-8)});
+  const t=H('table',{class:'heat'},right);const hr=H('tr',{},t);H('th',{},hr,'');pts.forEach((_,j)=>H('th',{},hr,j));
+  const cells=pts.map((_,i)=>{const tr=H('tr',{},t);H('th',{},tr,i);return pts.map((_,j)=>{const td=H('td',{style:'width:44px;height:30px;cursor:default'},tr,'');return td})});
+  const calc=H('div',{class:'calc'},host);
+  const N=pairs.length;
+  const sp=stepper(host,N+2,st=>{
+    let bi=-1;
+    cells.forEach((r,i)=>r.forEach((c,j)=>{c.className='';c.style.background='';c.textContent=i===j?'0':''}));
+    cells.forEach((r,i)=>r[i].style.background='var(--soft)');
+    pairs.forEach(([i,j],n)=>{const on=n<st;segs[n].setAttribute('opacity',on?.5:0);
+      if(on){cells[i][j].textContent=cells[j][i].textContent=f(D[i][j],2);cells[i][j].style.background=cells[j][i].style.background='var(--hl2)';if(bi<0||D[i][j]>D[pairs[bi][0]][pairs[bi][1]])bi=n}});
+    cur.setAttribute('opacity',0);best.setAttribute('opacity',0);
+    if(bi>=0){const [i,j]=pairs[bi];P.setLine(best,pts[i],pts[j]);best.setAttribute('opacity',1);cells[i][j].style.background=cells[j][i].style.background='var(--bad)'}
+    if(st===0){msg.innerHTML='La diagonal ya vale 0: cada punto contra sí mismo. Falta medir las 7·6/2 = 21 parejas.';calc.innerHTML='&nbsp;'}
+    else if(st<=N){const [i,j]=pairs[st-1];P.setLine(cur,pts[i],pts[j]);cur.setAttribute('opacity',1);cells[i][j].classList.add('sel');cells[j][i].classList.add('sel');
+      const [bI,bJ]=pairs[bi];
+      msg.innerHTML=`Pareja ${st} de ${N}: puntos ${i} y ${j}. Se rellenan D[${i},${j}] y su espejo D[${j},${i}].`;
+      calc.innerHTML=`D[${i},${j}] = √((${f(pts[i][0])}−${f(pts[j][0])})² + (${f(pts[i][1])}−${f(pts[j][1])})²) = <span class="hb">${f(D[i][j],3)}</span> &nbsp; · la más lejana hasta ahora: <span class="hr">${bI}–${bJ} = ${f(D[bI][bJ],3)}</span>`}
+    else{const [bI,bJ]=pairs[bi];msg.innerHTML=`Hecho. La matriz es <b>simétrica</b> y su diagonal es 0. El máximo (argmax) está en la casilla (${bI}, ${bJ}).`;
+      calc.innerHTML=`argmax → posición plana p = ${bI*k+bJ} → i = ${bI*k+bJ} // ${k} = <span class="hr">${bI}</span>, j = ${bI*k+bJ} % ${k} = <span class="hr">${bJ}</span> · distancia ${f(D[bI][bJ],3)}`}
+  },{interval:900});sp.draw();
+})();
+
+/* ================= E3: desigualdad triangular ================= */
+(function(){
+  const host=document.getElementById('wE3');
+  const P=new Plot(host,{x:[-1,6],y:[-2,4.2],w:600,maxw:560,label:'Desigualdad triangular'});
+  const g=P.g();let p=[3,.5],q=[.5,2.5];
+  const tri=P.poly(g,[[0,0],p,[p[0]+q[0],p[1]+q[1]]],{fill:'#8a877f',opacity:.12});
+  const aP=P.arrow(g,C.blue,3),aQ=P.arrow(g,C.orange,3),aS=P.arrow(g,getComputedStyle(document.body).color,3);
+  const lP=P.label(g,C.blue),lQ=P.label(g,C.orange),lS=P.label(g,null);
+  const hP=P.dot(g,p,8,C.blue,{opacity:.35,style:'cursor:grab'}),hQ=P.dot(g,p,8,C.orange,{opacity:.35,style:'cursor:grab'});
+  const bar=H('div',{class:'bar'},host);const b3=H('button',{},bar,'q = 3 · p (igualdad)');const bR=H('button',{},bar,'Otra q');
+  const calc=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Arrastra la punta azul (p) o la naranja (q). q siempre se dibuja a continuación de p.');
+  function draw(){const s=[p[0]+q[0],p[1]+q[1]];
+    aP.set([0,0],p);aQ.set(p,s);aS.set([0,0],s);P.setPoly(tri,[[0,0],p,s]);P.setDot(hP,p);P.setDot(hQ,s);
+    lP.set([p[0]/2,p[1]/2],'p',6,16);lQ.set([p[0]+q[0]/2,p[1]+q[1]/2],'q',8,0);lS.set([s[0]/2,s[1]/2],'p + q',-8,-6,'end');
+    const L=norm(s),R=norm(p)+norm(q),c=dot(p,q)/(norm(p)*norm(q)||1),th=Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI;
+    calc.innerHTML=`‖p + q‖ = <span class="hb">${f(L,3)}</span> &nbsp;≤&nbsp; ‖p‖ + ‖q‖ = ${f(norm(p),3)} + ${f(norm(q),3)} = <span class="hy">${f(R,3)}</span><br>θ = ${f(th,1)}° · cos θ = ${f(c,3)} → `+(R-L<1e-6?'<span class="hg">igualdad: misma dirección, el triángulo se aplana</span>':`sobran ${f(R-L,3)} por hacer la parada`)}
+  let drag=null;
+  P.svg.addEventListener('pointerdown',ev=>{const w=P.toWorld(ev),s=[p[0]+q[0],p[1]+q[1]];drag=Math.hypot(w[0]-p[0],w[1]-p[1])<Math.hypot(w[0]-s[0],w[1]-s[1])?'p':'q';P.svg.setPointerCapture(ev.pointerId);move(ev)});
+  P.svg.addEventListener('pointermove',ev=>{if(drag)move(ev)});
+  P.svg.addEventListener('pointerup',()=>drag=null);
+  function move(ev){cancelAnimationFrame(P._raf);const w=P.toWorld(ev).map(v=>Math.round(v*10)/10);if(drag==='p')p=w;else q=[w[0]-p[0],w[1]-p[1]];draw()}
+  function go(to){const from=q.slice();tween(P,700,u=>{q=[from[0]+u*(to[0]-from[0]),from[1]+u*(to[1]-from[1])];draw()})}
+  b3.onclick=()=>{p=[1.2,.4];go([3.6,1.2])};
+  bR.onclick=()=>go([Math.round((Math.random()*4-2)*10)/10,Math.round((Math.random()*3-1)*10)/10]);
+  draw();
+})();
+
+/* ================= E4: el doble bucle de A @ w ================= */
+(function(){
+  const host=document.getElementById('wE4');
+  const A=[[2,1,0],[1,3,1],[0,2,4],[3,0,1]],w=[1,2,-1],m=A.length,d=w.length;
+  const msg=H('div',{class:'msg'},host);
+  const sc=H('div',{class:'scroll'},host);const eq=H('div',{class:'eq'},sc);
+  const mW=H('div',{},eq);const mx=H('div',{class:'mx',style:`grid-template-columns:repeat(${d},auto)`},mW);H('div',{class:'nm'},mW,`A (${m} × ${d})`);
+  const ac=A.map(r=>r.map(v=>H('div',{class:'cell'},mx,v)));
+  H('span',{class:'op'},eq,'@');
+  const wW=H('div',{},eq);const wx=H('div',{class:'mx',style:'grid-template-columns:auto'},wW);H('div',{class:'nm'},wW,`w (${d},)`);const wc=w.map(v=>H('div',{class:'cell'},wx,v));
+  H('span',{class:'op'},eq,'=');
+  const rW=H('div',{},eq);const rx=H('div',{class:'mx',style:'grid-template-columns:auto'},rW);H('div',{class:'nm'},rW,`A @ w (${m},)`);const rc=A.map(()=>H('div',{class:'cell'},rx,'0'));
+  const code=H('pre',{},host);const calc=H('div',{class:'calc'},host);
+  const N=m*d;
+  const sp=stepper(host,N+2,st=>{
+    host.querySelectorAll('.cell').forEach(c=>c.classList.remove('row','hi','hi2','done'));
+    const acc=A.map(()=>0);let ci=-1,cj=-1;
+    for(let s=0;s<Math.min(st,N);s++){const i=Math.floor(s/d),j=s%d;acc[i]+=A[i][j]*w[j];ci=i;cj=j}
+    rc.forEach((c,i)=>{c.textContent=st===0?'0':acc[i];if(st>N||(ci>i)||(ci===i&&cj===d-1))c.classList.add('done')});
+    const L=(t,on)=>on?`<span class="hy">${t}</span>`:t;
+    const inner=st>=1&&st<=N;
+    code.innerHTML=[L(`for i in range(${m}):`,inner&&cj===0),`    `+L(`for j in range(${d}):`,inner),`        `+L(`r[i] += A[i, j] * w[j]`,inner)].join('\n');
+    if(st===0){msg.innerHTML=`El resultado <i>r</i> empieza a cero. Vamos a hacer ${m} × ${d} = ${N} multiplicaciones.`;calc.innerHTML='&nbsp;'}
+    else if(inner){ac[ci].forEach(c=>c.classList.add('row'));ac[ci][cj].classList.add('hi');wc[cj].classList.add('hi2');rc[ci].classList.add('hi');
+      msg.innerHTML=`Bucle de fuera <b>i = ${ci}</b> (fila ${ci}), bucle de dentro <b>j = ${cj}</b> (columna ${cj}).`;
+      calc.innerHTML=`r[${ci}] += A[${ci},${cj}] · w[${cj}] = ${A[ci][cj]} · ${w[cj]} = ${A[ci][cj]*w[cj]} &nbsp;→ r[${ci}] = <span class="hg">${acc[ci]}</span>`}
+    else{msg.innerHTML='Hecho. <code>A @ w</code> hace exactamente estas mismas multiplicaciones, pero todas de golpe (y en C, mucho más rápido).';
+      calc.innerHTML=`(${m}, <span class="hy">${d}</span>) @ (<span class="hy">${d}</span>,) → (${m},) &nbsp;·&nbsp; r = [${acc.join(', ')}]`}
+  },{interval:1100});sp.draw();
 })();
 </script>
 </body>
