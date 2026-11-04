@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cómo aprende un modelo — apuntes animados</title>
+<style>
+:root{
+  --bg:#fbfaf7;--card:#ffffff;--ink:#1f2328;--muted:#5f6368;--line:#e6e2d8;--grid:#ece9e1;--axis:#a9a59b;--soft:#f3f1ec;
+  --hl:#fde68a;--hlink:#7a4b00;--hl2:#bfdbfe;--hl2ink:#1e3a8a;--ok:#bbf7d0;--okink:#14532d;--bad:#fecaca;--badink:#7f1d1d;
+  --accent:#2563eb;--code:#f4f2ed;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#18181a;--card:#222225;--ink:#ecebe7;--muted:#a8a69f;--line:#3a3a3e;--grid:#2e2e32;--axis:#6f6d68;--soft:#2a2a2e;
+  --hl:#5c4510;--hlink:#fde68a;--hl2:#1e3a6a;--hl2ink:#cfe0ff;--ok:#174d2c;--okink:#c9f7d8;--bad:#5a1d1d;--badink:#ffd6d6;
+  --accent:#7aa7ff;--code:#2a2a2e;
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:24px 18px 80px}
+h1{font-size:30px;line-height:1.2;margin:10px 0 6px;font-weight:650}
+h2{font-size:23px;margin:56px 0 8px;font-weight:650;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:26px 0 6px;font-weight:600}
+p{margin:8px 0}
+.sub{color:var(--muted);margin:0 0 18px}
+.big{font-size:19px;padding:14px 18px;border-radius:12px;background:var(--soft);border-left:4px solid var(--accent);margin:16px 0}
+.idea{background:var(--soft);border-radius:10px;padding:10px 14px;margin:12px 0}
+.idea b{color:var(--accent)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+nav.toc a{font-size:14px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+nav.toc a:hover{border-color:var(--accent)}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+code{background:var(--code);padding:1px 5px;border-radius:5px}
+pre{background:var(--code);padding:10px 14px;border-radius:8px;overflow:auto;font-size:14px;line-height:1.5;margin:10px 0}
+.f{font-family:Georgia,"Times New Roman",serif;font-size:19px;text-align:center;margin:12px 0;padding:8px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+.w{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:16px 0}
+.w .hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+svg.plot{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+svg.plot text{fill:var(--ink);font:13px system-ui,sans-serif}
+svg.plot .tick{fill:var(--muted);font-size:11px}
+svg.plot .gr{stroke:var(--grid);stroke-width:1}
+svg.plot .ax{stroke:var(--axis);stroke-width:1.2}
+svg.plot .lbl{font-weight:600;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+button,select{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--axis);border-radius:8px;padding:5px 12px;cursor:pointer}
+button:hover{background:var(--soft)}
+button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.dots{font-size:13px;color:var(--muted);margin-left:4px}
+.msg{min-height:26px;font-size:15px;margin:6px 0}
+.calc{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14.5px;line-height:1.9;background:var(--soft);border-radius:8px;padding:8px 12px;margin:8px 0;min-height:44px;overflow-x:auto;white-space:nowrap}
+.sl{display:grid;grid-template-columns:auto 1fr 64px;gap:4px 10px;align-items:center;font-size:14px;margin:8px 0}
+.sl input{width:100%}
+.sl output{font-family:ui-monospace,monospace;text-align:right}
+.hy{background:var(--hl);color:var(--hlink);border-radius:4px;padding:0 3px}
+.hb{background:var(--hl2);color:var(--hl2ink);border-radius:4px;padding:0 3px}
+.hg{background:var(--ok);color:var(--okink);border-radius:4px;padding:0 3px}
+.hr{background:var(--bad);color:var(--badink);border-radius:4px;padding:0 3px}
+table.comp{border-collapse:separate;border-spacing:4px;font-family:ui-monospace,Menlo,monospace;font-size:14px;margin:4px 0}
+table.comp th{font-family:system-ui,sans-serif;font-weight:500;color:var(--muted);font-size:13px;text-align:right;padding:2px 8px}
+table.comp thead th{text-align:center}
+table.comp td{min-width:82px;text-align:center;padding:5px 8px;border-radius:6px;background:var(--soft);transition:background .3s,color .3s}
+table.comp td.hi{background:var(--hl);color:var(--hlink)}
+table.comp td.res{background:var(--ok);color:var(--okink)}
+.scroll{overflow-x:auto}
+.mx{display:inline-grid;gap:4px;padding:5px 8px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:7px;vertical-align:middle}
+.cell{min-width:50px;height:32px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:14.5px;border-radius:6px;padding:0 6px;transition:background .3s,color .3s,transform .3s}
+.cell.row{background:var(--soft)}
+.cell.hi{background:var(--hl);color:var(--hlink);transform:scale(1.08)}
+.cell.hi2{background:var(--hl2);color:var(--hl2ink);transform:scale(1.08)}
+.cell.done{background:var(--ok);color:var(--okink)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}
+.eq .op{font-size:20px}
+.eq .nm{font-size:13px;color:var(--muted);text-align:center;margin-top:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.list{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.list div{padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px}
+.list div.cur{background:var(--soft);font-weight:600}
+.sw{width:11px;height:11px;border-radius:50%;flex:none}
+.tp{position:relative;margin:10px 0}
+.tp .c{position:absolute;width:74px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;transition:left .9s cubic-bezier(.6,0,.3,1),top .9s cubic-bezier(.6,0,.3,1)}
+.tp .h{position:absolute;font-size:12px;white-space:nowrap;color:var(--muted);display:flex;align-items:center;transition:left .9s,top .9s,opacity .4s}
+table.heat{border-collapse:separate;border-spacing:3px;font-family:ui-monospace,monospace;font-size:13.5px}
+table.heat td{width:86px;height:46px;text-align:center;border-radius:6px;cursor:pointer;transition:outline .2s}
+table.heat td.sel{outline:3px solid #f59e0b}
+table.heat th{font-family:system-ui;font-weight:500;font-size:12px;color:var(--muted);padding:2px 6px}
+table.sum{border-collapse:collapse;width:100%;font-size:14.5px;margin:12px 0}
+table.sum th,table.sum td{border-bottom:1px solid var(--line);padding:8px 8px;text-align:left;vertical-align:top}
+table.sum th{color:var(--muted);font-weight:500;font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.err{color:#dc2626;font-weight:600}
+.good{color:#16a34a;font-weight:600}
+.f sub,.f sup{font-size:.65em}
+.f .sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 3px}
+.f .sum b{font-size:1.6em;font-weight:400}
+.f .sum small{font-size:.6em}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:14px;margin:-4px 0 14px;padding:8px 12px;background:var(--card);border:1px dashed var(--line);border-radius:8px}
+.leg dt{font-family:Georgia,"Times New Roman",serif;text-align:right;white-space:nowrap}
+.leg dd{margin:0;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;margin-top:50px}
+.back{margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:14px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:6px 14px;border-radius:999px}
+.back:hover{border-color:var(--accent);color:var(--accent)}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}
+@media (max-width:700px){.pair,.three{grid-template-columns:1fr}}
+.cap{font-size:13px;color:var(--muted);text-align:center;margin:2px 0 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Volver a los apuntes</a>
+
+<h1>Cómo aprende un modelo: una recta, iteración a iteración</h1>
+<p class="sub">Apuntes directos y animados del cuaderno <i>MA_01b · Com aprèn un model</i>. Todos los gráficos se mueven: arrastra, mueve los controles o dale a <b>Reproducir</b>.</p>
+
+<div class="big">La frase que tienes que entender al final: <b>entrenar es bajar por el mapa del error, paso a paso, en dirección contraria a la pendiente.</b></div>
+
+<nav class="toc">
+<a href="#s1">1 · Los datos</a><a href="#s2">2 · Mueve la recta</a><a href="#s3">3 · MSE</a><a href="#s4">4 · El mapa del error</a><a href="#s5">5 · Derivada</a><a href="#s6">6 · Gradiente</a><a href="#s7">7 · El bucle</a><a href="#s8">8 · En movimiento</a><a href="#s9">9 · Tasa η</a><a href="#s10">10 · scikit-learn</a><a href="#s11">11 · Escalas</a><a href="#ej">Ejercicios</a><a href="#res">Resumen</a>
+</nav>
+
+<p>En el cuaderno anterior vimos que <b>un modelo entrenado es un vector de números, y predecir es multiplicar</b>. Quedó una pregunta abierta: <b>¿de dónde salen esos números?</b> Aquí la respondemos con el modelo más sencillo que existe, una recta:</p>
+<div class="f">ŷ = w x + b</div>
+<dl class="leg">
+<dt>x</dt><dd>lo que conocemos: el largo del pétalo (cm)</dd>
+<dt>ŷ</dt><dd>"y gorro": lo que <b>predice</b> el modelo (el ancho del pétalo)</dd>
+<dt>w</dt><dd>la pendiente de la recta (el peso)</dd>
+<dt>b</dt><dd>dónde corta la recta el eje vertical (la constante)</dd>
+</dl>
+<p>Entrenar es encontrar los dos números <i>w</i> y <i>b</i> que dejan la recta lo más cerca posible de los puntos. Y lo haremos como un modelo de verdad: empezando con una recta cualquiera y <b>corrigiéndola un poco en cada paso</b> hasta que ya no mejora.</p>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1">1 · Los datos</h2>
+<div class="idea"><b>Idea:</b> antes de cualquier fórmula, mira los datos. Si sé el <b>largo</b> de un pétalo, ¿puedo adivinar su <b>ancho</b>?</div>
+<p>Las 150 flores de Iris, cada una con dos números: <code>x = iris.data[:, 2]</code> (largo, de 1.0 a 6.9 cm) e <code>y = iris.data[:, 3]</code> (ancho, de 0.1 a 2.5 cm). <b>Haz clic en una flor</b> para ver sus números.</p>
+<div class="w" id="w1"></div>
+<p>Los puntos forman una franja estrecha que sube: pétalo más largo, pétalo más ancho. Una recta encajará bien. Lo que no sabemos es <b>cuál</b>, es decir, qué <i>w</i> y qué <i>b</i>.</p>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2">2 · Pruébalo tú: mueve la recta</h2>
+<div class="idea"><b>Idea:</b> cada línea gris vertical es un <b>residuo</b>: lo que se equivoca la recta en esa flor. Abajo hay un número que resume todos los errores (el apartado 3 explica cómo se calcula). <b>Busca la recta que lo deje más pequeño.</b></div>
+<div class="w" id="w2"></div>
+<p>Si has jugado un rato habrás notado dos cosas. Una: <b>hay una recta mejor que las demás</b>, y cuando te acercas el error baja cada vez menos. Dos: lo que haces es <b>mover un control, mirar si el error baja y seguir en esa dirección</b>. Eso es exactamente el descenso de gradiente. Lo único que cambia es que el ordenador <b>calcula</b> hacia dónde mover cada control en vez de probar a ciegas.</p>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3">3 · Cómo se mide "cerca": el error cuadrático medio</h2>
+<div class="idea"><b>Idea:</b> coge el residuo de cada flor, elévalo al cuadrado y haz la media. Al cuadrado, los negativos no compensan a los positivos, y un error grande pesa mucho más que uno pequeño.</div>
+<div class="f">MSE(w, b) = <sup>1</sup>⁄<sub>n</sub> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> ( w x<sub>i</sub> + b − y<sub>i</sub> )<sup>2</sup></div>
+<dl class="leg">
+<dt>MSE</dt><dd><i>mean squared error</i>, error cuadrático medio: un solo número que mide lo mal que va la recta</dd>
+<dt>x<sub>i</sub>, y<sub>i</sub></dt><dd>el largo y el ancho de la flor número <i>i</i></dd>
+<dt>w x<sub>i</sub> + b</dt><dd>lo que predice la recta para esa flor (ŷ<sub>i</sub>)</dd>
+<dt>w x<sub>i</sub> + b − y<sub>i</sub></dt><dd>el residuo: predicción menos verdad (la línea gris)</dd>
+<dt>n</dt><dd>cuántas flores hay (150)</dd>
+<dt><sup>1</sup>⁄<sub>n</sub> Σ</dt><dd>sumar para todas las flores y dividir entre <i>n</i>: la media</dd>
+</dl>
+<p>Elevar al cuadrado tiene un dibujo: cada residuo se convierte en un <b>cuadrado</b> de ese lado. El MSE es el área media de los cuadrados rojos. Cambia de recta:</p>
+<div class="w" id="w3"></div>
+<pre>def mse(w, b):
+    return np.mean((w * x + b - y) ** 2)
+
+mse(0, 0)     # → 2.0155   recta plana
+mse(1, 0)     # → 7.6455   recta y = x
+mse(0.4, 0)   # → 0.1352   ya cerca</pre>
+<p>Lo que buscamos es el <i>w</i> y el <i>b</i> que hacen el MSE mínimo. Entrenar quiere decir exactamente esto: <b>minimizar una función de error.</b></p>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4">4 · El mapa del error</h2>
+<div class="idea"><b>Idea:</b> el MSE depende de dos números, <i>w</i> y <i>b</i>. Si lo calculamos para muchos (<i>w</i>, <i>b</i>) y lo pintamos, sale un mapa topográfico. Cada <b>punto del mapa es una recta</b>. Lo que buscamos es <b>el fondo del valle</b> (la estrella).</div>
+<p>Colores oscuros = poco error; claros = mucho. Cada franja de color es una curva de nivel, como en un mapa de montaña. <b>Arrastra por el mapa</b> y mira qué recta es cada punto:</p>
+<div class="w" id="w4"></div>
+<pre>W, B = np.meshgrid(np.linspace(-0.3, 1.0, 200), np.linspace(-1.6, 1.4, 200))
+E = np.mean((W * x[:, None, None] + B - y[:, None, None]) ** 2, axis=0)   # MSE en cada punto
+np.unravel_index(np.argmin(E), E.shape)    # el fondo del valle de la cuadrícula</pre>
+<p>Dos observaciones que volverán a salir:</p>
+<ul>
+<li>El valle tiene <b>un solo fondo</b>. Con la regresión lineal y el MSE pasa siempre: empieces donde empieces, si bajas acabas en el mismo sitio.</li>
+<li>El valle es <b>muy alargado y estrecho</b>, inclinado en diagonal. Mover <i>w</i> un poco cambia mucho el error; mover <i>b</i>, poco. Esta forma tendrá consecuencias en los apartados 8 y 11.</li>
+</ul>
+<p>Con 2 números, la cuadrícula de 200 × 200 = 40 000 cálculos funciona. Con 30 pesos harían falta 200<sup>30</sup>, un número de 70 cifras. Por eso no se hace así: hace falta una forma de <b>saber hacia dónde baja</b> sin mirar todo el mapa.</p>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5">5 · Hacia dónde baja: la derivada</h2>
+<div class="idea"><b>Idea:</b> estás en la montaña con niebla y no ves nada. Para bajar, tanteas el suelo con el pie y miras hacia dónde hace pendiente. Eso es una <b>derivada</b>: la pendiente de la función en el punto donde estás.</div>
+<p>Se puede calcular sin saber ninguna fórmula: mueves <i>w</i> un poquito (<i>h</i>) hacia cada lado y miras cuánto cambia el error.</p>
+<div class="f">∂MSE / ∂w ≈ [ MSE(w + h, b) − MSE(w − h, b) ] / 2h</div>
+<dl class="leg">
+<dt>∂</dt><dd>"derivada parcial": la derivada respecto de <i>w</i> dejando <i>b</i> quieto</dd>
+<dt>h</dt><dd>un número muy pequeño (en el cuaderno, 10<sup>−6</sup>)</dd>
+<dt>≈</dt><dd>"aproximadamente": cuanto más pequeño es <i>h</i>, más exacto</dd>
+</dl>
+<p>Cortamos el mapa por <i>b</i> = 0 y queda una curva. La recta roja es la <b>tangente</b>: su pendiente es la derivada. <b>Mueve w</b> y luego dale a <b>Da un paso</b> varias veces:</p>
+<div class="w" id="w5"></div>
+<p>La regla para bajar sale sola: <b>moverse en sentido contrario a la pendiente</b>. Si la pendiente es negativa, aumentar <i>w</i>; si es positiva, disminuir. En el fondo la pendiente es cero, y ahí el método se para solo.</p>
+<pre>h = 1e-6
+(mse(0 + h, 0) - mse(0 - h, 0)) / (2 * h)   # → -11.5881  pendiente respecto de w en (0, 0)
+(mse(0, 0 + h) - mse(0, 0 - h)) / (2 * h)   # → -2.3987   pendiente respecto de b</pre>
+<p>Las dos son <b>negativas</b> (la recta plana es demasiado baja: hay que subir <i>w</i> y <i>b</i>), y la de <i>w</i> es mucho mayor: es el valle estrecho del apartado 4 dicho con números.</p>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6">6 · El gradiente</h2>
+<div class="idea"><b>Idea:</b> el <b>gradiente</b> son las dos pendientes puestas en un vector. Apunta hacia donde el error <b>sube</b> más rápido; así que <b>−gradiente</b> apunta hacia donde baja más rápido.</div>
+<div class="f">∇MSE = ( ∂MSE/∂w , ∂MSE/∂b )</div>
+<p>Para el MSE se pueden sacar con lápiz (regla de la cadena: la derivada de <i>u</i><sup>2</sup> es 2<i>u</i>, y la de <i>w x<sub>i</sub></i> + <i>b</i> respecto de <i>w</i> es <i>x<sub>i</sub></i>):</p>
+<div class="f">∂MSE/∂w = <sup>2</sup>⁄<sub>n</sub> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (ŷ<sub>i</sub> − y<sub>i</sub>) x<sub>i</sub> &nbsp;&nbsp;&nbsp;&nbsp; ∂MSE/∂b = <sup>2</sup>⁄<sub>n</sub> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (ŷ<sub>i</sub> − y<sub>i</sub>)</div>
+<dl class="leg">
+<dt>∇</dt><dd>"nabla": el gradiente, el vector de todas las derivadas parciales</dd>
+<dt>ŷ<sub>i</sub> − y<sub>i</sub></dt><dd>el residuo de la flor <i>i</i></dd>
+<dt>(ŷ<sub>i</sub> − y<sub>i</sub>) x<sub>i</sub></dt><dd>el residuo multiplicado por su <i>x</i>: las flores donde la recta falla mucho empujan fuerte; las que aciertan no empujan nada</dd>
+</dl>
+<p>Antes de fiarnos de la fórmula, la comparamos con el cálculo numérico del apartado 5. Las flechas pequeñas son <b>−gradiente</b> en cada punto del mapa. <b>Haz clic</b> en el mapa o usa los botones (son los puntos del cuaderno):</p>
+<div class="w" id="w6"></div>
+<p>Fíjate en que las flechas <b>no apuntan a la estrella</b>: apuntan hacia el fondo del valle, casi en horizontal. El gradiente mira la pendiente más fuerte <i>aquí</i>, no dónde está el mínimo. Coinciden hasta el sexto decimal; esta comprobación se llama <b>gradient checking</b> y se hace siempre que se escribe un gradiente a mano.</p>
+<pre>def gradient(w, b):
+    residu = w * x + b - y
+    return 2 * np.mean(residu * x), 2 * np.mean(residu)
+
+gradient(0.7, 0.3)   # → (+14.771960, +3.462533), igual que el numérico</pre>
+<p><b>La transpuesta del cuaderno anterior, otra vez.</b> Con muchas columnas, <i>x</i> pasa a ser la matriz <i>X</i> y <i>w</i> un vector. La fórmula es la misma escrita con matrices:</p>
+<div class="f">∇<sub>w</sub> MSE = <sup>2</sup>⁄<sub>n</sub> X<sup>T</sup> ( X w + b − y )</div>
+<dl class="leg">
+<dt>X</dt><dd>los datos, una fila por flor y una columna por medida (<i>n</i> × <i>d</i>)</dd>
+<dt>X w + b − y</dt><dd>el vector de los <i>n</i> residuos</dd>
+<dt>X<sup>T</sup>( … )</dt><dd>para cada columna: "residuo de cada flor por su <i>x</i>, sumado". Sale un número por peso</dd>
+</dl>
+<pre>Xm = x.reshape(-1, 1)                 # (150,) → (150, 1): matriz de una columna
+residu = Xm @ np.array([0.7]) + 0.3 - y
+2 / len(y) * (Xm.T @ residu)          # → [14.77196], lo mismo que antes</pre>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7">7 · El bucle de entrenamiento</h2>
+<div class="idea"><b>Idea:</b> ya están todas las piezas. Entrenar es repetir: <b>calcula el gradiente, da un pasito en sentido contrario</b>. Una y otra vez.</div>
+<div class="f">w ← w − η · ∂MSE/∂w &nbsp;&nbsp;&nbsp;&nbsp; b ← b − η · ∂MSE/∂b</div>
+<dl class="leg">
+<dt>←</dt><dd>"sustituye": el nuevo <i>w</i> es el viejo menos un trocito</dd>
+<dt>−</dt><dd>el "contrario de la pendiente"</dd>
+<dt>η</dt><dd>"eta", la <b>tasa de aprendizaje</b>: lo largo de cada paso. Es el único número que elegimos nosotros (aquí η = 0.02)</dd>
+</dl>
+<p>Las primeras iteraciones, una a una, empezando con la recta plana (<i>w</i> = 0, <i>b</i> = 0):</p>
+<div class="w" id="w7a"></div>
+<pre>def entrena(eta, iteracions, w=0.0, b=0.0):
+    historial = [(w, b, mse(w, b))]
+    for _ in range(iteracions):
+        grad_w, grad_b = gradient(w, b)
+        w = w - eta * grad_w
+        b = b - eta * grad_b
+        historial.append((w, b, mse(w, b)))
+    return np.array(historial)
+
+hist = entrena(eta=0.02, iteracions=2000)</pre>
+<div class="scroll"><table class="sum">
+<tr><th>iteración</th><th>w</th><th>b</th><th>MSE</th></tr>
+<tr><td>0</td><td>0.0000</td><td>0.0000</td><td>2.01553</td></tr>
+<tr><td>1</td><td>0.2318</td><td>0.0480</td><td>0.22548</td></tr>
+<tr><td>2</td><td>0.2967</td><td>0.0592</td><td>0.08658</td></tr>
+<tr><td>5</td><td>0.3229</td><td>0.0558</td><td>0.07365</td></tr>
+<tr><td>10</td><td>0.3265</td><td>0.0417</td><td>0.07154</td></tr>
+<tr><td>50</td><td>0.3480</td><td>−0.0557</td><td>0.05906</td></tr>
+<tr><td>100</td><td>0.3677</td><td>−0.1452</td><td>0.05060</td></tr>
+<tr><td>500</td><td>0.4127</td><td>−0.3492</td><td>0.04210</td></tr>
+<tr><td>1000</td><td>0.4157</td><td>−0.3626</td><td>0.04207</td></tr>
+<tr><td>2000</td><td>0.4158</td><td>−0.3631</td><td>0.04207</td></tr>
+</table></div>
+<p>Hay <b>dos fases</b>, y no las hemos programado:</p>
+<ul>
+<li><b>Las 5 primeras iteraciones:</b> el error cae de 2.02 a 0.07 y <i>w</i> salta de 0 a 0.32. Es la parte fácil: girar la recta hasta que siga la franja.</li>
+<li><b>De la 10 a la 1000:</b> el error baja despacio de 0.07 a 0.042, mientras <i>b</i> baja de +0.04 a −0.36. Es el fondo del valle estrecho: casi plano en esa dirección, y los pasos son cortos.</li>
+</ul>
+<p>Desde la 1000 ya no cambia nada en el cuarto decimal. El modelo está entrenado: <b><i>w</i> = 0.4158 y <i>b</i> = −0.3631</b>. Dos números: esa es la respuesta a la pregunta del cuaderno anterior.</p>
+<p>La curva del error. Con el eje normal parece que tras la iteración 10 no pasa nada; con el eje <b>logarítmico</b> se ve que sigue bajando hasta la 1000. Las curvas de entrenamiento casi siempre se miran así:</p>
+<div class="w" id="w7b"></div>
+
+<!-- ============ 8 ============ -->
+<h2 id="s8">8 · La recta aprendiendo, en movimiento</h2>
+<div class="idea"><b>Idea:</b> tres vistas de lo mismo, sincronizadas: la recta sobre las flores, el punto (<i>w</i>, <i>b</i>) bajando por el mapa, y el error.</div>
+<p>Dale a <b>Reproducir</b> o mueve el control. El control avanza más despacio al principio, donde pasa casi todo:</p>
+<div class="w" id="w8"></div>
+<p>Mira el panel del medio. El punto no va recto hacia la estrella: primero <b>cae de golpe al fondo del valle</b> (la recta gira) y luego <b>avanza a ras del fondo</b>, despacito, hacia la estrella (la recta baja). Es lo que hace la forma alargada del valle: el gradiente apunta hacia donde la pendiente es más fuerte, que no es hacia donde está el mínimo.</p>
+
+<!-- ============ 9 ============ -->
+<h2 id="s9">9 · La tasa de aprendizaje: poco, bien, demasiado</h2>
+<div class="idea"><b>Idea:</b> η es lo largo de cada paso. Muy corto: llegas, pero tardas. Muy largo: <b>te pasas</b> al otro lado del valle, cada vez más arriba, y el error <b>explota</b>.</div>
+<p>Mueve η y mira los primeros 60 pasos:</p>
+<div class="w" id="w9"></div>
+<pre>entrena(eta=0.005, iteracions=1000)   # MSE tras 10: 0.11098   tras 1000: 0.043159
+entrena(eta=0.02,  iteracions=1000)   # MSE tras 10: 0.071541  tras 1000: 0.042067
+entrena(eta=0.05,  iteracions=1000)   # MSE tras 10: 0.091111  tras 1000: 0.042067
+entrena(eta=0.06,  iteracions=1000)   # MSE tras 10: 41.617    tras 1000: 2.37e+133</pre>
+<p>No hay forma de saber la η buena antes de probar. En la práctica se empieza con un valor y se mira la curva de error: si sube, se divide entre 10; si baja demasiado despacio, se multiplica. <b>Cuando un entrenamiento "no funciona", la primera sospechosa es siempre η.</b></p>
+
+<!-- ============ 10 ============ -->
+<h2 id="s10">10 · Comparación con scikit-learn</h2>
+<div class="idea"><b>Idea:</b> <code>LinearRegression</code> resuelve el mismo problema. Si nuestro bucle está bien, tiene que dar los mismos dos números.</div>
+<div class="scroll"><table class="sum">
+<tr><th></th><th>w</th><th>b</th><th>MSE</th></tr>
+<tr><td><b>nuestro bucle</b></td><td>0.415755</td><td>−0.363075</td><td>0.042067</td></tr>
+<tr><td><b>scikit-learn</b></td><td>0.415755</td><td>−0.363076</td><td>0.042067</td></tr>
+</table></div>
+<p>Los mismos números. Pero hay una diferencia importante: <code>LinearRegression</code> <b>no hace descenso de gradiente</b>. Para la regresión lineal con MSE hay una <b>fórmula cerrada</b> que da el mínimo en un solo cálculo:</p>
+<div class="f">w = <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (x<sub>i</sub> − x̄)(y<sub>i</sub> − ȳ) &nbsp;/&nbsp; <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (x<sub>i</sub> − x̄)<sup>2</sup> &nbsp;&nbsp;&nbsp;&nbsp; b = ȳ − w x̄</div>
+<dl class="leg">
+<dt>x̄, ȳ</dt><dd>"x barra", "y barra": la media de las <i>x</i> y la media de las <i>y</i></dd>
+<dt>x<sub>i</sub> − x̄</dt><dd>cuánto se aparta la flor <i>i</i> de la media</dd>
+<dt>b = ȳ − w x̄</dt><dd>la recta buena siempre pasa por el punto medio (x̄, ȳ)</dd>
+</dl>
+<div class="w" id="w10"></div>
+<p>Entonces, ¿para qué el descenso de gradiente? Porque <b>es el método que funciona para todos los modelos</b>, también los que no tienen fórmula: la regresión logística, las redes neuronales. Una red con millones de pesos se entrena con el bucle del apartado 7, cambiando solo la función de error y el gradiente.</p>
+
+<!-- ============ 11 ============ -->
+<h2 id="s11">11 · La trampa de las escalas</h2>
+<div class="idea"><b>Idea:</b> si una columna tiene números grandes, sus pasos son grandes: el gradiente respecto de <i>w</i> va multiplicado por <i>x</i>. Por eso, antes de entrenar, <b>se ponen todas las columnas a la misma escala</b>.</div>
+<p>Un experimento que parece inocente: medimos el largo en <b>milímetros</b> (multiplicamos <i>x</i> por 10). Las flores son las mismas y la recta buena también (solo que la pendiente es 10 veces más pequeña). Volvemos a entrenar con la misma η = 0.02… y <b>explota</b>. Haría falta una η 100 veces más pequeña, y entonces <i>b</i> no se movería nunca.</p>
+<p>La solución habitual es <b>estandarizar</b>: restar la media y dividir entre la desviación típica. Es lo que hace <code>StandardScaler</code>.</p>
+<div class="f">x′<sub>i</sub> = ( x<sub>i</sub> − x̄ ) / σ</div>
+<dl class="leg">
+<dt>x′<sub>i</sub></dt><dd>el valor estandarizado: queda centrado en 0 y con "tamaño" 1</dd>
+<dt>σ</dt><dd>"sigma", la desviación típica: cuánto se apartan los datos de la media, de media (<code>x.std()</code>, aquí 1.7594 cm)</dd>
+</dl>
+<p>Las tres curvas de error, para las mismas flores medidas de tres formas:</p>
+<div class="w" id="w11a"></div>
+<p><b>El mismo error mínimo, 0.042067, en 50 iteraciones en vez de 1000.</b> ¿Por qué? Mira los dos valles con la misma escala (1.5 unidades a cada lado del mínimo). Con <i>x</i> en cm es un valle estrecho; con <i>x</i> estandarizada es <b>un cuenco perfectamente redondo</b>: desde cualquier punto, la bajada más fuerte apunta directa al fondo, y se puede usar una η más grande.</p>
+<div class="w" id="w11b"></div>
+<pre>x_std = (x - x.mean()) / x.std()
+x = x_std
+entrena(eta=0.1, iteracions=100)   # MSE en la 20: 0.042330 · en la 50: 0.042067</pre>
+<p>Esto no es un detalle de este cuaderno. Las escalas volverán a ser una trampa en <b>k vecinos</b> (donde la columna más grande decide ella sola la distancia) y en las <b>redes neuronales</b> (donde los datos sin escalar hacen que el entrenamiento no arranque). Recuerda el número: <b>de 1000 a 50</b>.</p>
+
+<!-- ============ EJERCICIOS ============ -->
+<h2 id="ej">Ejercicios del cuaderno: lo que te tiene que salir</h2>
+<p>Tienes disponibles <code>iris</code>, <code>x</code>, <code>y</code> y las funciones de los apartados anteriores.</p>
+<h3>Ejercicio 1 · Tu propio descenso, con otra pareja de columnas</h3>
+<p>Largo del sépalo (<code>iris.data[:, 0]</code>) para predecir el largo del pétalo (<code>iris.data[:, 2]</code>). Escribe tú <code>mse1</code>, <code>gradient1</code> y el bucle.</p>
+<ul>
+<li><b>Gradient checking</b> en (<i>w</i> = 0.5, <i>b</i> = 0.5): fórmula y numérico tienen que dar <b>(−5.781133, −0.672667)</b>.</li>
+<li><code>LinearRegression</code>: <b><i>w</i> = 1.858433, <i>b</i> = −7.101443, MSE = 0.743061</b>.</li>
+<li>La η más grande que no explota es <b>≈ 0.0279</b>: con 0.025 converge, con 0.03 explota. Ojo: con η pequeña <b>tarda muchísimo</b> (con η = 0.02, unas 3 200 iteraciones para quedarse a menos de un 1 % del mínimo). Las <i>x</i> del sépalo rondan 5.8 cm, lejos del 0: el valle es aún más estrecho que el del apartado 4.</li>
+</ul>
+<h3>Ejercicio 2 · Escalar o no escalar</h3>
+<p>Lo mismo con la <i>x</i> estandarizada (media 5.8433, σ = 0.8253). Iteraciones hasta quedar a menos de un 1 % del MSE mínimo:</p>
+<div class="scroll"><table class="sum">
+<tr><th></th><th>η más grande que funciona</th><th>iteraciones (con esa η o una buena)</th></tr>
+<tr><td><b>sin escalar</b></td><td>≈ 0.0279</td><td>2 585 con η = 0.025 · 3 232 con η = 0.02</td></tr>
+<tr><td><b>estandarizada</b></td><td>justo por debajo de 1 (con 1.0 ya no converge)</td><td>18 con η = 0.1 · 5 con η = 0.3 · <b>1</b> con η = 0.5</td></tr>
+</table></div>
+<p>¿Una sola iteración con η = 0.5? Con la <i>x</i> centrada y con σ = 1, el cuenco es perfectamente redondo y <i>w</i> y <i>b</i> no se mezclan: el paso de 0.5 cae exactamente en el fondo. Para comparar con <code>LinearRegression</code> hay que deshacer la escala: <i>w</i><sub>cm</sub> = <i>w</i> / σ y <i>b</i><sub>cm</sub> = <i>b</i> − <i>w</i> · x̄ / σ, que vuelve a dar <b>1.858433 y −7.101443</b>.</p>
+<h3>Ejercicio 3 · Dos columnas a la vez, con matrices</h3>
+<p>Ancho del pétalo a partir del largo del pétalo y del largo del sépalo (<code>X2 = iris.data[:, [2, 0]]</code>, estandarizadas), con <code>grad_w = 2 / len(y) * (X2.T @ residu)</code>.</p>
+<ul>
+<li>Con las columnas estandarizadas: <b><i>w</i> = [0.790634, −0.067854], <i>b</i> = 1.199333</b>. En cm (lo que da <code>LinearRegression().fit(X2, y)</code>): <b>[0.449376, −0.082218]</b> y <b>−0.008996</b>.</li>
+<li>MSE: <b>0.040962</b>, frente a 0.042067 con una sola columna. <b>Baja, pero muy poco</b> (un 2.6 %): el largo del sépalo casi no aporta nada que no diga ya el largo del pétalo.</li>
+<li>Curiosidad: aquí η = 0.9 ya explota (el límite es ≈ 0.534). Las dos columnas están muy correlacionadas (0.87), y eso vuelve a estrechar el valle aunque estén estandarizadas.</li>
+</ul>
+
+<!-- ============ RESUMEN ============ -->
+<h2 id="res">Resumen en una tabla</h2>
+<div class="scroll">
+<table class="sum">
+<tr><th>Concepto</th><th>Qué es</th><th>Numpy</th><th>Número para comprobar</th></tr>
+<tr><td><b>Modelo</b></td><td>Una recta: ŷ = w x + b</td><td><code>w * x + b</code></td><td>2 números</td></tr>
+<tr><td><b>MSE</b></td><td>Media de los residuos al cuadrado</td><td><code>np.mean((w*x + b - y)**2)</code></td><td>2.0155 en (0, 0)</td></tr>
+<tr><td><b>Derivada</b></td><td>La pendiente del error en un punto</td><td><code>(mse(w+h, b) - mse(w-h, b)) / (2*h)</code></td><td>−11.5881 en (0, 0)</td></tr>
+<tr><td><b>Gradiente</b></td><td>El vector de las pendientes, uno por peso</td><td><code>2 / n * X.T @ residu</code></td><td>(14.77196, 3.462533) en (0.7, 0.3)</td></tr>
+<tr><td><b>Descenso</b></td><td>Paso en contra del gradiente, repetido</td><td><code>w = w - eta * grad_w</code></td><td>w = 0.4158, b = −0.3631</td></tr>
+<tr><td><b>Tasa η</b></td><td>Lo largo de cada paso</td><td><code>eta = 0.02</code></td><td>explota a partir de ≈ 0.055</td></tr>
+<tr><td><b>Escalar</b></td><td>Media 0 y desviación 1 por columna</td><td><code>(x - x.mean()) / x.std()</code></td><td>de 1000 a 50 iteraciones</td></tr>
+</table>
+</div>
+<div class="big">Los pesos de un modelo salen de este bucle: calcular el gradiente y dar un pasito en contra. La regresión logística y las redes neuronales hacen lo mismo con otra función de error.</div>
+<p>Siguiente: la regresión logística (<code>ML_04</code>) y <code>MA_02</code>, con otra función de error y el mismo bucle.</p>
+<footer>Apuntes generados a partir del cuaderno MA_01b. Funciona sin conexión: todo está en este archivo.</footer>
+</main>
+
+<script>
+const IRIS={"X":[[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4],[4.6,3.4,1.4,0.3],[5.0,3.4,1.5,0.2],[4.4,2.9,1.4,0.2],[4.9,3.1,1.5,0.1],[5.4,3.7,1.5,0.2],[4.8,3.4,1.6,0.2],[4.8,3.0,1.4,0.1],[4.3,3.0,1.1,0.1],[5.8,4.0,1.2,0.2],[5.7,4.4,1.5,0.4],[5.4,3.9,1.3,0.4],[5.1,3.5,1.4,0.3],[5.7,3.8,1.7,0.3],[5.1,3.8,1.5,0.3],[5.4,3.4,1.7,0.2],[5.1,3.7,1.5,0.4],[4.6,3.6,1.0,0.2],[5.1,3.3,1.7,0.5],[4.8,3.4,1.9,0.2],[5.0,3.0,1.6,0.2],[5.0,3.4,1.6,0.4],[5.2,3.5,1.5,0.2],[5.2,3.4,1.4,0.2],[4.7,3.2,1.6,0.2],[4.8,3.1,1.6,0.2],[5.4,3.4,1.5,0.4],[5.2,4.1,1.5,0.1],[5.5,4.2,1.4,0.2],[4.9,3.1,1.5,0.2],[5.0,3.2,1.2,0.2],[5.5,3.5,1.3,0.2],[4.9,3.6,1.4,0.1],[4.4,3.0,1.3,0.2],[5.1,3.4,1.5,0.2],[5.0,3.5,1.3,0.3],[4.5,2.3,1.3,0.3],[4.4,3.2,1.3,0.2],[5.0,3.5,1.6,0.6],[5.1,3.8,1.9,0.4],[4.8,3.0,1.4,0.3],[5.1,3.8,1.6,0.2],[4.6,3.2,1.4,0.2],[5.3,3.7,1.5,0.2],[5.0,3.3,1.4,0.2],[7.0,3.2,4.7,1.4],[6.4,3.2,4.5,1.5],[6.9,3.1,4.9,1.5],[5.5,2.3,4.0,1.3],[6.5,2.8,4.6,1.5],[5.7,2.8,4.5,1.3],[6.3,3.3,4.7,1.6],[4.9,2.4,3.3,1.0],[6.6,2.9,4.6,1.3],[5.2,2.7,3.9,1.4],[5.0,2.0,3.5,1.0],[5.9,3.0,4.2,1.5],[6.0,2.2,4.0,1.0],[6.1,2.9,4.7,1.4],[5.6,2.9,3.6,1.3],[6.7,3.1,4.4,1.4],[5.6,3.0,4.5,1.5],[5.8,2.7,4.1,1.0],[6.2,2.2,4.5,1.5],[5.6,2.5,3.9,1.1],[5.9,3.2,4.8,1.8],[6.1,2.8,4.0,1.3],[6.3,2.5,4.9,1.5],[6.1,2.8,4.7,1.2],[6.4,2.9,4.3,1.3],[6.6,3.0,4.4,1.4],[6.8,2.8,4.8,1.4],[6.7,3.0,5.0,1.7],[6.0,2.9,4.5,1.5],[5.7,2.6,3.5,1.0],[5.5,2.4,3.8,1.1],[5.5,2.4,3.7,1.0],[5.8,2.7,3.9,1.2],[6.0,2.7,5.1,1.6],[5.4,3.0,4.5,1.5],[6.0,3.4,4.5,1.6],[6.7,3.1,4.7,1.5],[6.3,2.3,4.4,1.3],[5.6,3.0,4.1,1.3],[5.5,2.5,4.0,1.3],[5.5,2.6,4.4,1.2],[6.1,3.0,4.6,1.4],[5.8,2.6,4.0,1.2],[5.0,2.3,3.3,1.0],[5.6,2.7,4.2,1.3],[5.7,3.0,4.2,1.2],[5.7,2.9,4.2,1.3],[6.2,2.9,4.3,1.3],[5.1,2.5,3.0,1.1],[5.7,2.8,4.1,1.3],[6.3,3.3,6.0,2.5],[5.8,2.7,5.1,1.9],[7.1,3.0,5.9,2.1],[6.3,2.9,5.6,1.8],[6.5,3.0,5.8,2.2],[7.6,3.0,6.6,2.1],[4.9,2.5,4.5,1.7],[7.3,2.9,6.3,1.8],[6.7,2.5,5.8,1.8],[7.2,3.6,6.1,2.5],[6.5,3.2,5.1,2.0],[6.4,2.7,5.3,1.9],[6.8,3.0,5.5,2.1],[5.7,2.5,5.0,2.0],[5.8,2.8,5.1,2.4],[6.4,3.2,5.3,2.3],[6.5,3.0,5.5,1.8],[7.7,3.8,6.7,2.2],[7.7,2.6,6.9,2.3],[6.0,2.2,5.0,1.5],[6.9,3.2,5.7,2.3],[5.6,2.8,4.9,2.0],[7.7,2.8,6.7,2.0],[6.3,2.7,4.9,1.8],[6.7,3.3,5.7,2.1],[7.2,3.2,6.0,1.8],[6.2,2.8,4.8,1.8],[6.1,3.0,4.9,1.8],[6.4,2.8,5.6,2.1],[7.2,3.0,5.8,1.6],[7.4,2.8,6.1,1.9],[7.9,3.8,6.4,2.0],[6.4,2.8,5.6,2.2],[6.3,2.8,5.1,1.5],[6.1,2.6,5.6,1.4],[7.7,3.0,6.1,2.3],[6.3,3.4,5.6,2.4],[6.4,3.1,5.5,1.8],[6.0,3.0,4.8,1.8],[6.9,3.1,5.4,2.1],[6.7,3.1,5.6,2.4],[6.9,3.1,5.1,2.3],[5.8,2.7,5.1,1.9],[6.8,3.2,5.9,2.3],[6.7,3.3,5.7,2.5],[6.7,3.0,5.2,2.3],[6.3,2.5,5.0,1.9],[6.5,3.0,5.2,2.0],[6.2,3.4,5.4,2.3],[5.9,3.0,5.1,1.8]],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]};
+const X=IRIS.X, Y=IRIS.y;
+const SPECIES=['setosa','versicolor','virginica'];
+const NS='http://www.w3.org/2000/svg';
+const C={blue:'#2563eb',orange:'#ea580c',green:'#16a34a',purple:'#7c3aed',red:'#dc2626',gray:'#8a877f',pink:'#db2777',teal:'#0d9488',amber:'#d97706',ink:'currentColor'};
+const SPC=[C.blue,C.orange,C.green];
+function E(tag,attrs,parent){const e=document.createElementNS(NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function H(tag,attrs,parent,html){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e}
+function f(x,d=4){const r=+(+x).toFixed(d);return (Object.is(r,-0)?0:r).toString()}
+const ease=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+function tween(o,dur,fn,done){cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
+const dot=(a,b)=>a.reduce((s,ai,i)=>s+ai*b[i],0);
+const norm=a=>Math.sqrt(dot(a,a));
+const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];
+
+class Plot{
+  constructor(host,o){
+    const W=o.w||680,pad=o.pad??34,[x0,x1]=o.x,[y0,y1]=o.y;
+    this.sx=(W-2*pad)/(x1-x0);
+    let Hh;
+    if(o.h){Hh=o.h;this.sy=o.free?(Hh-2*pad)/(y1-y0):this.sx}else{this.sy=this.sx;Hh=Math.round((y1-y0)*this.sy+2*pad)}
+    Object.assign(this,{x0,x1,y0,y1,pad,W,H:Hh});
+    this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
+    this.grid=E('g',{},this.svg);
+    const gx=o.gx||1,gy=o.gy||gx;
+    const yAx=(!o.edge&&y0<=0&&y1>=0)?this.Y(0):this.Y(y0), xAx=(!o.edge&&x0<=0&&x1>=0)?this.X(0):this.X(x0);   // edge: números en el borde
+    for(let x=Math.ceil(x0/gx-1e-9)*gx;x<=x1+1e-9;x+=gx){const X=this.X(x);E('line',{x1:X,y1:this.Y(y1),x2:X,y2:this.Y(y0),class:Math.abs(x)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(x)>1e-9&&o.ticks!==false)E('text',{x:X,y:Math.min(yAx+14,Hh-4),'text-anchor':'middle',class:'tick'},this.grid).textContent=f(x,2)}
+    for(let y=Math.ceil(y0/gy-1e-9)*gy;y<=y1+1e-9;y+=gy){const Yp=this.Y(y);E('line',{x1:this.X(x0),y1:Yp,x2:this.X(x1),y2:Yp,class:Math.abs(y)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(y)>1e-9&&o.ticks!==false)E('text',{x:Math.max(xAx-5,22),y:Yp+4,'text-anchor':'end',class:'tick'},this.grid).textContent=f(y,2)}
+    if(o.xl)E('text',{x:this.X(x1),y:Hh-6,'text-anchor':'end',class:'tick'},this.grid).textContent=o.xl;
+    if(o.yl)E('text',{x:this.X(x0)+4,y:pad-12,class:'tick'},this.grid).textContent=o.yl;
+  }
+  X(x){return this.pad+(x-this.x0)*this.sx}
+  Y(y){return this.pad+(this.y1-y)*this.sy}
+  P(p){return [this.X(p[0]),this.Y(p[1])]}
+  g(){return E('g',{},this.svg)}
+  toWorld(ev){const pt=this.svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(this.svg.getScreenCTM().inverse());return [(q.x-this.pad)/this.sx+this.x0,this.y1-(q.y-this.pad)/this.sy]}
+  arrow(g,color,w=2.6,dash){const grp=E('g',{},g);const l=E('line',{stroke:color,'stroke-width':w,'stroke-linecap':'round'},grp);if(dash)l.setAttribute('stroke-dasharray',dash);const h=E('polygon',{fill:color},grp);const self=this;
+    return {el:grp,set(a,b){const [X1,Y1]=self.P(a),[X2,Y2]=self.P(b);const dx=X2-X1,dy=Y2-Y1,L=Math.hypot(dx,dy);if(L<2){grp.style.display='none';return}grp.style.display='';const hl=Math.min(10+w*1.6,L*.6),hw=hl*.45,ux=dx/L,uy=dy/L,bx=X2-ux*hl,by=Y2-uy*hl;
+      l.setAttribute('x1',X1);l.setAttribute('y1',Y1);l.setAttribute('x2',bx);l.setAttribute('y2',by);h.setAttribute('points',`${X2},${Y2} ${bx-uy*hw},${by+ux*hw} ${bx+uy*hw},${by-ux*hw}`)},
+      show(v){grp.style.opacity=v?1:0}}}
+  label(g,color,cls='lbl'){const t=E('text',{class:cls},g);if(color)t.style.fill=color;const self=this;return {el:t,set(p,s,dx=6,dy=-6,anchor='start'){const [X,Yp]=self.P(p);t.setAttribute('x',X+dx);t.setAttribute('y',Yp+dy);t.setAttribute('text-anchor',anchor);t.textContent=s},show(v){t.style.opacity=v?1:0}}}
+  line(g,a,b,attrs){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);return E('line',Object.assign({x1,y1,x2,y2},attrs),g)}
+  setLine(el,a,b){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2)}
+  poly(g,pts,attrs){return E('polygon',Object.assign({points:pts.map(p=>this.P(p).join(',')).join(' ')},attrs),g)}
+  setPoly(el,pts){el.setAttribute('points',pts.map(p=>this.P(p).join(',')).join(' '))}
+  dot(g,p,r,color,attrs){const [cx,cy]=this.P(p);return E('circle',Object.assign({cx,cy,r,fill:color},attrs||{}),g)}
+  setDot(el,p){const [cx,cy]=this.P(p);el.setAttribute('cx',cx);el.setAttribute('cy',cy)}
+}
+
+function stepper(host,n,render,o={}){
+  const bar=H('div',{class:'bar'},host);
+  const prev=H('button',{},bar,'← Anterior');
+  const play=H('button',{},bar,'▶ Reproducir');
+  const next=H('button',{},bar,'Siguiente →');
+  const rst=H('button',{title:'Volver al principio'},bar,'↺');
+  const dots=H('span',{class:'dots'},bar);
+  let step=0,timer=null;
+  const draw=()=>{render(step);dots.textContent=`Paso ${step+1} de ${n}`};
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  prev.onclick=()=>{stop();step=Math.max(0,step-1);draw()};
+  next.onclick=()=>{stop();step=Math.min(n-1,step+1);draw()};
+  rst.onclick=()=>{stop();step=0;draw()};
+  play.onclick=()=>{if(timer){stop();return}if(step>=n-1)step=0;draw();play.textContent='❚❚ Pausa';timer=setInterval(()=>{step++;draw();if(step>=n-1)stop()},o.interval||1800)};
+  return {bar,draw,reset(){stop();step=0;draw()},get step(){return step}};
+}
+
+/* ================= datos y funciones del modelo ================= */
+const xP=X.map(r=>r[2]),yP=X.map(r=>r[3]);
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(mean(a.map(v=>(v-m)**2)))};
+// el MSE es un polinomio de grado 2 en (w, b): con 5 medias se calcula al instante
+function mom(x){return {a:mean(x.map(v=>v*v)),m:mean(x),c:mean(x.map((v,i)=>v*yP[i])),my:mean(yP),q:mean(yP.map(v=>v*v))}}
+const mseM=(M,w,b)=>w*w*M.a+2*w*b*M.m+b*b-2*w*M.c-2*b*M.my+M.q;
+const gradM=(M,w,b)=>[2*(w*M.a+b*M.m-M.c),2*(w*M.m+b-M.my)];
+function train(M,eta,its,w=0,b=0){const Hs=[[w,b,mseM(M,w,b)]];for(let t=0;t<its;t++){const [gw,gb]=gradM(M,w,b);w-=eta*gw;b-=eta*gb;Hs.push([w,b,mseM(M,w,b)])}return Hs}
+const MC=mom(xP),mse=(w,b)=>mseM(MC,w,b),grad=(w,b)=>gradM(MC,w,b);
+const xm=mean(xP),ym=mean(yP),xsd=sd(xP);
+const W_OPT=xP.reduce((s,v,i)=>s+(v-xm)*(yP[i]-ym),0)/xP.reduce((s,v)=>s+(v-xm)**2,0),B_OPT=ym-W_OPT*xm,E_OPT=mse(W_OPT,B_OPT);
+const HIST=train(MC,0.02,2000);
+const ETA_MAX=(()=>{const t=MC.a+1,d=MC.a-MC.m**2;return 2/(t+Math.sqrt(t*t-4*d))})();   // 1 / autovalor mayor
+const MM=mom(xP.map(v=>v*10)),MS=mom(xP.map(v=>(v-xm)/xsd));
+const fe=v=>!isFinite(v)?'∞':(Math.abs(v)<1e4?f(v,4):v.toPrecision(4));
+const numgrad=(w,b,h=1e-6)=>[(mse(w+h,b)-mse(w-h,b))/(2*h),(mse(w,b+h)-mse(w,b-h))/(2*h)];
+
+/* ================= utilidades de dibujo ================= */
+const VIR=[[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]];
+function vir(t){t=Math.max(0,Math.min(1,t));const s=t*4,i=Math.min(3,Math.floor(s)),u=s-i;return VIR[i].map((v,k)=>Math.round(v+u*(VIR[i+1][k]-v)))}
+// mapa de calor en franjas (curvas de nivel) pintado en un canvas y metido como imagen en el SVG
+function heat(P,F,o={}){const n=o.n||160,lo=Math.log(o.lo||0.04),hi=Math.log(o.hi||8),L=o.levels||16;
+  const cv=document.createElement('canvas');cv.width=cv.height=n;const cx=cv.getContext('2d'),im=cx.createImageData(n,n);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){const w=P.x0+(c+.5)/n*(P.x1-P.x0),b=P.y1-(r+.5)/n*(P.y1-P.y0),e=F(w,b),k=(r*n+c)*4;
+    if(o.cut&&e>o.cut)continue;
+    const col=vir(Math.floor(L*(Math.log(e)-lo)/(hi-lo))/L);im.data[k]=col[0];im.data[k+1]=col[1];im.data[k+2]=col[2];im.data[k+3]=215}
+  cx.putImageData(im,0,0);
+  const img=E('image',{x:P.X(P.x0),y:P.Y(P.y1),width:P.X(P.x1)-P.X(P.x0),height:P.Y(P.y0)-P.Y(P.y1),preserveAspectRatio:'none',href:cv.toDataURL()});
+  P.svg.insertBefore(img,P.grid);P.grid.querySelectorAll('line').forEach(l=>l.style.opacity=.3);return img}
+let CLIPN=0;
+function clip(P,g){const id='clip'+(CLIPN++);const cp=E('clipPath',{id},E('defs',{},P.svg));
+  E('rect',{x:P.X(P.x0),y:P.Y(P.y1),width:P.X(P.x1)-P.X(P.x0),height:P.Y(P.y0)-P.Y(P.y1)},cp);g.setAttribute('clip-path',`url(#${id})`);return g}
+// ponytail: los puntos que se van al infinito se recortan a 20 veces el rango; fuera del clip no se ven
+function lim(P,p){const R=20,cw=(P.x1-P.x0)*R,ch=(P.y1-P.y0)*R,ok=v=>isFinite(v);
+  return [ok(p[0])?Math.max(P.x0-cw,Math.min(P.x1+cw,p[0])):P.x1+cw,ok(p[1])?Math.max(P.y0-ch,Math.min(P.y1+ch,p[1])):P.y1+ch]}
+function pline(P,g,pts,attrs){return E('polyline',Object.assign({fill:'none',points:pts.map(p=>P.P(lim(P,p)).join(',')).join(' ')},attrs),g)}
+function setPline(P,el,pts){el.setAttribute('points',pts.map(p=>P.P(lim(P,p)).join(',')).join(' '))}
+function star(P,g,p,r=9){const [cx,cy]=P.P(p),pts=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,R=i%2?r*.45:r;pts.push(`${cx+R*Math.cos(a)},${cy+R*Math.sin(a)}`)}
+  return E('polygon',{points:pts.join(' '),fill:C.red,stroke:'#fff','stroke-width':1.2},g)}
+function ticks(P,xs,ys){xs.forEach(([v,t])=>{E('text',{x:P.X(v),y:P.Y(P.y0)+14,'text-anchor':'middle',class:'tick'},P.grid).textContent=t});
+  ys.forEach(([v,t])=>{E('text',{x:P.X(P.x0)-5,y:P.Y(v)+4,'text-anchor':'end',class:'tick'},P.grid).textContent=t})}
+function slider(host,lab,min,max,step,val,fmt=v=>f(v,3)){const sl=H('div',{class:'sl'},host);H('label',{},sl,lab);
+  const inp=H('input',{type:'range',min,max,step,value:val},sl),out=H('output',{},sl,fmt(val));
+  return {inp,get v(){return +inp.value},set(v){inp.value=v;out.textContent=fmt(v)}}}
+function drag(P,fn){let on=false;P.svg.style.cursor='crosshair';
+  P.svg.addEventListener('pointerdown',e=>{on=true;P.svg.setPointerCapture(e.pointerId);fn(clampP(P,P.toWorld(e)))});
+  P.svg.addEventListener('pointermove',e=>{if(on)fn(clampP(P,P.toWorld(e)))});
+  P.svg.addEventListener('pointerup',()=>{on=false})}
+const clampP=(P,p)=>[Math.max(P.x0,Math.min(P.x1,p[0])),Math.max(P.y0,Math.min(P.y1,p[1]))];
+const ink=()=>getComputedStyle(document.body).color;
+
+// las 150 flores, con capa de residuos (debajo) y capa de la recta (encima)
+function dataPlot(host,o={}){
+  const P=new Plot(host,Object.assign({x:[0,7.5],y:[-0.5,3.2],gx:1,gy:.5,xl:'largo del pétalo, x (cm) →',yl:'↑ ancho, y (cm)',label:'Las 150 flores: largo y ancho del pétalo'},o));
+  P.gRes=clip(P,P.g());const gp=P.g();xP.forEach((v,i)=>P.dot(gp,[v,yP[i]],o.r||4,C.blue,{opacity:.5}));P.gTop=clip(P,P.g());
+  P.ln=P.line(P.gTop,[0,0],[1,0],{stroke:C.red,'stroke-width':3,'stroke-linecap':'round'});
+  P.setRecta=(w,b)=>P.setLine(P.ln,[P.x0,w*P.x0+b],[P.x1,w*P.x1+b]);
+  P.addRes=()=>{P.res=xP.map(()=>E('line',{stroke:C.gray,'stroke-width':1,opacity:.6},P.gRes));
+    P.setRes=(w,b)=>P.res.forEach((l,i)=>P.setLine(l,[xP[i],yP[i]],[xP[i],w*xP[i]+b]))};
+  return P}
+// el mapa del error: w en horizontal, b en vertical
+function mapPlot(host,o={}){
+  const P=new Plot(host,Object.assign({x:[-0.3,1],y:[-1.6,1.4],h:340,free:true,edge:true,gx:.1,gy:.4,w:560,xl:'w (pendiente) →',yl:'↑ b (corte)',label:'Mapa del error MSE(w, b)'},o));
+  heat(P,o.F||mse,o);P.gTop=clip(P,P.g());star(P,P.gTop,[W_OPT,B_OPT],o.small?7:9);return P}
+
+/* ================= 1: los datos ================= */
+(function(){
+  const host=document.getElementById('w1');
+  const P=dataPlot(host);P.ln.style.display='none';
+  const sel=P.dot(P.gTop,[xP[0],yP[0]],7,'none',{stroke:ink(),'stroke-width':2.5});
+  const info=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Varias flores comparten punto porque tienen las mismas medidas.');
+  function show(i){P.setDot(sel,[xP[i],yP[i]]);info.innerHTML=`Flor ${i} (${SPECIES[Y[i]]}): largo <span class="hb">x = ${f(xP[i])} cm</span> → ancho <span class="hy">y = ${f(yP[i])} cm</span>`}
+  P.svg.addEventListener('click',ev=>{const [x,y]=P.toWorld(ev);let best=0,bd=1e9;xP.forEach((v,i)=>{const d=(v-x)**2+(yP[i]-y)**2;if(d<bd){bd=d;best=i}});show(best)});
+  show(0);
+})();
+
+/* ================= 2: mueve la recta ================= */
+(function(){
+  const host=document.getElementById('w2');
+  const P=dataPlot(host);P.addRes();
+  const sw=slider(host,'pendiente w',-0.5,1,.01,0,v=>f(v,2)),sb=slider(host,'corte b',-2,2,.05,0,v=>f(v,2));
+  const calc=H('div',{class:'calc'},host);
+  const bar=H('div',{class:'bar'},host);const best=H('button',{},bar,'Ver la mejor recta'),rst=H('button',{},bar,'↺ Recta plana');
+  let rec=Infinity;
+  function draw(w,b){P.setRecta(w,b);P.setRes(w,b);const e=mse(w,b);rec=Math.min(rec,e);
+    const tag=e<E_OPT*1.02?'<span class="hg">¡es la mejor recta!</span>':(e<0.06?'<span class="hg">muy cerca</span>':(e<0.3?'<span class="hy">vas bien</span>':'<span class="hr">lejos</span>'));
+    calc.innerHTML=`ŷ = ${f(w,2)} · x + ${f(b,2)} &nbsp;→&nbsp; error (MSE) = <b>${f(e,4)}</b> &nbsp;${tag} &nbsp;·&nbsp; tu récord: ${f(rec,4)} &nbsp;·&nbsp; mínimo posible: ${f(E_OPT,4)}`}
+  const upd=()=>{cancelAnimationFrame(P._raf);draw(sw.v,sb.v)};
+  sw.inp.oninput=sb.inp.oninput=()=>{sw.set(sw.v);sb.set(sb.v);upd()};
+  function go(w1,b1){const w0=sw.v,b0=sb.v;tween(P,1200,u=>{const w=w0+u*(w1-w0),b=b0+u*(b1-b0);sw.set(w);sb.set(b);draw(w,b)})}
+  best.onclick=()=>go(W_OPT,B_OPT);rst.onclick=()=>go(0,0);
+  draw(0,0);
+})();
+
+/* ================= 3: los cuadrados del MSE ================= */
+(function(){
+  const host=document.getElementById('w3');
+  const msg=H('div',{class:'msg'},host);
+  const bar=H('div',{class:'bar'},host);
+  const P=dataPlot(host);P.addRes();
+  const sq=xP.map(()=>E('polygon',{fill:C.red,opacity:.045},P.gRes));
+  const calc=H('div',{class:'calc'},host);
+  const L=[{w:0,b:0,n:'Recta plana (w = 0, b = 0)',t:'Demasiado baja: se equivoca de media unos √2.02 ≈ 1.4 cm, mucho para pétalos de 2.5 cm como mucho.'},
+    {w:1,b:0,n:'y = x (w = 1)',t:'Aún peor: dobla el ancho de todos los pétalos largos. Los cuadrados se salen del dibujo.'},
+    {w:.4,b:0,n:'y = 0.4x (w = 0.4)',t:'Ya estamos cerca: los cuadrados son pequeños.'},
+    {w:W_OPT,b:B_OPT,n:'La mejor',t:'La recta que deja el MSE más pequeño posible. Esta es la que tenemos que encontrar.'}];
+  let cur=[0,0];
+  function draw(w,b){P.setRecta(w,b);P.setRes(w,b);
+    sq.forEach((s,i)=>{const p=w*xP[i]+b,r=Math.abs(p-yP[i]);P.setPoly(s,[[xP[i],yP[i]],[xP[i],p],[xP[i]+r,p],[xP[i]+r,yP[i]]])})}
+  function pick(k){const l=L[k],from=cur.slice();cur=[l.w,l.b];[...bar.children].forEach((b,i)=>b.classList.toggle('on',i===k));
+    tween(P,700,u=>draw(from[0]+u*(l.w-from[0]),from[1]+u*(l.b-from[1])));
+    const r=xP.map((v,i)=>l.w*v+l.b-yP[i]),S=r.reduce((s,v)=>s+v*v,0);
+    msg.innerHTML=l.t;
+    calc.innerHTML=`MSE = ((${f(r[0],2)})² + (${f(r[1],2)})² + … + (${f(r[149],2)})²) / 150 = ${f(S,3)} / 150 = <span class="hg">${f(S/150,4)}</span>`}
+  L.forEach((l,k)=>{H('button',{},bar,l.n).onclick=()=>pick(k)});
+  draw(0,0);pick(0);
+})();
+
+/* ================= 4: el mapa del error ================= */
+(function(){
+  const host=document.getElementById('w4');
+  const pr=H('div',{class:'pair'},host);const a=H('div',{},pr),b=H('div',{},pr);
+  const M=mapPlot(a,{w:440,h:400,gx:.2});H('div',{class:'cap'},a,'el mapa: cada punto es una recta');
+  const D=dataPlot(b,{w:440,r:3});D.addRes();H('div',{class:'cap'},b,'la recta de ese punto');
+  const pt=M.dot(M.gTop,[0,0],7,'#fff',{stroke:'#111','stroke-width':2});
+  const calc=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Arrastra por el mapa. Fíjate en que moverte en horizontal (w) cambia mucho el color, y en vertical (b), poco.');
+  function set([w,b]){M.setDot(pt,[w,b]);D.setRecta(w,b);D.setRes(w,b);const e=mse(w,b);
+    calc.innerHTML=`(w, b) = (${f(w,3)}, ${f(b,3)}) &nbsp;→&nbsp; MSE = <b>${f(e,4)}</b>${e<E_OPT*1.02?' &nbsp;<span class="hg">¡el fondo del valle!</span>':''} &nbsp;·&nbsp; ★ = (${f(W_OPT,3)}, ${f(B_OPT,3)}), MSE ${f(E_OPT,4)}`}
+  drag(M,set);set([0,0]);
+})();
+
+/* ================= 5: la derivada ================= */
+(function(){
+  const host=document.getElementById('w5');
+  const P=new Plot(host,{x:[-0.3,1],y:[0,8],h:330,free:true,edge:true,gx:.1,gy:1,xl:'w →',yl:'↑ MSE(w, b = 0)',label:'El error cortado por b = 0'});
+  const g=clip(P,P.g()),ws=Array.from({length:201},(_,i)=>-0.3+1.3*i/200);
+  pline(P,g,ws.map(w=>[w,mse(w,0)]),{stroke:C.blue,'stroke-width':2.5});
+  const wmin=MC.c/MC.a;P.line(g,[wmin,0],[wmin,8],{stroke:C.gray,'stroke-dasharray':'4 4'});
+  const tg=P.line(g,[0,0],[0,0],{stroke:C.red,'stroke-width':3,'stroke-linecap':'round'});
+  const pt=P.dot(g,[0,0],6,C.red),dir=P.arrow(g,C.green,3),lab=P.label(g,C.red);
+  const sw=slider(host,'w',-0.3,1,.01,0,v=>f(v,3));
+  const bar=H('div',{class:'bar'},host);const step=H('button',{},bar,'Da un paso: w ← w − 0.02 · pendiente'),rst=H('button',{},bar,'↺');
+  const calc=H('div',{class:'calc'},host);
+  const slope=w=>(mse(w+1e-6,0)-mse(w-1e-6,0))/2e-6;
+  let W=0;
+  function draw(w){W=w;const e=mse(w,0),p=slope(w);P.setDot(pt,[w,e]);P.setLine(tg,[w-.15,e-.15*p],[w+.15,e+.15*p]);
+    lab.set([w,e],`pendiente ${f(p,2)}`,10,-12);
+    dir.show(Math.abs(p)>.3);dir.set([w,.5],[w-Math.sign(p)*.12,.5]);
+    calc.innerHTML=`pendiente ≈ (MSE(${f(w,3)} + h) − MSE(${f(w,3)} − h)) / 2h = <span class="hy">${f(p,4)}</span> &nbsp;→&nbsp; `+
+      (Math.abs(p)<.05?'<span class="hg">casi cero: estás en el fondo</span>':(p<0?'<span class="hg">negativa: mover w a la derecha</span>':'<span class="hr">positiva: te has pasado, mover w a la izquierda</span>'))}
+  sw.inp.oninput=()=>{cancelAnimationFrame(P._raf);sw.set(sw.v);draw(sw.v)};
+  const go=t=>{const a=W;tween(P,600,u=>{const w=a+u*(t-a);sw.set(w);draw(w)})};
+  step.onclick=()=>go(Math.max(-0.3,Math.min(1,W-0.02*slope(W))));rst.onclick=()=>go(0);
+  H('p',{class:'hint'},host,`La línea discontinua es el fondo de esta curva (w = ${f(wmin,4)}). Prueba a empezar en w = 0.7: la pendiente sale positiva.`);
+  draw(0);
+})();
+
+/* ================= 6: el gradiente en el mapa ================= */
+(function(){
+  const host=document.getElementById('w6');
+  const bar=H('div',{class:'bar'},host);
+  const P=mapPlot(host,{w:680,h:380});
+  const field=P.g();P.svg.insertBefore(field,P.gTop);
+  // −gradiente en píxeles, normalizado a una longitud fija en pantalla
+  const tip=(w,b,len)=>{const [gw,gb]=grad(w,b),px=-gw*P.sx,py=-gb*P.sy,L=Math.hypot(px,py)||1;return [w+px/L*len/P.sx,b+py/L*len/P.sy]};
+  for(let i=0;i<12;i++)for(let j=0;j<8;j++){const w=-0.25+i*1.2/11,b=-1.45+j*2.7/7;const a=P.arrow(field,'#fff',1.3);a.el.style.opacity=.7;a.set([w,b],tip(w,b,16))}
+  const big=P.arrow(P.gTop,C.red,3.5),pt=P.dot(P.gTop,[0,0],6,'#fff',{stroke:'#111','stroke-width':2});
+  const calc=H('div',{class:'calc'},host);
+  function set([w,b]){P.setDot(pt,[w,b]);big.set([w,b],tip(w,b,55));const g=grad(w,b),nm=numgrad(w,b);
+    calc.innerHTML=`en (w, b) = (${f(w,3)}, ${f(b,3)})<br>fórmula: (<span class="hy">${g[0].toFixed(6)}</span>, <span class="hy">${g[1].toFixed(6)}</span>) &nbsp;·&nbsp; numérico: (${nm[0].toFixed(6)}, ${nm[1].toFixed(6)}) &nbsp;<span class="hg">coinciden</span>`}
+  [[0,0],[.7,.3],[.4,-.3]].forEach(p=>{H('button',{},bar,`(${p[0]}, ${p[1]})`).onclick=()=>set(p)});
+  drag(P,set);set([0,0]);
+  H('p',{class:'hint'},host,'La flecha roja es −gradiente en el punto blanco: la dirección en la que el error baja más rápido. Solo se dibuja su dirección, no su tamaño.');
+})();
+
+/* ================= 7a: el bucle, iteración a iteración ================= */
+(function(){
+  const host=document.getElementById('w7a');
+  const msg=H('div',{class:'msg'},host);
+  const P=dataPlot(host);P.addRes();
+  const ghost=P.line(P.gTop,[0,0],[1,0],{stroke:C.gray,'stroke-width':2,'stroke-dasharray':'6 5'});P.gTop.insertBefore(ghost,P.ln);
+  const calc=H('div',{class:'calc'},host);
+  const N=6;let last=[0,0];
+  const sp=stepper(host,N,st=>{
+    const [w,b,e]=HIST[st],from=last.slice();last=[w,b];
+    tween(P,700,u=>{const ww=from[0]+u*(w-from[0]),bb=from[1]+u*(b-from[1]);P.setRecta(ww,bb);P.setRes(ww,bb)});
+    if(st===0){ghost.style.display='none';msg.innerHTML='Empezamos con la recta plana: <i>w</i> = 0, <i>b</i> = 0.';
+      calc.innerHTML=`w = 0, b = 0 → MSE = <span class="hr">${f(e,4)}</span>`;return}
+    const [pw,pb,pe]=HIST[st-1],[gw,gb]=grad(pw,pb);ghost.style.display='';P.setLine(ghost,[P.x0,pw*P.x0+pb],[P.x1,pw*P.x1+pb]);
+    msg.innerHTML=`Iteración <b>${st}</b>: gradiente en el punto actual y un paso en contra (la discontinua es la recta de antes).`;
+    calc.innerHTML=`gradiente en (${f(pw)}, ${f(pb)}) = (${f(gw)}, ${f(gb)})<br>w ← ${f(pw)} − 0.02 · (${f(gw)}) = <span class="hg">${f(w)}</span><br>`+
+      `b ← ${f(pb)} − 0.02 · (${f(gb)}) = <span class="hg">${f(b)}</span><br>MSE: ${f(pe,5)} → <span class="hg">${f(e,5)}</span>`;
+  },{interval:1600});sp.draw();
+})();
+
+/* ================= 7b: curva de error, eje normal o logarítmico ================= */
+(function(){
+  const host=document.getElementById('w7b');
+  const bar=H('div',{class:'bar'},host);const bL=H('button',{},bar,'Eje normal'),bG=H('button',{},bar,'Eje logarítmico');
+  const box=H('div',{},host);
+  function build(log){box.innerHTML='';bL.classList.toggle('on',!log);bG.classList.toggle('on',log);
+    const P=new Plot(box,{x:log?[0,Math.log10(2000)]:[0,2000],y:[0,log?.25:2.1],h:300,free:true,edge:true,ticks:false,gx:log?1:250,gy:log?.05:.5,xl:'iteración →',yl:'↑ MSE',label:'Curva de error'});
+    ticks(P,log?[[0,'1'],[1,'10'],[2,'100'],[3,'1000']]:[0,500,1000,1500,2000].map(v=>[v,String(v)]),(log?[0,.05,.1,.15,.2,.25]:[0,.5,1,1.5,2]).map(v=>[v,f(v)]));
+    const g=clip(P,P.g());
+    const pts=log?HIST.slice(1).map((h,i)=>[Math.log10(i+1),h[2]]):HIST.map((h,i)=>[i,h[2]]);
+    const pl=pline(P,g,pts.slice(0,1),{stroke:C.blue,'stroke-width':2.5});
+    tween(P,1400,u=>setPline(P,pl,pts.slice(0,Math.max(2,Math.round(u*pts.length)))))}
+  bL.onclick=()=>build(false);bG.onclick=()=>build(true);build(false);
+  H('p',{class:'hint'},host,'Con el eje logarítmico cada marca es 10 veces la anterior: se ven a la vez las primeras iteraciones y las últimas.');
+})();
+
+/* ================= 8: las tres vistas sincronizadas ================= */
+(function(){
+  const host=document.getElementById('w8');
+  const tr=H('div',{class:'three'},host);const c1=H('div',{},tr),c2=H('div',{},tr),c3=H('div',{},tr);
+  const D=dataPlot(c1,{w:360,h:330,free:true,pad:28,r:2.6,xl:'largo (cm) →',yl:'↑ ancho'});const k1=H('div',{class:'cap'},c1);
+  const M=mapPlot(c2,{w:360,h:330,pad:28,gx:.2,gy:.5,xl:'w →',yl:'↑ b',small:true,n:120});const k2=H('div',{class:'cap'},c2);
+  const path=pline(M,M.gTop,[[0,0]],{stroke:C.red,'stroke-width':2});const pt=M.dot(M.gTop,[0,0],5,C.red,{stroke:'#fff','stroke-width':1.5});
+  const L=new Plot(c3,{x:[0,Math.log10(2000)],y:[0,.9],h:330,w:360,pad:28,free:true,edge:true,ticks:false,gx:1,gy:.2,xl:'iteración →',yl:'↑ MSE',label:'Error'});
+  ticks(L,[[0,'1'],[1,'10'],[2,'100'],[3,'1000']],[0,.2,.4,.6,.8].map(v=>[v,f(v)]));
+  const gl=clip(L,L.g());const all=HIST.slice(1).map((h,i)=>[Math.log10(i+1),h[2]]);
+  pline(L,gl,all,{stroke:C.gray,'stroke-width':1.5,opacity:.5});const prog=pline(L,gl,[all[0]],{stroke:C.blue,'stroke-width':2.5});const lp=L.dot(gl,all[0],5,C.blue);
+  const k3=H('div',{class:'cap'},c3);
+  const FR=[0,...new Set(Array.from({length:120},(_,i)=>Math.round(Math.pow(2000,i/119))))];
+  const sl=slider(host,'fotograma',0,FR.length-1,1,0,k=>'it. '+FR[k]);
+  const bar=H('div',{class:'bar'},host);const play=H('button',{},bar,'▶ Reproducir');
+  function draw(k){const it=FR[k],[w,b,e]=HIST[it];D.setRecta(w,b);setPline(M,path,HIST.slice(0,it+1));M.setDot(pt,[w,b]);
+    setPline(L,prog,it>0?all.slice(0,it):[all[0]]);lp.style.display=it>0?'':'none';if(it>0)L.setDot(lp,all[it-1]);
+    k1.textContent=`iteración ${it}`;k2.textContent=`w = ${f(w,3)}  b = ${f(b,3)}`;k3.textContent=`MSE = ${f(e,4)}`}
+  let timer=null;const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  sl.inp.oninput=()=>{stop();sl.set(sl.v);draw(sl.v)};
+  play.onclick=()=>{if(timer){stop();return}let k=sl.v>=FR.length-1?0:sl.v;play.textContent='❚❚ Pausa';
+    timer=setInterval(()=>{sl.set(k);draw(k);if(++k>=FR.length)stop()},110)};
+  draw(0);
+})();
+
+/* ================= 9: la tasa de aprendizaje ================= */
+(function(){
+  const host=document.getElementById('w9');
+  const pr=H('div',{class:'pair'},host);const a=H('div',{},pr),b=H('div',{},pr);
+  const M=mapPlot(a,{w:440,h:400,gx:.2});H('div',{class:'cap'},a,'60 pasos sobre el mapa');
+  const path=pline(M,M.gTop,[[0,0]],{stroke:C.red,'stroke-width':1.6});const dots=M.g();clip(M,dots);
+  const L=new Plot(b,{x:[0,60],y:[-1.5,3],h:400,w:440,free:true,edge:true,ticks:false,gx:10,gy:1,xl:'iteración →',yl:'↑ MSE (escala log)',label:'Error en 60 pasos'});
+  ticks(L,[0,10,20,30,40,50,60].map(v=>[v,String(v)]),[[-1,'0.1'],[0,'1'],[1,'10'],[2,'100'],[3,'1000']]);
+  const gl=clip(L,L.g());const cur=pline(L,gl,[[0,0]],{stroke:C.blue,'stroke-width':2.5});
+  L.line(gl,[0,Math.log10(E_OPT)],[60,Math.log10(E_OPT)],{stroke:C.green,'stroke-dasharray':'5 4'});
+  H('div',{class:'cap'},b,'línea verde: el error mínimo');
+  const se=slider(host,'η',.002,.06,.002,.02,v=>f(v,3));
+  const calc=H('div',{class:'calc'},host);
+  function draw(eta){const h=train(MC,eta,60);setPline(M,path,h);dots.innerHTML='';h.forEach(p=>{if(isFinite(p[0]))M.dot(dots,lim(M,p),2.4,C.red)});
+    setPline(L,cur,h.map((p,i)=>[i,isFinite(p[2])?Math.log10(p[2]):9]));const e=h[60][2];
+    const what=eta<ETA_MAX/2?'<span class="hg">baja sin pasarse</span>':(eta<ETA_MAX?'<span class="hy">hace zigzag de una pared a otra, pero llega</span>':'<span class="hr">cada salto lo deja más arriba: explota</span>');
+    calc.innerHTML=`η = ${f(eta,3)} → ${what} &nbsp;·&nbsp; MSE tras 60 pasos: <b>${fe(e)}</b>`}
+  se.inp.oninput=()=>{se.set(se.v);draw(se.v)};draw(.02);
+  H('p',{class:'hint'},host,`El zigzag empieza en η ≈ ${f(ETA_MAX/2,4)} y explota a partir de η ≈ ${f(ETA_MAX,4)} (justo entre 0.054 y 0.056).`);
+})();
+
+/* ================= 10: la fórmula cerrada ================= */
+(function(){
+  const host=document.getElementById('w10');
+  const msg=H('div',{class:'msg'},host);
+  const P=dataPlot(host);P.ln.style.opacity=0;
+  const cross=P.g();const hx=P.line(cross,[xm,P.y0],[xm,P.y1],{stroke:C.orange,'stroke-dasharray':'5 4'}),hy=P.line(cross,[P.x0,ym],[P.x1,ym],{stroke:C.orange,'stroke-dasharray':'5 4'});
+  const mp=P.dot(cross,[xm,ym],7,C.orange,{stroke:'#fff','stroke-width':1.5});const ml=P.label(cross,C.orange);ml.set([xm,ym],'(x̄, ȳ)',10,-10);
+  const calc=H('div',{class:'calc'},host);
+  const S1=xP.reduce((s,v,i)=>s+(v-xm)*(yP[i]-ym),0),S2=xP.reduce((s,v)=>s+(v-xm)**2,0),[wg,bg]=HIST[2000];
+  const T=[['Las medias: el punto medio de todas las flores.',`x̄ = ${f(xm,4)} &nbsp;&nbsp; ȳ = ${f(ym,4)}`],
+    ['Arriba de la fórmula: cuánto se mueven x e y juntas.',`Σ (xᵢ − x̄)(yᵢ − ȳ) = <span class="hy">${f(S1,4)}</span>`],
+    ['Abajo: cuánto se mueve x sola.',`Σ (xᵢ − x̄)² = <span class="hb">${f(S2,4)}</span>`],
+    ['La pendiente, de un solo cálculo.',`w = ${f(S1,4)} / ${f(S2,4)} = <span class="hg">${W_OPT.toFixed(6)}</span>`],
+    ['El corte: la recta tiene que pasar por el punto medio.',`b = ${f(ym,4)} − ${f(W_OPT,6)} · ${f(xm,4)} = <span class="hg">${B_OPT.toFixed(6)}</span>`],
+    ['Y nuestro bucle, tras 2000 iteraciones, da lo mismo:',`descenso: w = ${wg.toFixed(6)}, b = ${bg.toFixed(6)} &nbsp;·&nbsp; fórmula: w = ${W_OPT.toFixed(6)}, b = ${B_OPT.toFixed(6)}`]];
+  const sp=stepper(host,T.length,st=>{cancelAnimationFrame(P._raf);msg.innerHTML=T[st][0];calc.innerHTML=T[st][1];
+    if(st===3)tween(P,900,u=>{P.ln.style.opacity=1;const w=u*W_OPT;P.setRecta(w,ym-w*xm)});else if(st>3){P.ln.style.opacity=1;P.setRecta(W_OPT,B_OPT)}else P.ln.style.opacity=0},{interval:1900});
+  sp.draw();
+})();
+
+/* ================= 11a: cm, mm y estandarizada ================= */
+(function(){
+  const host=document.getElementById('w11a');
+  const R=[{n:'cm, η = 0.02',M:MC,eta:.02,c:C.blue},{n:'mm, η = 0.02',M:MM,eta:.02,c:C.red},{n:'estandarizada, η = 0.1',M:MS,eta:.1,c:C.green}].map(r=>Object.assign(r,{h:train(r.M,r.eta,100)}));
+  const P=new Plot(host,{x:[0,100],y:[-1.6,2],h:320,free:true,edge:true,ticks:false,gx:10,gy:1,xl:'iteración →',yl:'↑ MSE (escala log)',label:'Curvas de error con tres escalas'});
+  ticks(P,[0,20,40,60,80,100].map(v=>[v,String(v)]),[[-1,'0.1'],[0,'1'],[1,'10'],[2,'100']]);
+  const g=clip(P,P.g());P.line(g,[0,Math.log10(E_OPT)],[100,Math.log10(E_OPT)],{stroke:C.gray,'stroke-dasharray':'5 4'});
+  const pls=R.map(r=>pline(P,g,[[0,Math.log10(r.h[0][2])]],{stroke:r.c,'stroke-width':2.5}));
+  const leg=H('div',{class:'legend'},host);R.forEach(r=>H('span',{},leg,`<i class="sw" style="background:${r.c}"></i>${r.n}`));H('span',{},leg,'- - - error mínimo 0.0421');
+  const bar=H('div',{class:'bar'},host);const play=H('button',{},bar,'▶ Reproducir');
+  const run=()=>tween(P,2400,u=>{const k=Math.max(1,Math.round(u*100));R.forEach((r,i)=>setPline(P,pls[i],r.h.slice(0,k+1).map((p,j)=>[j,isFinite(p[2])?Math.log10(p[2]):9])))},null);
+  play.onclick=run;
+  const its=[0,1,2,5,10,50,100];
+  H('div',{class:'scroll'},host,`<table class="sum"><tr><th>iteración</th>${its.map(i=>`<th>${i}</th>`).join('')}</tr>`+
+    R.map(r=>`<tr><td><b style="color:${r.c}">${r.n}</b></td>${its.map(i=>`<td>${fe(r.h[i][2])}</td>`).join('')}</tr>`).join('')+'</table>');
+  run();
+})();
+
+/* ================= 11b: valle estrecho vs cuenco redondo ================= */
+(function(){
+  const host=document.getElementById('w11b');
+  const pr=H('div',{class:'pair'},host);
+  [{M:MC,w:W_OPT,b:B_OPT,eta:.02,its:2000,t:'x en cm: valle estrecho'},{M:MS,w:W_OPT*xsd,b:ym,eta:.1,its:100,t:'x estandarizada: cuenco redondo'}].forEach(o=>{
+    const c=H('div',{},pr);
+    const P=new Plot(c,{x:[-1.5,1.5],y:[-1.5,1.5],w:420,gx:.5,edge:true,xl:'w − w* →',yl:'↑ b − b*',label:o.t});
+    heat(P,(dw,db)=>mseM(o.M,o.w+dw,o.b+db),{cut:2,lo:.04,hi:2,levels:14});
+    const g=clip(P,P.g());const h=train(o.M,o.eta,o.its);const rel=h.map(p=>[p[0]-o.w,p[1]-o.b]);
+    pline(P,g,rel,{stroke:C.red,'stroke-width':2});P.dot(g,rel[0],5,'#fff',{stroke:'#111','stroke-width':2});star(P,g,[0,0],8);
+    const k=h.findIndex(p=>p[2]-E_OPT<5e-7);
+    H('div',{class:'cap'},c,`${o.t} · η = ${o.eta} · ${k} iteraciones hasta el fondo`)});
+  H('p',{class:'hint'},host,'El punto blanco es la salida (w = 0, b = 0). La zona blanca es donde el error pasa de 2. "Hasta el fondo" = hasta que el MSE ya no cambia en el sexto decimal (0.042067).');
+})();
+</script>
+</body>
+</html>
