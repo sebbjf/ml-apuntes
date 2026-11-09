@@ -13,7 +13,7 @@
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--serif:ui-serif,"New York",Georgia,"Times New Roman",serif;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#000000;--card:#1c1c1e;--ink:#f5f5f7;--muted:#98989d;--line:#38383a;--grid:#2c2c2e;--axis:#636366;--soft:rgba(118,118,128,.24);
+  --bg:#1c1c1e;--card:#2a2a2d;--ink:#f5f5f7;--muted:#98989d;--line:#3d3d40;--grid:#3a3a3d;--axis:#636366;--soft:rgba(118,118,128,.24);
   --hl:#4d3d00;--hlink:#ffd60a;--hl2:#0a2e5c;--hl2ink:#a8d0ff;--ok:#0f3d1c;--okink:#7ee3a0;--bad:#4d1210;--badink:#ff9a92;
   --accent:#0a84ff;--code:rgba(118,118,128,.18);--red:#ff6961;--green:#30d158;
 }}
@@ -112,6 +112,48 @@ table.sum th{color:var(--muted);font-weight:500;font-size:13px}
 footer{color:var(--muted);font-size:13px;margin-top:64px}
 .back{margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:17px;text-decoration:none;color:var(--accent);min-height:44px}
 .back:hover{text-decoration:underline}
+/* ===== Minimalismo ===== */
+:root{
+  --sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --serif:"Iowan Old Style","Charter","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:"SF Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);--t:.3s;--ring:rgba(128,128,128,.16)}
+body{font-family:var(--sans);text-rendering:optimizeLegibility}
+main>p,.idea,.big,.sub,.leg dd,table.sum td{font-family:var(--sans)}
+main>p,.idea{font-size:17px;line-height:1.6}
+.sub{font-size:19px}
+h1{font-weight:650;letter-spacing:-.03em}
+h2{font-weight:650;margin-top:88px;padding-top:0;border:0}
+h3{font-weight:600}
+.big{background:none;border:0;box-shadow:none;border-left:2px solid var(--accent);border-radius:0;padding:4px 0 4px 20px;font-size:22px;margin:28px 0}
+.idea{background:none;border:0;box-shadow:none;border-left:2px solid var(--line);border-radius:0;padding:2px 0 2px 16px}
+.idea b{color:var(--ink)}
+.w{background:var(--card);border:0;box-shadow:none;border-radius:16px}
+.f,pre,table.sum,.leg{box-shadow:none;background:var(--card)}
+.f{background:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0}
+.f:has(+ .leg){border-bottom:0;margin-bottom:0}
+.leg{background:none;border-top:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 4px}
+code,pre,.calc,table.comp,.cell,.list,table.heat,.tp .c,.sl output,.mono{font-family:var(--mono)}
+.calc{border:0}
+nav.toc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:12px -18px 0;padding:8px 18px;gap:2px;background:color-mix(in srgb,var(--bg) 85%,transparent);border-bottom:1px solid var(--line)}
+nav.toc a{background:none;box-shadow:none;color:var(--muted);padding:4px 10px;transition:color var(--t) var(--ease),background var(--t) var(--ease)}
+nav.toc a:hover{background:var(--soft);color:var(--ink)}
+h2{scroll-margin-top:64px}
+button,select{font-weight:500;transition:background var(--t) var(--ease),color var(--t) var(--ease),transform .2s var(--ease)}
+button:hover{filter:none;background:var(--line)}
+button.on:hover{background:var(--accent);filter:brightness(1.08)}
+button.on{box-shadow:none}
+.cell,table.comp td,table.heat td,.tp .c{transition-duration:.45s;transition-timing-function:var(--ease)}
+.cell.hi,.cell.hi2{transform:scale(1.04)}
+.tp .c{transition:left .8s var(--ease),top .8s var(--ease),background .4s,color .4s}
+.tp .h{transition:left .8s var(--ease),top .8s var(--ease),opacity .4s var(--ease)}
+.msg{transition:opacity .25s var(--ease)}
+table.sum tbody tr:hover{background:none}
+table.sum{border-radius:0;background:none;border-top:1px solid var(--line)}
+table.sum th,table.sum td{padding:12px 10px}
+footer{border-top:0;padding-top:0}
+@media (max-width:560px){main{padding-left:16px;padding-right:16px}h2{font-size:24px;margin-top:64px}.big{font-size:19px;padding-left:16px}nav.toc{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}}
+@media (prefers-reduced-motion:reduce){.tp .c,.tp .h{transition:none!important}}
 </style>
 </head>
 <body>
@@ -405,8 +447,8 @@ const SPC=[C.blue,C.orange,C.green];
 function E(tag,attrs,parent){const e=document.createElementNS(NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
 function H(tag,attrs,parent,html){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e}
 function f(x,d=4){const r=+(+x).toFixed(d);return (Object.is(r,-0)?0:r).toString()}
-const ease=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
-function tween(o,dur,fn,done){cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
+const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;const RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+function tween(o,dur,fn,done){if(RM)dur=1;cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
 const dot=(a,b)=>a.reduce((s,ai,i)=>s+ai*b[i],0);
 const norm=a=>Math.sqrt(dot(a,a));
 const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];

@@ -7,7 +7,7 @@
 <style>
 :root{--bg:#f2f2f7;--card:#fff;--ink:#1d1d1f;--muted:#6e6e73;--soft:rgba(118,118,128,.12);--accent:#007aff;--grid:#e5e5ea;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif}
-@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f5f5f7;--muted:#98989d;--soft:rgba(118,118,128,.24);--accent:#0a84ff;--grid:#2c2c2e}}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1e;--card:#2a2a2d;--ink:#f5f5f7;--muted:#98989d;--soft:rgba(118,118,128,.24);--accent:#0a84ff;--grid:#3a3a3d}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
 main{max-width:900px;margin:0 auto;padding:64px 18px 96px}
@@ -29,6 +29,22 @@ a.card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .go{color:var(--accent);font-weight:600;font-size:17px;margin-top:12px;display:inline-block}
 @media (prefers-reduced-motion:reduce){a.card,a.card:hover,a.card:active{transition:none;transform:none}}
 @media (max-width:560px){a.card{grid-template-columns:1fr}.thumb{width:100%;height:110px}}
+h1{background:linear-gradient(135deg,var(--ink) 30%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+a.card{border:1px solid rgba(128,128,128,.14);margin-top:14px}
+a.card:hover{box-shadow:0 14px 36px rgba(0,0,0,.12);border-color:var(--accent)}
+a.card:hover .go{text-decoration:underline}
+.thumb{box-shadow:inset 0 0 0 1px rgba(128,128,128,.14)}
+::selection{background:rgba(0,122,255,.2)}
+:root{--sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--serif:"Iowan Old Style","Charter","Palatino Linotype",Palatino,Georgia,serif;--ease:cubic-bezier(.22,1,.36,1)}
+body{font-family:var(--sans)}
+h1{font-weight:650;letter-spacing:-.03em;background:none;color:var(--ink)}
+.sub,.card p{font-family:var(--sans)}
+a.card{background:none;border:0;border-top:1px solid var(--soft);border-radius:0;box-shadow:none;margin-top:0;padding:28px 0;transition:opacity .3s var(--ease)}
+a.card:hover{transform:none;box-shadow:none;opacity:.8}
+a.card:active{transform:none}
+a.card .go{transition:transform .3s var(--ease)}
+a.card:hover .go{text-decoration:none;transform:translateX(4px)}
+.thumb{box-shadow:none}
 </style>
 </head>
 <body>
@@ -55,7 +71,7 @@ a.card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
   </div>
 </a>
 
-<a class="card" href="como_aprende_un_modelo.html" style="margin-top:14px">
+<a class="card" href="como_aprende_un_modelo.html">
   <svg class="thumb" viewBox="0 0 120 120" aria-hidden="true">
     <g fill="none" stroke-width="2" transform="rotate(-55 72 72)">
       <ellipse cx="72" cy="72" rx="62" ry="22" stroke="#21918c" opacity=".55"/>
