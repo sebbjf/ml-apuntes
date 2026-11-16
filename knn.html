@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>k-NN: los k vecinos más cercanos — apuntes animados</title>
+<style>
+:root{
+  --bg:#f2f2f7;--card:#ffffff;--ink:#1d1d1f;--muted:#6e6e73;--line:#d8d8dc;--grid:#e5e5ea;--axis:#aeaeb2;--soft:rgba(118,118,128,.12);
+  --hl:#ffefb0;--hlink:#6b4e00;--hl2:#d6e8ff;--hl2ink:#0040dd;--ok:#d3f5dc;--okink:#1b6e31;--bad:#ffe0de;--badink:#b0001a;
+  --accent:#007aff;--code:rgba(118,118,128,.1);--red:#d70015;--green:#248a3d;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--serif:ui-serif,"New York",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e;--card:#2a2a2d;--ink:#f5f5f7;--muted:#98989d;--line:#3d3d40;--grid:#3a3a3d;--axis:#636366;--soft:rgba(118,118,128,.24);
+  --hl:#4d3d00;--hlink:#ffd60a;--hl2:#0a2e5c;--hl2ink:#a8d0ff;--ok:#0f3d1c;--okink:#7ee3a0;--bad:#4d1210;--badink:#ff9a92;
+  --accent:#0a84ff;--code:rgba(118,118,128,.18);--red:#ff6961;--green:#30d158;
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{transition:none!important}}
+main{max-width:900px;margin:0 auto;padding:20px 18px 96px}
+h1{font-size:clamp(30px,5vw,40px);line-height:1.12;margin:14px 0 8px;font-weight:700;letter-spacing:-.022em}
+h2{font-size:28px;line-height:1.2;margin:72px 0 12px;font-weight:700;letter-spacing:-.018em;scroll-margin-top:16px}
+h3{font-size:20px;margin:30px 0 6px;font-weight:600;letter-spacing:-.01em}
+p{margin:8px 0}
+.sub{color:var(--muted);font-size:19px;margin:0 0 22px}
+.big{font-size:21px;line-height:1.4;letter-spacing:-.012em;padding:20px 22px;border-radius:18px;background:var(--card);margin:18px 0}
+.idea{background:var(--card);border-radius:14px;padding:12px 16px;margin:14px 0}
+.idea b{color:var(--accent)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+nav.toc a{font-size:15px;text-decoration:none;color:var(--accent);background:var(--card);padding:6px 14px;border-radius:999px;min-height:32px;display:inline-flex;align-items:center}
+nav.toc a:hover{background:var(--hl2)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--code);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);padding:14px 16px;border-radius:14px;overflow:auto;font-size:14px;line-height:1.55;margin:12px 0}
+.f{font-family:var(--serif);font-size:21px;text-align:center;margin:14px 0;padding:14px 12px;background:var(--card);border-radius:14px}
+.f:has(+ .leg){margin-bottom:0;border-radius:14px 14px 0 0}
+.w{background:var(--card);border-radius:20px;padding:16px 18px;margin:18px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.w .hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+svg.plot{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+svg.plot text{fill:var(--ink);font:13px var(--sans)}
+svg.plot .tick{fill:var(--muted);font-size:11px}
+svg.plot .gr{stroke:var(--grid);stroke-width:1}
+svg.plot .ax{stroke:var(--axis);stroke-width:1.2}
+svg.plot .lbl{font-weight:600;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+button,select{font:inherit;font-size:15px;font-weight:500;color:var(--accent);background:var(--soft);border:0;border-radius:999px;padding:6px 16px;min-height:34px;cursor:pointer;transition:filter .15s,transform .1s}
+button:hover{filter:brightness(.95)}
+button:active{transform:scale(.97)}
+button.on{background:var(--accent);color:#fff}
+select{color:var(--ink)}
+input[type=range]{accent-color:var(--accent);min-height:28px}
+@media (pointer:coarse){button,select{min-height:44px}}
+.dots{font-size:13px;color:var(--muted);margin-left:4px}
+.msg{min-height:26px;font-size:15px;margin:6px 0}
+.calc{font-family:var(--mono);font-size:14.5px;line-height:1.9;background:var(--soft);border-radius:12px;padding:8px 12px;margin:8px 0;min-height:44px;overflow-x:auto;white-space:nowrap}
+.sl{display:grid;grid-template-columns:auto 1fr 64px;gap:4px 12px;align-items:center;font-size:15px;margin:8px 0}
+.sl input{width:100%}
+.sl output{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.hy{background:var(--hl);color:var(--hlink);border-radius:4px;padding:0 3px}
+.hb{background:var(--hl2);color:var(--hl2ink);border-radius:4px;padding:0 3px}
+.hg{background:var(--ok);color:var(--okink);border-radius:4px;padding:0 3px}
+.hr{background:var(--bad);color:var(--badink);border-radius:4px;padding:0 3px}
+table.comp{border-collapse:separate;border-spacing:4px;font-family:ui-monospace,Menlo,monospace;font-size:14px;margin:4px 0}
+table.comp th{font-family:var(--sans);font-weight:500;color:var(--muted);font-size:13px;text-align:right;padding:2px 8px}
+table.comp thead th{text-align:center}
+table.comp td{min-width:82px;text-align:center;padding:5px 8px;border-radius:6px;background:var(--soft);transition:background .3s,color .3s}
+table.comp td.hi{background:var(--hl);color:var(--hlink)}
+table.comp td.res{background:var(--ok);color:var(--okink)}
+.scroll{overflow-x:auto}
+.mx{display:inline-grid;gap:4px;padding:5px 8px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:7px;vertical-align:middle}
+.cell{min-width:50px;height:32px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:14.5px;border-radius:6px;padding:0 6px;transition:background .3s,color .3s,transform .3s}
+.cell.row{background:var(--soft)}
+.cell.hi{background:var(--hl);color:var(--hlink);transform:scale(1.08)}
+.cell.hi2{background:var(--hl2);color:var(--hl2ink);transform:scale(1.08)}
+.cell.done{background:var(--ok);color:var(--okink)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}
+.eq .op{font-size:20px}
+.eq .nm{font-size:13px;color:var(--muted);text-align:center;margin-top:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.list{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.list div{padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px}
+.list div.cur{background:var(--soft);font-weight:600}
+.sw{width:11px;height:11px;border-radius:50%;flex:none}
+.tp{position:relative;margin:10px 0}
+.tp .c{position:absolute;width:74px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;transition:left .9s cubic-bezier(.6,0,.3,1),top .9s cubic-bezier(.6,0,.3,1)}
+.tp .h{position:absolute;font-size:12px;white-space:nowrap;color:var(--muted);display:flex;align-items:center;transition:left .9s,top .9s,opacity .4s}
+table.heat{border-collapse:separate;border-spacing:3px;font-family:ui-monospace,monospace;font-size:13.5px}
+table.heat td{width:86px;height:46px;text-align:center;border-radius:6px;cursor:pointer;transition:outline .2s}
+table.heat td.sel{outline:3px solid #f59e0b}
+table.heat th{font-family:var(--sans);font-weight:500;font-size:12px;color:var(--muted);padding:2px 6px}
+table.sum{border-collapse:collapse;width:100%;font-size:15px;margin:12px 0;background:var(--card);border-radius:14px;overflow:hidden}
+table.sum th,table.sum td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+table.sum th{color:var(--muted);font-weight:500;font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.err{color:var(--red);font-weight:600}
+.good{color:var(--green);font-weight:600}
+.f sub,.f sup{font-size:.65em}
+.f .sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 3px}
+.f .sum b{font-size:1.6em;font-weight:400}
+.f .sum small{font-size:.6em}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:0 0 16px;padding:12px 16px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 14px 14px}
+.leg dt{font-family:var(--serif);text-align:right;white-space:nowrap}
+.leg dd{margin:0;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;margin-top:64px}
+.back{margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:17px;text-decoration:none;color:var(--accent);min-height:44px}
+.back:hover{text-decoration:underline}
+/* ===== Minimalismo ===== */
+:root{
+  --sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --serif:"Iowan Old Style","Charter","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:"SF Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);--t:.3s;--ring:rgba(128,128,128,.16)}
+body{font-family:var(--sans);text-rendering:optimizeLegibility}
+main>p,.idea,.big,.sub,.leg dd,table.sum td{font-family:var(--sans)}
+main>p,.idea{font-size:17px;line-height:1.6}
+.sub{font-size:19px}
+h1{font-weight:650;letter-spacing:-.03em}
+h2{font-weight:650;margin-top:88px;padding-top:0;border:0}
+h3{font-weight:600}
+.big{background:none;border:0;box-shadow:none;border-left:2px solid var(--accent);border-radius:0;padding:4px 0 4px 20px;font-size:22px;margin:28px 0}
+.idea{background:none;border:0;box-shadow:none;border-left:2px solid var(--line);border-radius:0;padding:2px 0 2px 16px}
+.idea b{color:var(--ink)}
+.w{background:var(--card);border:0;box-shadow:none;border-radius:16px}
+.f,pre,table.sum,.leg{box-shadow:none;background:var(--card)}
+.f{background:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0}
+.f:has(+ .leg){border-bottom:0;margin-bottom:0}
+.leg{background:none;border-top:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 4px}
+code,pre,.calc,table.comp,.cell,.list,table.heat,.tp .c,.sl output,.mono{font-family:var(--mono)}
+.calc{border:0}
+nav.toc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:12px -18px 0;padding:8px 18px;gap:2px;background:color-mix(in srgb,var(--bg) 85%,transparent);border-bottom:1px solid var(--line)}
+nav.toc a{background:none;box-shadow:none;color:var(--muted);padding:4px 10px;transition:color var(--t) var(--ease),background var(--t) var(--ease)}
+nav.toc a:hover{background:var(--soft);color:var(--ink)}
+h2{scroll-margin-top:64px}
+button,select{font-weight:500;transition:background var(--t) var(--ease),color var(--t) var(--ease),transform .2s var(--ease)}
+button:hover{filter:none;background:var(--line)}
+button.on:hover{background:var(--accent);filter:brightness(1.08)}
+button.on{box-shadow:none}
+.cell,table.comp td,table.heat td,.tp .c{transition-duration:.45s;transition-timing-function:var(--ease)}
+.cell.hi,.cell.hi2{transform:scale(1.04)}
+.tp .c{transition:left .8s var(--ease),top .8s var(--ease),background .4s,color .4s}
+.tp .h{transition:left .8s var(--ease),top .8s var(--ease),opacity .4s var(--ease)}
+.msg{transition:opacity .25s var(--ease)}
+table.sum tbody tr:hover{background:none}
+table.sum{border-radius:0;background:none;border-top:1px solid var(--line)}
+table.sum th,table.sum td{padding:12px 10px}
+footer{border-top:0;padding-top:0}
+@media (max-width:560px){main{padding-left:16px;padding-right:16px}h2{font-size:24px;margin-top:64px}.big{font-size:19px;padding-left:16px}nav.toc{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}}
+@media (prefers-reduced-motion:reduce){.tp .c,.tp .h{transition:none!important}}
+</style>
+<style>
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.chip{display:inline-block;font-family:var(--mono);font-size:13px;padding:2px 9px;border-radius:999px;background:var(--soft);margin:2px}
+.chip.on{background:var(--ok);color:var(--okink)}.chip.off{opacity:.45}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:14px;margin:8px 0}
+.bars i{display:block;height:16px;border-radius:5px;background:var(--accent);transition:width .5s var(--ease)}
+.bars span.n{font-family:var(--mono);font-size:13px;text-align:right}
+.bars label{white-space:nowrap}
+nav.toc a{white-space:nowrap}
+svg.plot rect.cellbg{shape-rendering:crispEdges}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Volver a los apuntes</a>
+
+<h1>k-NN: los k vecinos más cercanos</h1>
+<p class="sub">Apuntes directos y animados del cuaderno <i>ML_01 · El model dels k veïns més propers (k-NN)</i>. Todos los gráficos se mueven: arrastra, desliza o dale a <b>Reproducir</b>.</p>
+
+<div class="big">La frase que tienes que entender al final: <b>parecerse es estar cerca, y estar cerca se mide con una distancia. k-NN solo mide distancias y hace votar a los k más cercanos.</b></div>
+
+<nav class="toc">
+<a href="#s1">1 · El problema</a><a href="#s2">2 · Distancia</a><a href="#s3">3 · A mano</a><a href="#s4">4 · Contra sklearn</a><a href="#s5">5 · Por qué importa k</a><a href="#s6">6 · Las escalas</a><a href="#s7">7 · Práctica</a><a href="#res">Resumen</a>
+</nav>
+
+<p>Los datos son otra vez las <b>150 flores de Iris</b>: 3 especies, 4 medidas por flor (largo y ancho del sépalo y del pétalo, en cm). Las columnas se llaman <code>sepal_llarg</code>, <code>sepal_ample</code>, <code>petal_llarg</code>, <code>petal_ample</code>, como en el cuaderno.</p>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1">1 · El problema: una flor sin etiqueta</h2>
+<div class="idea"><b>Idea:</b> te dan una <b>flor nueva</b> con sus 4 medidas y no sabes de qué especie es. Miras qué flores conocidas se le <b>parecen más</b> y las haces <b>votar</b>. Todo el modelo se reduce a definir bien una palabra: <i>parecerse</i>.</div>
+<p>Para poder dibujarlo usamos solo 2 medidas (las del pétalo). <b>Arrastra el punto rojo</b> (la flor nueva): la línea te enseña cuál es la flor conocida más parecida y de qué especie es.</p>
+<div class="w" id="w1"></div>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2">2 · La matemática: parecerse = estar cerca</h2>
+<div class="idea"><b>Idea:</b> «estar cerca» se puede medir: es una <b>distancia</b>. Si dos flores tienen casi las mismas medidas, están cerca en el espacio de las medidas. k-NN no hace nada más que calcular distancias y mirar cuáles son las más pequeñas.</div>
+
+<h3>2.1 · Dos medidas: Pitágoras</h3>
+<p>Cada flor es un punto <i>(x, y)</i>. La distancia es la hipotenusa del triángulo cuyos catetos son las diferencias en cada eje.</p>
+<div class="f">d = √( (x<sub>1</sub> − x<sub>2</sub>)<sup>2</sup> + (y<sub>1</sub> − y<sub>2</sub>)<sup>2</sup> )</div>
+<dl class="leg">
+<dt>d</dt><dd>la distancia entre las dos flores, en cm</dd>
+<dt>x<sub>1</sub>, y<sub>1</sub></dt><dd>largo y ancho del pétalo de la primera flor</dd>
+<dt>x<sub>2</sub>, y<sub>2</sub></dt><dd>largo y ancho del pétalo de la segunda flor</dd>
+<dt>x<sub>1</sub> − x<sub>2</sub></dt><dd>el cateto horizontal: cuánto difieren en largo</dd>
+<dt>y<sub>1</sub> − y<sub>2</sub></dt><dd>el cateto vertical: cuánto difieren en ancho</dd>
+<dt>√</dt><dd>raíz cuadrada: deshace el «al cuadrado» y deja la longitud de la hipotenusa</dd>
+</dl>
+<p>Dale a <b>Reproducir</b>: la flor 0 (<code>setosa</code>) y la flor 50 (<code>versicolor</code>).</p>
+<div class="w" id="w2a"></div>
+
+<h3>2.2 · Cuatro medidas: la misma fórmula con más sumandos</h3>
+<div class="idea"><b>Idea:</b> no hace falta poder dibujar 4 dimensiones para calcular en ellas. El ordenador no dibuja nada: resta, eleva al cuadrado y suma. Le da igual que sean 4 columnas o 400.</div>
+<div class="f">d = √( <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (a<sub>i</sub> − b<sub>i</sub>)<sup>2</sup> )</div>
+<dl class="leg">
+<dt>a, b</dt><dd>las dos flores, cada una con sus <i>n</i> medidas (aquí <i>n</i> = 4)</dd>
+<dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>la medida número <i>i</i> de cada flor</dd>
+<dt>a<sub>i</sub> − b<sub>i</sub></dt><dd>cuánto difieren las dos flores en esa medida</dd>
+<dt>Σ</dt><dd>«suma todos»: desde <i>i</i> = 1 hasta <i>n</i></dd>
+</dl>
+<p>Las mismas dos flores, ahora con las 4 medidas. Fíjate qué columna aporta más a la suma: es la que más pesa para decidir quién está cerca de quién.</p>
+<div class="w" id="w2b"></div>
+<pre>a = X[0]; b = X[50]
+diferencies = a - b                       # → [-1.9  0.3 -3.3 -1.2]
+dist_4d = np.sqrt(np.sum(diferencies ** 2))   # → 4.003748 (con solo el pétalo salía 3.51)</pre>
+
+<h3>2.3 · No todas las distancias son la misma</h3>
+<div class="idea"><b>Idea:</b> la <b>euclidiana</b> va en línea recta (la hipotenusa). La de <b>Manhattan</b> va por la cuadrícula, como un taxi que no puede cruzar las manzanas: suma los bloques en cada dirección. Sale más grande y se asusta menos de una diferencia enorme en una sola columna.</div>
+<div class="f">d<sub>manhattan</sub> = <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> | a<sub>i</sub> − b<sub>i</sub> |</div>
+<dl class="leg">
+<dt>| · |</dt><dd>valor absoluto: quita el signo, solo importa cuánto difieren</dd>
+<dt>a<sub>i</sub>, b<sub>i</sub>, Σ, n</dt><dd>lo mismo que en la fórmula anterior</dd>
+</dl>
+<p><b>Arrastra la flor B</b> y compara las dos longitudes. Empieza en la flor 50: 3.30 + 1.20 = 4.50 por la cuadrícula contra 3.51 en línea recta.</p>
+<div class="w" id="w2c"></div>
+<pre>euclidiana = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5   # → 3.51
+manhattan  = abs(x1 - x2) + abs(y1 - y2)                # → 4.50</pre>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3">3 · Impleméntalo a mano</h2>
+<div class="idea"><b>Idea:</b> k-NN completo son dos pasos. <b>1)</b> Calcula la distancia de la flor nueva a <b>todas</b> las conocidas. <b>2)</b> Quédate con las <i>k</i> más cercanas y haz que <b>voten</b> por la especie más repetida. Sin librerías, solo Python y numpy.</div>
+<div class="f">ŷ(q) = especie más repetida entre { y<sub>j</sub> : j ∈ los k vecinos más cercanos de q }</div>
+<dl class="leg">
+<dt>q</dt><dd>la flor nueva que quieres clasificar</dd>
+<dt>ŷ(q)</dt><dd>la especie que predice el modelo para <i>q</i></dd>
+<dt>k</dt><dd>cuántas flores votan (lo eliges tú)</dd>
+<dt>y<sub>j</sub></dt><dd>la especie conocida de la flor de entrenamiento número <i>j</i></dd>
+<dt>j</dt><dd>el índice de una flor conocida; se usan solo las <i>k</i> con menor distancia a <i>q</i></dd>
+</dl>
+<pre>def distancia(a, b):
+    a = np.array(a, dtype=float); b = np.array(b, dtype=float)
+    return np.sqrt(np.sum((a - b) ** 2))
+
+def classifica_knn(flor_nova, X, y, k):
+    dists = [distancia(flor_nova, x) for x in X]   # 1) distancia a todas
+    idx_veins = np.argsort(dists)[:k]              # 2) las k más cercanas...
+    valors, comptes = np.unique(y[idx_veins], return_counts=True)
+    return valors[np.argmax(comptes)]              #    ...y la más votada</pre>
+
+<h3>3.1 · Una flor inventada y varios k</h3>
+<p>La estrella es una flor <b>nueva e inventada</b> (4.85, 1.70) en la zona donde se mezclan <code>versicolor</code> y <code>virginica</code>. El círculo pasa por el <i>k</i>-ésimo vecino: las flores de dentro votan. <b>Mueve k</b> (o arrastra la estrella) y mira cómo el voto puede cambiar.</p>
+<div class="w" id="w3a"></div>
+<p>Con la estrella en su sitio: <b>k = 1</b> → versicolor (1 voto); <b>k = 5</b> → versicolor 1, virginica 4 → <b>virginica</b>; <b>k = 15</b> → versicolor 8, virginica 7 → <b>versicolor</b>. El mismo punto, tres valores de <i>k</i>, y el vencedor cambia.</p>
+
+<h3>3.2 · Probarlo con una flor real</h3>
+<p>Aparta la flor 75 de la tabla, haz como si no supieras su especie y pídele a la función que la adivine con <i>k</i> = 5. En el cuaderno: especie real <code>versicolor</code>, predicha <code>versicolor</code>. <b>Cambia de flor</b> con el deslizador (usa las 4 medidas).</p>
+<div class="w" id="w3b"></div>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4">4 · Comprueba que tu función coincide con scikit-learn</h2>
+<div class="idea"><b>Idea:</b> acertar una flor no demuestra nada. Hay que examinar con flores que el modelo <b>no ha visto nunca</b>. Por eso se reparten los datos en dos grupos <b>antes</b> de entrenar: <b>entrenamiento</b> (lo que el modelo puede mirar) y <b>examen</b> (lo que se guarda apartado). Si examinas con flores que ya conoce, no sabes si ha aprendido o si se las ha memorizado.</div>
+<pre>X_entrena, X_examen, y_entrena, y_examen = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y)
+# → 105 flores para enseñar, 45 para examinar</pre>
+<p><code>stratify=y</code> mantiene la proporción de especies en los dos grupos. Abajo, <b>puntos rellenos = entrenamiento</b> (105) y <b>aros = examen</b> (45); verde si acierta, rojo si falla. El reparto es el real del cuaderno (<code>random_state=42</code>). Cambia <i>k</i>.</p>
+<div class="w" id="w4"></div>
+<pre>model = KNeighborsClassifier(n_neighbors=5)
+model.fit(X_entrena, y_entrena)
+model.score(X_examen, y_examen)            # → 0.9778  (97.8 %)
+np.mean(prediccions_ma == prediccions_sklearn)   # → 1.0  (100 % de coincidencia)</pre>
+<p><b>El momento clave del cuaderno:</b> tu función y <code>KNeighborsClassifier</code> coinciden en el <b>100 %</b> de las 45 flores y las dos aciertan el <b>97.8 %</b>. La librería no hace magia: calcula distancias y vota, solo que más rápido. Si alguna vez discrepan, suele ser por cómo desempatan distancias iguales, no porque la idea sea distinta.</p>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5">5 · Por qué importa k</h2>
+<div class="idea"><b>Idea:</b> <i>k</i> es cuántas flores votan, y cambiarlo cambia el resultado. <b><i>k</i> pequeño</b> memoriza: se fía de un solo vecino, aunque sea un punto raro (ruido) → <span class="hr">sobreajuste</span>. <b><i>k</i> enorme</b> lo suaviza todo: mete vecinos de otras especies y pierde las fronteras → <span class="hb">infraajuste</span>. Hay que buscar un equilibrio, probando.</div>
+<h3>5.1 · La exactitud en el examen según k (Iris)</h3>
+<p>Para cada <i>k</i> de 1 a 25, la exactitud en las 45 flores de examen. <b>Haz clic</b> en la curva. Con solo 45 flores, <b>una</b> flor mal clasificada mueve la exactitud ~2.2 puntos, así que la curva sube y baja sin ser una «U» limpia. Los dos extremos, <i>k</i> = 1 y <i>k</i> = 25, quedan en <b>93.3 %</b>, por debajo de <i>k</i> = 5 (97.8 %).</p>
+<div class="w" id="w5a"></div>
+
+<h3>5.2 · Cómo se ve el sobreajuste: la frontera de decisión</h3>
+<p>Con Iris todo es demasiado limpio. Salimos un momento: <b>datos inventados</b> (mitades de luna con ruido, generadas aquí con otro azar que el cuaderno: son parecidas, no las mismas, y los porcentajes salen distintos). Cada celda se pinta del color que k-NN daría a ese punto del plano: es la <b>frontera de decisión</b>.</p>
+<ul>
+<li><b>k = 1</b>: la frontera hace <b>islas</b>. Acierta el 100 % del entrenamiento porque cada punto es su propio vecino más cercano: <b>memoriza</b>.</li>
+<li><b>k mediano</b>: frontera <b>suave</b>, sigue la forma y pasa de los puntos sueltos.</li>
+<li><b>k enorme</b>: la suaviza tanto que ya no sigue la forma: <b>infraajuste</b>.</li>
+</ul>
+<div class="w" id="w5b"></div>
+<p>Esto es el <b>sobreajuste</b>: va muy bien con lo que ya ha visto y peor con lo que no. Con <i>k</i> = 1 la curva azul toca el 100 % y <b>no significa nada</b>. Por eso se parte en entrenamiento y examen: si midieses con el entrenamiento elegirías siempre <i>k</i> = 1, justo el peor para datos nuevos. La exactitud que vale es la del examen.</p>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6">6 · La trampa de las escalas</h2>
+<div class="idea"><b>Idea:</b> la distancia es una resta y una suma de cuadrados. <b>No sabe qué son centímetros ni milímetros</b>: solo ve números. Si una columna viene en una escala mucho mayor (porque alguien la midió en una unidad 100 veces más fina), esa columna <b>domina</b> la distancia aunque no sea la más importante. <b>Trampa típica:</b> no escalar y no recibir ningún aviso.</div>
+<div class="f">z = ( x − μ ) / σ</div>
+<dl class="leg">
+<dt>x</dt><dd>el valor original de una columna</dd>
+<dt>μ</dt><dd>la media de esa columna en el entrenamiento</dd>
+<dt>σ</dt><dd>la desviación típica de esa columna (cuánto se separa de la media, por término medio)</dd>
+<dt>z</dt><dd>el valor estandarizado: columna con media 0 y desviación 1, comparable con las demás</dd>
+</dl>
+<p>Eso hace <code>StandardScaler</code>. Multiplica <code>sepal_ample</code> por un factor (×100 es como medirla en una unidad 100 veces más fina) y mira la exactitud con <i>k</i> = 5. Marca la casilla para estandarizar. En el cuaderno: <b>97.8 % → 66.7 %</b> sin escalar, <b>91.1 %</b> con <code>StandardScaler</code>.</p>
+<div class="w" id="w6a"></div>
+<pre>X_entrena_mal[:, 1] *= 100; X_examen_mal[:, 1] *= 100
+KNeighborsClassifier(5).fit(X_entrena_mal, y_entrena).score(X_examen_mal, y_examen)   # → 0.6667
+escalador = StandardScaler()
+X_ent_esc = escalador.fit_transform(X_entrena_mal)   # media y σ salen del ENTRENAMIENTO
+X_exa_esc = escalador.transform(X_examen_mal)        # el examen solo se transforma
+KNeighborsClassifier(5).fit(X_ent_esc, y_entrena).score(X_exa_esc, y_examen)           # → 0.9111</pre>
+<p>Fíjate: <b>no vuelve al 97.8 %</b>. Escalar no es deshacer el ×100, es poner <b>todas</b> las columnas en igualdad, y eso cambia un poco el peso de las que ya iban bien. Aun así repara casi todo el daño. <b>Regla práctica:</b> con modelos basados en distancias, si dudas, escala. Cuesta una línea; no hacerlo puede costar 30 puntos sin avisar.</p>
+
+<h3>El truco en un dibujo</h3>
+<p>Dos columnas, <code>petal_llarg</code> y <code>sepal_ample</code>×100, y una flor concreta (la estrella, una <code>virginica</code>, la flor 109). El óvalo discontinuo son <b>todos los puntos a la misma distancia que su vecino más cercano</b>. Sin escalar (izquierda), el eje vertical va de 200 a 450 y 4.7 cm de pétalo pesan como 4.7 unidades de sépalo: casi nada. Su vecino más cercano es una <code>setosa</code> con el pétalo cuatro veces más corto, solo porque el sépalo coincide. Estandarizado (derecha), las dos columnas pesan igual y el vecino es otra <code>virginica</code>.</p>
+<div class="w" id="w6b"></div>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7">7 · Práctica</h2>
+<p>Los tres ejercicios del cuaderno, con lo que te tiene que salir al final de la página. Antes, la idea de los dos primeros.</p>
+<div class="idea"><b>Ejercicio 1 y 3 — Manhattan:</b> <code>distancia_manhattan(a, b)</code> y una copia de <code>classifica_knn</code> que la use. Dos distancias distintas eligen <b>vecinos distintos</b>: «a distancia &lt; 1» es un <b>círculo</b> con la euclidiana y un <b>rombo</b> con Manhattan. En scikit-learn es el parámetro <code>metric</code> (por defecto <code>"minkowski"</code> con <code>p=2</code>, que es la euclidiana). El parámetro cambia <b>quién</b> es vecino, no cómo votan.</div>
+<p>Puntos <b>inventados</b> (no son los del cuaderno) y una estrella. Cambia de distancia: los vecinos con aro rojo lo son solo con una de las dos.</p>
+<div class="w" id="w7"></div>
+<div class="idea"><b>Ejercicio 2 — la mejor k con un bucle:</b> prueba <i>k</i> de 1 a 30 y que el bucle decida cuál da la mejor exactitud, sin ningún valor fijo. <b>Trampa típica:</b> <code>np.argmax</code> devuelve la <b>posición</b> en la lista, que empieza en 0, mientras que <i>k</i> empieza en 1: el mejor <i>k</i> es <code>posición + 1</code>.</div>
+<pre>millor_k, millor_exactitud = None, 0
+for k in range(1, 31):
+    ex = KNeighborsClassifier(n_neighbors=k).fit(X_entrena, y_entrena).score(X_examen, y_examen)
+    if ex &gt; millor_exactitud:      # estricto: con empate se queda el k más pequeño
+        millor_k, millor_exactitud = k, ex</pre>
+
+<!-- ============ RESUMEN ============ -->
+<h2 id="res">Resumen en una tabla</h2>
+<div class="scroll">
+<table class="sum">
+<tr><th>Concepto</th><th>Qué es</th><th>Numpy / sklearn</th><th>Número para comprobar</th></tr>
+<tr><td><b>Distancia euclidiana</b></td><td>Pitágoras con tantos sumandos como columnas</td><td><code>np.sqrt(np.sum((a - b) ** 2))</code></td><td>3.51 (pétalo) · 4.003748 (4 medidas), flores 0 y 50</td></tr>
+<tr><td><b>Manhattan</b></td><td>Suma de diferencias en valor absoluto</td><td><code>np.sum(np.abs(a - b))</code></td><td>4.50 (pétalo)</td></tr>
+<tr><td><b>k-NN</b></td><td>Distancia a todas, las k más cercanas votan</td><td><code>KNeighborsClassifier(n_neighbors=k)</code></td><td>flor 75, k = 5 → versicolor</td></tr>
+<tr><td><b>Entrenamiento / examen</b></td><td>Se examina con flores nunca vistas</td><td><code>train_test_split(..., test_size=0.3, random_state=42, stratify=y)</code></td><td>105 / 45 flores</td></tr>
+<tr><td><b>Tu función vs sklearn</b></td><td>La librería no hace nada que no hagas tú</td><td><code>np.mean(pred_ma == pred_sk)</code></td><td>100 % de coincidencia · 97.8 % de exactitud</td></tr>
+<tr><td><b>Valor de k</b></td><td>Pequeño memoriza, grande lo suaviza</td><td>bucle sobre <code>n_neighbors</code></td><td>k = 1 y k = 25: 93.3 % · k = 5: 97.8 %</td></tr>
+<tr><td><b>Escalar</b></td><td>Todas las columnas en la misma escala</td><td><code>StandardScaler().fit_transform(X)</code></td><td>66.7 % sin escalar → 91.1 % escalado</td></tr>
+</table>
+</div>
+<div class="big">k-NN no tiene fórmula que aprender: guarda las flores y, cada vez que clasifica, mide distancias y cuenta votos. Por eso la <b>distancia</b> (y las escalas de las columnas) lo es todo.</div>
+
+<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
+<ul>
+<li><b>Ejercicio 1</b> (<i>k</i> = 5, las 45 flores de examen): con la euclidiana <b>97.8 %</b>; con Manhattan <b>93.3 %</b> (2 fallos más: 42 de 45 contra 44). Sí cambia, aunque poco. Una función a mano puede diferir en una flor si desempata distinto.</li>
+<li><b>Ejercicio 2</b>: mejor <i>k</i> = <b>5</b>, exactitud <b>97.8 %</b> (en <i>k</i> de 1 a 30; los demás se quedan en 91.1 – 95.6 %).</li>
+<li><b>Ejercicio 3</b> (<code>metric="euclidean"</code> contra <code>metric="manhattan"</code>, <i>k</i> = 5): <b>97.8 %</b> y <b>93.3 %</b>. El primero coincide con el modelo por defecto.</li>
+</ul>
+<p>Siguiente cuaderno: <b>la regresión logística</b>. k-NN mira los datos cada vez que clasifica; la regresión logística aprende <b>una ecuación</b> y ya no vuelve a mirarlos.</p>
+<footer>Apuntes generados a partir del cuaderno ML_01 (k-NN). Funciona sin conexión: todo está en este archivo. Los datos de Iris y el reparto entrenamiento/examen son los reales; los puntos de las lunas y del apartado 7 son inventados y lo dicen.</footer>
+
+</main>
+
+<script>
+const IRIS={"X":[[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4],[4.6,3.4,1.4,0.3],[5.0,3.4,1.5,0.2],[4.4,2.9,1.4,0.2],[4.9,3.1,1.5,0.1],[5.4,3.7,1.5,0.2],[4.8,3.4,1.6,0.2],[4.8,3.0,1.4,0.1],[4.3,3.0,1.1,0.1],[5.8,4.0,1.2,0.2],[5.7,4.4,1.5,0.4],[5.4,3.9,1.3,0.4],[5.1,3.5,1.4,0.3],[5.7,3.8,1.7,0.3],[5.1,3.8,1.5,0.3],[5.4,3.4,1.7,0.2],[5.1,3.7,1.5,0.4],[4.6,3.6,1.0,0.2],[5.1,3.3,1.7,0.5],[4.8,3.4,1.9,0.2],[5.0,3.0,1.6,0.2],[5.0,3.4,1.6,0.4],[5.2,3.5,1.5,0.2],[5.2,3.4,1.4,0.2],[4.7,3.2,1.6,0.2],[4.8,3.1,1.6,0.2],[5.4,3.4,1.5,0.4],[5.2,4.1,1.5,0.1],[5.5,4.2,1.4,0.2],[4.9,3.1,1.5,0.2],[5.0,3.2,1.2,0.2],[5.5,3.5,1.3,0.2],[4.9,3.6,1.4,0.1],[4.4,3.0,1.3,0.2],[5.1,3.4,1.5,0.2],[5.0,3.5,1.3,0.3],[4.5,2.3,1.3,0.3],[4.4,3.2,1.3,0.2],[5.0,3.5,1.6,0.6],[5.1,3.8,1.9,0.4],[4.8,3.0,1.4,0.3],[5.1,3.8,1.6,0.2],[4.6,3.2,1.4,0.2],[5.3,3.7,1.5,0.2],[5.0,3.3,1.4,0.2],[7.0,3.2,4.7,1.4],[6.4,3.2,4.5,1.5],[6.9,3.1,4.9,1.5],[5.5,2.3,4.0,1.3],[6.5,2.8,4.6,1.5],[5.7,2.8,4.5,1.3],[6.3,3.3,4.7,1.6],[4.9,2.4,3.3,1.0],[6.6,2.9,4.6,1.3],[5.2,2.7,3.9,1.4],[5.0,2.0,3.5,1.0],[5.9,3.0,4.2,1.5],[6.0,2.2,4.0,1.0],[6.1,2.9,4.7,1.4],[5.6,2.9,3.6,1.3],[6.7,3.1,4.4,1.4],[5.6,3.0,4.5,1.5],[5.8,2.7,4.1,1.0],[6.2,2.2,4.5,1.5],[5.6,2.5,3.9,1.1],[5.9,3.2,4.8,1.8],[6.1,2.8,4.0,1.3],[6.3,2.5,4.9,1.5],[6.1,2.8,4.7,1.2],[6.4,2.9,4.3,1.3],[6.6,3.0,4.4,1.4],[6.8,2.8,4.8,1.4],[6.7,3.0,5.0,1.7],[6.0,2.9,4.5,1.5],[5.7,2.6,3.5,1.0],[5.5,2.4,3.8,1.1],[5.5,2.4,3.7,1.0],[5.8,2.7,3.9,1.2],[6.0,2.7,5.1,1.6],[5.4,3.0,4.5,1.5],[6.0,3.4,4.5,1.6],[6.7,3.1,4.7,1.5],[6.3,2.3,4.4,1.3],[5.6,3.0,4.1,1.3],[5.5,2.5,4.0,1.3],[5.5,2.6,4.4,1.2],[6.1,3.0,4.6,1.4],[5.8,2.6,4.0,1.2],[5.0,2.3,3.3,1.0],[5.6,2.7,4.2,1.3],[5.7,3.0,4.2,1.2],[5.7,2.9,4.2,1.3],[6.2,2.9,4.3,1.3],[5.1,2.5,3.0,1.1],[5.7,2.8,4.1,1.3],[6.3,3.3,6.0,2.5],[5.8,2.7,5.1,1.9],[7.1,3.0,5.9,2.1],[6.3,2.9,5.6,1.8],[6.5,3.0,5.8,2.2],[7.6,3.0,6.6,2.1],[4.9,2.5,4.5,1.7],[7.3,2.9,6.3,1.8],[6.7,2.5,5.8,1.8],[7.2,3.6,6.1,2.5],[6.5,3.2,5.1,2.0],[6.4,2.7,5.3,1.9],[6.8,3.0,5.5,2.1],[5.7,2.5,5.0,2.0],[5.8,2.8,5.1,2.4],[6.4,3.2,5.3,2.3],[6.5,3.0,5.5,1.8],[7.7,3.8,6.7,2.2],[7.7,2.6,6.9,2.3],[6.0,2.2,5.0,1.5],[6.9,3.2,5.7,2.3],[5.6,2.8,4.9,2.0],[7.7,2.8,6.7,2.0],[6.3,2.7,4.9,1.8],[6.7,3.3,5.7,2.1],[7.2,3.2,6.0,1.8],[6.2,2.8,4.8,1.8],[6.1,3.0,4.9,1.8],[6.4,2.8,5.6,2.1],[7.2,3.0,5.8,1.6],[7.4,2.8,6.1,1.9],[7.9,3.8,6.4,2.0],[6.4,2.8,5.6,2.2],[6.3,2.8,5.1,1.5],[6.1,2.6,5.6,1.4],[7.7,3.0,6.1,2.3],[6.3,3.4,5.6,2.4],[6.4,3.1,5.5,1.8],[6.0,3.0,4.8,1.8],[6.9,3.1,5.4,2.1],[6.7,3.1,5.6,2.4],[6.9,3.1,5.1,2.3],[5.8,2.7,5.1,1.9],[6.8,3.2,5.9,2.3],[6.7,3.3,5.7,2.5],[6.7,3.0,5.2,2.3],[6.3,2.5,5.0,1.9],[6.5,3.0,5.2,2.0],[6.2,3.4,5.4,2.3],[5.9,3.0,5.1,1.8]],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]};
+const X=IRIS.X, Y=IRIS.y;
+const SPECIES=['setosa','versicolor','virginica'];
+const NS='http://www.w3.org/2000/svg';
+const C={blue:'#2563eb',orange:'#ea580c',green:'#16a34a',purple:'#7c3aed',red:'#dc2626',gray:'#8a877f',pink:'#db2777',teal:'#0d9488',amber:'#d97706',ink:'currentColor'};
+const SPC=[C.blue,C.orange,C.green];
+function E(tag,attrs,parent){const e=document.createElementNS(NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function H(tag,attrs,parent,html){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e}
+function f(x,d=4){const r=+(+x).toFixed(d);return (Object.is(r,-0)?0:r).toString()}
+const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;const RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+function tween(o,dur,fn,done){if(RM)dur=1;cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
+const dot=(a,b)=>a.reduce((s,ai,i)=>s+ai*b[i],0);
+const norm=a=>Math.sqrt(dot(a,a));
+const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];
+
+class Plot{
+  constructor(host,o){
+    const W=o.w||680,pad=o.pad??34,[x0,x1]=o.x,[y0,y1]=o.y;
+    this.sx=(W-2*pad)/(x1-x0);
+    let Hh;
+    if(o.h){Hh=o.h;this.sy=o.free?(Hh-2*pad)/(y1-y0):this.sx}else{this.sy=this.sx;Hh=Math.round((y1-y0)*this.sy+2*pad)}
+    Object.assign(this,{x0,x1,y0,y1,pad,W,H:Hh});
+    this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
+    this.grid=E('g',{},this.svg);
+    const gx=o.gx||1,gy=o.gy||gx;
+    const yAx=(y0<=0&&y1>=0)?this.Y(0):this.Y(y0), xAx=(x0<=0&&x1>=0)?this.X(0):this.X(x0);
+    for(let x=Math.ceil(x0/gx-1e-9)*gx;x<=x1+1e-9;x+=gx){const X=this.X(x);E('line',{x1:X,y1:this.Y(y1),x2:X,y2:this.Y(y0),class:Math.abs(x)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(x)>1e-9&&o.ticks!==false)E('text',{x:X,y:Math.min(yAx+14,Hh-4),'text-anchor':'middle',class:'tick'},this.grid).textContent=f(x,2)}
+    for(let y=Math.ceil(y0/gy-1e-9)*gy;y<=y1+1e-9;y+=gy){const Yp=this.Y(y);E('line',{x1:this.X(x0),y1:Yp,x2:this.X(x1),y2:Yp,class:Math.abs(y)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(y)>1e-9&&o.ticks!==false)E('text',{x:Math.max(xAx-5,22),y:Yp+4,'text-anchor':'end',class:'tick'},this.grid).textContent=f(y,2)}
+    if(o.xl)E('text',{x:this.X(x1),y:Hh-6,'text-anchor':'end',class:'tick'},this.grid).textContent=o.xl;
+    if(o.yl)E('text',{x:this.X(x0)+4,y:pad-12,class:'tick'},this.grid).textContent=o.yl;
+  }
+  X(x){return this.pad+(x-this.x0)*this.sx}
+  Y(y){return this.pad+(this.y1-y)*this.sy}
+  P(p){return [this.X(p[0]),this.Y(p[1])]}
+  g(){return E('g',{},this.svg)}
+  toWorld(ev){const pt=this.svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(this.svg.getScreenCTM().inverse());return [(q.x-this.pad)/this.sx+this.x0,this.y1-(q.y-this.pad)/this.sy]}
+  arrow(g,color,w=2.6,dash){const grp=E('g',{},g);const l=E('line',{stroke:color,'stroke-width':w,'stroke-linecap':'round'},grp);if(dash)l.setAttribute('stroke-dasharray',dash);const h=E('polygon',{fill:color},grp);const self=this;
+    return {el:grp,set(a,b){const [X1,Y1]=self.P(a),[X2,Y2]=self.P(b);const dx=X2-X1,dy=Y2-Y1,L=Math.hypot(dx,dy);if(L<2){grp.style.display='none';return}grp.style.display='';const hl=Math.min(10+w*1.6,L*.6),hw=hl*.45,ux=dx/L,uy=dy/L,bx=X2-ux*hl,by=Y2-uy*hl;
+      l.setAttribute('x1',X1);l.setAttribute('y1',Y1);l.setAttribute('x2',bx);l.setAttribute('y2',by);h.setAttribute('points',`${X2},${Y2} ${bx-uy*hw},${by+ux*hw} ${bx+uy*hw},${by-ux*hw}`)},
+      show(v){grp.style.opacity=v?1:0}}}
+  label(g,color,cls='lbl'){const t=E('text',{class:cls},g);if(color)t.style.fill=color;const self=this;return {el:t,set(p,s,dx=6,dy=-6,anchor='start'){const [X,Yp]=self.P(p);t.setAttribute('x',X+dx);t.setAttribute('y',Yp+dy);t.setAttribute('text-anchor',anchor);t.textContent=s},show(v){t.style.opacity=v?1:0}}}
+  line(g,a,b,attrs){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);return E('line',Object.assign({x1,y1,x2,y2},attrs),g)}
+  setLine(el,a,b){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2)}
+  poly(g,pts,attrs){return E('polygon',Object.assign({points:pts.map(p=>this.P(p).join(',')).join(' ')},attrs),g)}
+  setPoly(el,pts){el.setAttribute('points',pts.map(p=>this.P(p).join(',')).join(' '))}
+  dot(g,p,r,color,attrs){const [cx,cy]=this.P(p);return E('circle',Object.assign({cx,cy,r,fill:color},attrs||{}),g)}
+  setDot(el,p){const [cx,cy]=this.P(p);el.setAttribute('cx',cx);el.setAttribute('cy',cy)}
+}
+
+function stepper(host,n,render,o={}){
+  const bar=H('div',{class:'bar'},host);
+  const prev=H('button',{},bar,'← Anterior');
+  const play=H('button',{},bar,'▶ Reproducir');
+  const next=H('button',{},bar,'Siguiente →');
+  const rst=H('button',{title:'Volver al principio'},bar,'↺');
+  const dots=H('span',{class:'dots'},bar);
+  let step=0,timer=null;
+  const draw=()=>{render(step);dots.textContent=`Paso ${step+1} de ${n}`};
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  prev.onclick=()=>{stop();step=Math.max(0,step-1);draw()};
+  next.onclick=()=>{stop();step=Math.min(n-1,step+1);draw()};
+  rst.onclick=()=>{stop();step=0;draw()};
+  play.onclick=()=>{if(timer){stop();return}if(step>=n-1)step=0;draw();play.textContent='❚❚ Pausa';timer=setInterval(()=>{step++;draw();if(step>=n-1)stop()},o.interval||1800)};
+  return {bar,draw,reset(){stop();step=0;draw()},get step(){return step}};
+}
+
+/* Tabla de componentes animada: norma, distancia, producto escalar */
+function compTable(host,o){
+  const n=o.cols.length;
+  const msg=H('div',{class:'msg'},host);
+  const wrap=H('div',{class:'scroll'},host);
+  const t=H('table',{class:'comp'},wrap);
+  const th=H('thead',{},t),hr=H('tr',{},th);H('th',{},hr,'');o.cols.forEach(c=>H('th',{},hr,c));
+  const tb=H('tbody',{},t);const cells=[];
+  o.rows.forEach(r=>{const tr=H('tr',{},tb);H('th',{},tr,r.name);cells.push(r.vals.map(v=>H('td',{},tr,f(v))))});
+  const trO=H('tr',{},tb);H('th',{},trO,o.opName);const opC=o.cols.map(()=>H('td',{},trO,''));
+  const trS=H('tr',{},tb);H('th',{},trS,'suma acumulada');const sC=o.cols.map(()=>H('td',{},trS,''));
+  const out=H('div',{class:'calc'},host);
+  const vals=o.cols.map((_,i)=>o.op(i));const total=vals.reduce((a,b)=>a+b,0);
+  const N=n+2+(o.finals?o.finals.length:0);
+  const sp=stepper(host,N,s=>{
+    let run=0;
+    for(let i=0;i<n;i++){run+=vals[i];[...cells.map(r=>r[i]),opC[i],sC[i]].forEach(c=>c.classList.remove('hi','res'));
+      opC[i].textContent=s>i?f(vals[i]):'';sC[i].textContent=s>i?f(run):'';
+      if(s===i+1){cells.forEach(r=>r[i].classList.add('hi'));opC[i].classList.add('hi')}}
+    if(s>=n+1)sC[n-1].classList.add('res');
+    if(s===0){msg.innerHTML=o.intro;out.innerHTML='&nbsp;'}
+    else if(s<=n){msg.innerHTML=`Columna <b>${s}</b> (${o.cols[s-1]}): ${o.stepText||'se calcula'}`;out.innerHTML=o.opText(s-1)+' = <span class="hg">'+f(vals[s-1])+'</span>'}
+    else if(s===n+1){msg.innerHTML='Se suma todo:';out.innerHTML=vals.map(v=>f(v)).join(' + ')+' = <span class="hg">'+f(total)+'</span>'}
+    else{const k=s-n-2;msg.innerHTML=o.finals[k].msg;out.innerHTML=o.finals[k].html(total)}
+  },{interval:1500});
+  sp.draw();
+  return sp;
+}
+/* ===== utilidades comunes (azar con semilla y datos inventados) ===== */
+function rngSeed(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+/* "mitges llunes" inventadas (no son las de scikit-learn: otro generador de azar) */
+function moons(n,noise,seed){const r=rngSeed(seed),Xs=[],ys=[];for(let i=0;i<n;i++){const c=i%2,t=Math.PI*r();
+  const x=c?1-Math.cos(t):Math.cos(t),y=c?.5-Math.sin(t):Math.sin(t);Xs.push([x+noise*gauss(r),y+noise*gauss(r)]);ys.push(c)}return {X:Xs,y:ys}}
+const SPN=['setosa','versicolor','virginica'];
+
+/* ===== k-NN: datos y funciones ===== */
+const TR=[0,1,3,4,5,6,8,9,11,12,13,15,16,17,19,21,24,25,26,27,29,30,31,32,33,34,36,37,39,41,44,45,46,47,48,50,52,54,59,60,61,62,64,65,67,68,70,71,72,73,74,76,78,79,80,81,82,83,86,87,88,89,90,91,92,94,95,96,98,99,100,101,102,103,105,109,110,112,113,114,115,117,118,119,120,121,122,123,124,125,126,128,129,130,131,135,136,137,139,142,143,144,145,146,149]; // reparto real (random_state=42, stratify=y)
+const trSet=new Set(TR),TE=[...Array(150).keys()].filter(i=>!trSet.has(i));
+const Xtr=TR.map(i=>X[i]),ytr=TR.map(i=>Y[i]),Xte=TE.map(i=>X[i]),yte=TE.map(i=>Y[i]);
+const eu=(a,b)=>Math.sqrt(a.reduce((s,v,i)=>s+(v-b[i])**2,0));
+const mh=(a,b)=>a.reduce((s,v,i)=>s+Math.abs(v-b[i]),0);
+function order(q,Xs,dist=eu,skip=-1){const d=[];Xs.forEach((x,i)=>{if(i!==skip)d.push([dist(q,x),i])});d.sort((a,b)=>a[0]-b[0]);return d}
+function vote(d,ys,k,nc=3){const v=new Array(nc).fill(0);for(let j=0;j<k;j++)v[ys[d[j][1]]]++;let b=0;for(let c=1;c<nc;c++)if(v[c]>v[b])b=c;return {v,b}}
+function knnAcc(Xa,ya,Xb,yb,k,dist=eu){let ok=0;Xb.forEach((q,i)=>{if(vote(order(q,Xa,dist),ya,k).b===yb[i])ok++});return ok}
+function pct(a,b){return f(100*a/b,1)+' %'}
+const ink='currentColor';
+const speciesLegend=(host)=>{const l=H('div',{class:'legend'},host);SPECIES.forEach((s,i)=>H('span',{},l,`<i class="sw" style="background:${SPC[i]}"></i>${s}`))};
+/* arrastrar un punto dentro de un Plot */
+function draggable(P,cb){let d=false;P.svg.addEventListener('pointerdown',ev=>{d=true;P.svg.setPointerCapture(ev.pointerId);cb(P.toWorld(ev))});
+  P.svg.addEventListener('pointermove',ev=>{if(d)cb(P.toWorld(ev))});P.svg.addEventListener('pointerup',()=>d=false)}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ================= 1: la flor más parecida ================= */
+(function(){
+  const host=document.getElementById('w1');
+  const P=new Plot(host,{x:[0,7.5],y:[0,2.8],gx:1,gy:.5,xl:'largo del pétalo (cm) →',yl:'↑ ancho del pétalo (cm)',label:'Flor nueva y flor conocida más parecida'});
+  const g=P.g();X.forEach((r,i)=>P.dot(g,[r[2],r[3]],4.2,SPC[Y[i]],{opacity:.55}));
+  const gl=P.g();const ln=P.line(gl,[0,0],[0,0],{stroke:ink,'stroke-width':1.6,'stroke-dasharray':'4 3'});
+  const nb=P.dot(gl,[0,0],9,'none',{stroke:ink,'stroke-width':2.5});
+  const st=P.dot(gl,[4.85,1.7],9,C.red,{stroke:ink,'stroke-width':1.5,style:'cursor:grab'});
+  speciesLegend(host);
+  const calc=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Arrastra el punto rojo. Aquí solo se usan las 2 medidas del pétalo; con las 4 el razonamiento es el mismo.');
+  function draw(q){const d=order(q,X.map(r=>[r[2],r[3]]));const j=d[0][1];
+    P.setDot(st,q);P.setDot(nb,[X[j][2],X[j][3]]);P.setLine(ln,q,[X[j][2],X[j][3]]);
+    calc.innerHTML=`flor más parecida: nº ${j} (<span class="hy">${SPECIES[Y[j]]}</span>) a distancia ${f(d[0][0],3)} → la flor nueva sería <span class="hg">${SPECIES[Y[j]]}</span>`}
+  draggable(P,w=>draw([clamp(w[0],.2,7.3),clamp(w[1],.05,2.7)]));draw([4.85,1.7]);
+})();
+
+/* ================= 2a: Pitágoras con dos flores ================= */
+(function(){
+  const host=document.getElementById('w2a');
+  const msg=H('div',{class:'msg'},host);
+  const P=new Plot(host,{x:[.4,5.6],y:[-.3,1.9],gx:1,gy:.5,w:560,maxw:520,xl:'petal_llarg →',yl:'↑ petal_ample',label:'Distancia entre dos flores con Pitágoras'});
+  const a=[1.4,.2],b=[4.7,1.4],g=P.g();
+  const lx=P.line(g,a,a,{stroke:C.green,'stroke-width':4,'stroke-linecap':'round'});
+  const ly=P.line(g,[b[0],a[1]],[b[0],a[1]],{stroke:C.purple,'stroke-width':4,'stroke-linecap':'round'});
+  const hip=P.arrow(g,C.red,3);
+  P.dot(g,a,7,C.blue,{stroke:ink});P.dot(g,b,7,C.orange,{stroke:ink});
+  const la=P.label(g,C.blue),lb=P.label(g,C.orange),l1=P.label(g,C.green),l2=P.label(g,C.purple),lh=P.label(g,C.red);
+  la.set(a,'A: flor 0 (setosa)',8,18);lb.set(b,'B: flor 50 (versicolor)',-8,-10,'end');
+  l1.set([3.05,.2],'3.30',0,18,'middle');l2.set([4.7,.8],'1.20',10,4);lh.set([3.05,.8],'d',-10,-8,'end');
+  const calc=H('div',{class:'calc'},host);
+  const T=['Dos flores reales: A (setosa) y B (versicolor), solo con el largo y el ancho del pétalo.','Cateto horizontal: |1.4 − 4.7| = 3.30 cm.','Cateto vertical: |0.2 − 1.4| = 1.20 cm. Sale un triángulo rectángulo.','Pitágoras: cada cateto al cuadrado y se suman.','La raíz: la distancia es la hipotenusa.'];
+  const sp=stepper(host,5,st=>{msg.textContent=T[st];
+    lx.style.opacity=st>=1?1:0;ly.style.opacity=st>=2?1:0;l1.show(st>=1);l2.show(st>=2);hip.show(st>=3);lh.show(st>=4);
+    if(st===1)tween(P,700,u=>P.setLine(lx,a,[a[0]+3.3*u,a[1]]));else P.setLine(lx,a,[b[0],a[1]]);
+    if(st===2)tween(P,700,u=>P.setLine(ly,[b[0],a[1]],[b[0],a[1]+1.2*u]));else P.setLine(ly,[b[0],a[1]],b);
+    hip.set(a,b);
+    calc.innerHTML=st<3?'&nbsp;':(st===3?'3.30² + 1.20² = 10.89 + 1.44 = <span class="hy">12.33</span>':'d = √12.33 = <span class="hg">3.51</span> cm &nbsp;&nbsp;# catet_x=3.30, catet_y=1.20')},{interval:1700});
+  sp.draw();
+})();
+
+/* ================= 2b: cuatro medidas ================= */
+(function(){
+  const a=X[0],b=X[50];
+  compTable(document.getElementById('w2b'),{
+    cols:['sepal_llarg','sepal_ample','petal_llarg','petal_ample'],
+    rows:[{name:'a = flor 0',vals:a},{name:'b = flor 50',vals:b}],opName:'(aᵢ − bᵢ)²',op:i=>(a[i]-b[i])**2,stepText:'se resta, y se eleva al cuadrado.',
+    opText:i=>`(${f(a[i])} − ${f(b[i])})² = (${f(a[i]-b[i])})²`,intro:'Las flores 0 y 50 con las 4 medidas. En cada columna: resta, cuadrado; al final, suma y raíz.',
+    finals:[{msg:'Y la raíz de la suma:',html:s=>`d = √${f(s,2)} = <span class="hg">${f(Math.sqrt(s),6)}</span> &nbsp;&nbsp;# con solo el pétalo: 3.51`}]});
+})();
+
+/* ================= 2c: euclidiana vs Manhattan ================= */
+(function(){
+  const host=document.getElementById('w2c');
+  const P=new Plot(host,{x:[.4,6],y:[-.3,2.1],gx:1,gy:.5,w:560,maxw:520,xl:'petal_llarg →',yl:'↑ petal_ample',label:'Euclidiana y Manhattan entre dos flores'});
+  const a=[1.4,.2],g=P.g();
+  const bg=P.g();X.forEach((r,i)=>P.dot(bg,[r[2],r[3]],3,SPC[Y[i]],{opacity:.15}));
+  const eL=P.line(g,a,a,{stroke:C.red,'stroke-width':3,'stroke-linecap':'round'});
+  const m1=P.line(g,a,a,{stroke:C.green,'stroke-width':3,'stroke-dasharray':'7 4'}),m2=P.line(g,a,a,{stroke:C.green,'stroke-width':3,'stroke-dasharray':'7 4'});
+  P.dot(g,a,7,C.blue,{stroke:ink});const hb=P.dot(g,[4.7,1.4],8,C.orange,{stroke:ink,style:'cursor:grab'});
+  const calc=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Arrastra la flor B. Si B está justo en horizontal o en vertical con A, las dos distancias coinciden.');
+  function draw(b){P.setDot(hb,b);P.setLine(eL,a,b);P.setLine(m1,a,[b[0],a[1]]);P.setLine(m2,[b[0],a[1]],b);
+    const dx=Math.abs(a[0]-b[0]),dy=Math.abs(a[1]-b[1]);
+    calc.innerHTML=`<span class="hr">euclidiana</span> = √(${f(dx,2)}² + ${f(dy,2)}²) = <b>${f(Math.hypot(dx,dy),2)}</b> cm<br><span class="hg">Manhattan</span> = ${f(dx,2)} + ${f(dy,2)} = <b>${f(dx+dy,2)}</b> cm`}
+  draggable(P,w=>draw([clamp(w[0],.6,5.8),clamp(w[1],-.15,2)]));draw([4.7,1.4]);
+})();
+
+/* ================= 3a: k vecinos votando ================= */
+(function(){
+  const host=document.getElementById('w3a');
+  const P=new Plot(host,{x:[3.4,6.6],y:[.8,2.6],gx:.5,gy:.2,w:560,maxw:560,xl:'petal_llarg →',yl:'↑ petal_ample',label:'Los k vecinos votan'});
+  const Pp=X.map(r=>[r[2],r[3]]);
+  const bg=P.g();Pp.forEach((p,i)=>P.dot(bg,p,4,SPC[Y[i]],{opacity:.35}));
+  const g=P.g();const lines=[],rings=[];
+  for(let i=0;i<25;i++){lines.push(P.line(g,[0,0],[0,0],{stroke:'#8a877f','stroke-width':.9}));rings.push(P.dot(g,[0,0],6.5,'none',{stroke:ink,'stroke-width':2}))}
+  const circ=E('circle',{fill:'none',stroke:ink,'stroke-width':1.4,'stroke-dasharray':'6 4'},g);
+  const st=P.dot(g,[4.85,1.7],10,C.red,{stroke:ink,'stroke-width':1.6,style:'cursor:grab'});
+  speciesLegend(host);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'k (vecinos)');const inp=H('input',{type:'range',min:1,max:25,step:1,value:5},sl);const out=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);[1,5,15].forEach(k=>{const b=H('button',{},bar,'k = '+k);b.onclick=()=>{inp.value=k;draw()}});
+  const calc=H('div',{class:'calc'},host);
+  H('p',{class:'hint'},host,'Arrastra la estrella o mueve k. Con k par puede haber empate: gana la primera especie de la lista, como hace np.argmax.');
+  let q=[4.85,1.7];
+  function draw(){const k=+inp.value;out.textContent=k;const d=order(q,Pp);const {v,b}=vote(d,Y,k);
+    P.setDot(st,q);for(let i=0;i<25;i++){const on=i<k;lines[i].style.display=rings[i].style.display=on?'':'none';
+      if(on){const p=Pp[d[i][1]];P.setLine(lines[i],q,p);P.setDot(rings[i],p);rings[i].setAttribute('stroke',SPC[Y[d[i][1]]])}}
+    const r=d[k-1][0],[cx,cy]=P.P(q);circ.setAttribute('cx',cx);circ.setAttribute('cy',cy);circ.setAttribute('r',r*P.sx);
+    calc.innerHTML=`k = ${k}: `+SPECIES.map((s,i)=>`<span class="${i===b?'hg':'hb'}">${s} ${v[i]}</span>`).join(' · ')+` → gana <b>${SPECIES[b]}</b> &nbsp;·&nbsp; radio del círculo (k-ésimo vecino) = ${f(r,3)}`}
+  inp.oninput=draw;
+  draggable(P,w=>{q=[clamp(w[0],3.5,6.5),clamp(w[1],.9,2.5)];draw()});draw();
+})();
+
+/* ================= 3b: una flor real ================= */
+(function(){
+  const host=document.getElementById('w3b');
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'flor nº');const inp=H('input',{type:'range',min:0,max:149,step:1,value:75},sl);const out=H('output',{},sl);
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  H('p',{class:'hint'},host,'Cada vez se aparta esa flor de la tabla y se clasifica con las otras 149 (k = 5, 4 medidas). Algunas flores en la frontera versicolor / virginica fallan.');
+  function draw(){const i=+inp.value;out.textContent=i;const d=order(X[i],X,eu,i);const {v,b}=vote(d,Y,5);
+    const ok=b===Y[i];
+    calc.innerHTML=`flor ${i}: [${X[i].map(v=>f(v)).join(', ')}]<br>5 vecinos: `+d.slice(0,5).map(e=>`<span class="chip">nº ${e[1]} · ${SPECIES[Y[e[1]]]} · ${f(e[0],2)}</span>`).join('')+
+      `<br>especie real: <b>${SPECIES[Y[i]]}</b> &nbsp;·&nbsp; predicha: <span class="${ok?'hg':'hr'}">${SPECIES[b]}</span>`}
+  inp.oninput=draw;draw();
+})();
+
+/* ================= 4: entrenamiento / examen ================= */
+(function(){
+  const host=document.getElementById('w4');
+  const P=new Plot(host,{x:[0,7.5],y:[0,2.8],gx:1,gy:.5,xl:'petal_llarg →',yl:'↑ petal_ample',label:'Reparto entrenamiento y examen'});
+  const g=P.g();TR.forEach(i=>P.dot(g,[X[i][2],X[i][3]],3.6,SPC[Y[i]],{opacity:.5}));
+  const gt=P.g();const rings=TE.map(i=>P.dot(gt,[X[i][2],X[i][3]],8,'none',{'stroke-width':2.6}));
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'k (vecinos)');const inp=H('input',{type:'range',min:1,max:25,step:1,value:5},sl);const out=H('output',{},sl);
+  H('div',{class:'legend'},host,`<span><i class="sw" style="background:${C.green}"></i>examen acertado</span><span><i class="sw" style="background:${C.red}"></i>examen fallado</span><span>puntos rellenos = entrenamiento (105)</span>`);
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  H('p',{class:'hint'},host,'El modelo usa las 4 medidas; el dibujo solo muestra 2, así que un fallo puede parecer «en medio de su especie».');
+  function draw(){const k=+inp.value;out.textContent=k;let ok=0;
+    TE.forEach((fi,j)=>{const good=vote(order(X[fi],Xtr),ytr,k).b===Y[fi];if(good)ok++;rings[j].setAttribute('stroke',good?C.green:C.red);rings[j].setAttribute('r',good?7:10)});
+    calc.innerHTML=`Entrenamiento: ${TR.length} flores · Examen: ${TE.length} flores<br>k = ${k}: aciertos <b>${ok} de ${TE.length}</b> = <span class="${ok===44?'hg':'hy'}">${pct(ok,TE.length)}</span>`+(k===5?' &nbsp;# el 97.8 % del cuaderno (tu función y sklearn, igual)':'')}
+  inp.oninput=draw;draw();
+})();
+
+/* ================= 5a: curva exactitud vs k ================= */
+(function(){
+  const host=document.getElementById('w5a');
+  const ks=[...Array(25).keys()].map(i=>i+1);const acc=ks.map(k=>knnAcc(Xtr,ytr,Xte,yte,k)/TE.length);
+  const P=new Plot(host,{x:[0,26],y:[.88,1],gx:5,gy:.02,h:300,free:true,pad:38,xl:'k →',yl:'exactitud al examen',label:'Exactitud en el examen según k'});
+  const g=P.g();E('polyline',{points:ks.map((k,i)=>P.P([k,acc[i]]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':2.2},g);
+  const dots=ks.map((k,i)=>P.dot(g,[k,acc[i]],4.5,C.blue));
+  const sel=P.dot(g,[5,acc[4]],10,'none',{stroke:C.red,'stroke-width':2.5});
+  const calc=H('div',{class:'calc'},host);H('p',{class:'hint'},host,'Haz clic cerca de un punto para ver su k.');
+  function show(k){P.setDot(sel,[k,acc[k-1]]);const n=Math.round(acc[k-1]*TE.length);calc.innerHTML=`k = ${k}: ${n} de 45 = <span class="${k===5?'hg':'hy'}">${f(100*acc[k-1],1)} %</span>`+(k===1||k===25?' &nbsp;# extremos: 93.3 %':'')}
+  P.svg.addEventListener('click',ev=>show(clamp(Math.round(P.toWorld(ev)[0]),1,25)));show(5);
+})();
+
+/* ================= 5b: fronteras con datos inventados ================= */
+(function(){
+  const host=document.getElementById('w5b');
+  const D=moons(600,.35,4);const NT=300;
+  const Xa=D.X.slice(0,NT),ya=D.y.slice(0,NT),Xb=D.X.slice(NT),yb=D.y.slice(NT);
+  const pref=(q,excl)=>{const d=order(q,Xa);const p=new Uint16Array(NT+1);for(let j=0;j<NT;j++)p[j+1]=p[j]+ya[d[j][1]];return p};
+  const GW=60,GH=40,x0=-2,x1=3,y0=-1.6,y1=2.1;
+  const P=new Plot(host,{x:[x0,x1],y:[y0,y1],gx:1,gy:1,w:560,maxw:560,label:'Frontera de decisión de k-NN con datos inventados'});
+  const bgG=P.g();const cells=[],cp=[];
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){const cx=x0+(i+.5)*(x1-x0)/GW,cy=y1-(j+.5)*(y1-y0)/GH;
+    cells.push(E('rect',{x:P.X(x0+i*(x1-x0)/GW),y:P.Y(y1-j*(y1-y0)/GH),width:P.sx*(x1-x0)/GW+.6,height:P.sy*(y1-y0)/GH+.6,class:'cellbg'},bgG));cp.push(pref([cx,cy]))}
+  const g=P.g();Xa.forEach((p,i)=>P.dot(g,p,3.6,ya[i]?C.red:C.blue,{stroke:'#222','stroke-width':.5}));
+  const trP=Xa.map(q=>pref(q)),teP=Xb.map(q=>pref(q));
+  const ks=[];for(let k=1;k<=NT-1;k+=2)ks.push(k);
+  const accOf=(ps,ys,k)=>{let ok=0;ps.forEach((p,i)=>{if((p[k]*2>k?1:0)===ys[i])ok++});return ok/ys.length};
+  const atr=ks.map(k=>accOf(trP,ya,k)),ate=ks.map(k=>accOf(teP,yb,k));
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'k (impar)');const inp=H('input',{type:'range',min:0,max:ks.length-1,step:1,value:0},sl);const out=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);[1,15,199].forEach(k=>{const b=H('button',{},bar,'k = '+k);b.onclick=()=>{inp.value=(k-1)/2;draw()}});
+  const calc=H('div',{class:'calc'},host);
+  const Q=new Plot(host,{x:[0,NT],y:[.5,1.02],gx:50,gy:.1,h:260,free:true,pad:38,xl:'k →',yl:'exactitud',label:'Exactitud en entrenamiento y examen según k'});
+  const gq=Q.g();E('polyline',{points:ks.map((k,i)=>Q.P([k,atr[i]]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':2.2},gq);
+  E('polyline',{points:ks.map((k,i)=>Q.P([k,ate[i]]).join(',')).join(' '),fill:'none',stroke:C.orange,'stroke-width':2.2},gq);
+  const mk=Q.line(gq,[1,.5],[1,1.02],{stroke:ink,'stroke-width':1.4,'stroke-dasharray':'4 3'});
+  H('div',{class:'legend'},host,`<span><i class="sw" style="background:${C.blue}"></i>entrenamiento (ya vistas)</span><span><i class="sw" style="background:${C.orange}"></i>examen (nunca vistas)</span>`);
+  function draw(){const ki=+inp.value,k=ks[ki];out.textContent=k;
+    cp.forEach((p,i)=>cells[i].setAttribute('fill',p[k]*2>k?'#fcbba1':'#c6dbef'));Q.setLine(mk,[k,.5],[k,1.02]);
+    calc.innerHTML=`k = ${k}: entrenamiento <span class="hb">${f(100*atr[ki],1)} %</span> · examen <span class="hy">${f(100*ate[ki],1)} %</span> · distancia entre las dos = ${f(100*(atr[ki]-ate[ki]),1)} puntos`}
+  inp.oninput=draw;draw();
+  H('p',{class:'hint'},host,'Datos inventados: 300 puntos de entrenamiento (dibujados) y 300 de examen. Con k = 1 la distancia entre las dos curvas es máxima: sobreajuste.');
+})();
+
+/* ================= 6a: escalas ================= */
+(function(){
+  const host=document.getElementById('w6a');
+  const Xs=(M,fac)=>M.map(r=>[r[0],r[1]*fac,r[2],r[3]]);
+  const stats=(M)=>[0,1,2,3].map(c=>{const m=M.reduce((s,r)=>s+r[c],0)/M.length;return [m,Math.sqrt(M.reduce((s,r)=>s+(r[c]-m)**2,0)/M.length)]});
+  const std=(M,st)=>M.map(r=>r.map((v,c)=>(v-st[c][0])/st[c][1]));
+  const accOf=(fac,sc)=>{let A=Xs(Xtr,fac),B=Xs(Xte,fac);if(sc){const st=stats(A);A=std(A,st);B=std(B,st)}return knnAcc(A,ytr,B,yte,5)};
+  const grid=[];for(let s=0;s<=40;s++)grid.push(s/20);
+  const raw=grid.map(s=>accOf(10**s,false)/45),esc=grid.map(s=>accOf(10**s,true)/45);
+  const P=new Plot(host,{x:[0,2],y:[.5,1],gx:.5,gy:.1,h:260,free:true,pad:38,xl:'factor = 10^x  (0 → ×1 · 2 → ×100)',yl:'exactitud',label:'Exactitud según el factor aplicado a sepal_ample'});
+  const g=P.g();
+  E('polyline',{points:grid.map((s,i)=>P.P([s,raw[i]]).join(',')).join(' '),fill:'none',stroke:C.red,'stroke-width':2.2},g);
+  E('polyline',{points:grid.map((s,i)=>P.P([s,esc[i]]).join(',')).join(' '),fill:'none',stroke:C.green,'stroke-width':2.2},g);
+  const mk=P.line(g,[0,.5],[0,1],{stroke:ink,'stroke-width':1.4,'stroke-dasharray':'4 3'});
+  H('div',{class:'legend'},host,`<span><i class="sw" style="background:${C.red}"></i>sin escalar</span><span><i class="sw" style="background:${C.green}"></i>con StandardScaler</span>`);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'factor de sepal_ample');const inp=H('input',{type:'range',min:0,max:40,step:1,value:40},sl);const out=H('output',{},sl);
+  const cb=H('label',{style:'display:flex;gap:8px;align-items:center;font-size:15px'},host,'<input type="checkbox" id="chkesc"> estandarizar con StandardScaler');
+  const calc=H('div',{class:'calc'},host);const chk=cb.querySelector('input');
+  function draw(){const s=+inp.value/20,fac=10**s;out.textContent='×'+f(fac,fac<10?2:0);P.setLine(mk,[s,.5],[s,1]);
+    const ok=accOf(fac,chk.checked);
+    calc.innerHTML=`sepal_ample × ${f(fac,fac<10?2:0)}${chk.checked?' + StandardScaler':' (sin escalar)'}: <b>${ok} de 45</b> = <span class="${chk.checked?'hg':(ok<44?'hr':'hg')}">${pct(ok,45)}</span>`+(inp.value==='40'?(chk.checked?' &nbsp;# 91.1 % del cuaderno':' &nbsp;# 66.7 % del cuaderno'):(inp.value==='0'&&!chk.checked?' &nbsp;# 97.8 %: sin tocar nada':''))}
+  inp.oninput=chk.onchange=draw;draw();
+  H('p',{class:'hint'},host,'La curva verde es plana: al estandarizar, multiplicar una columna por lo que sea ya no cambia nada (el 91.1 % no sube al 97.8 % porque estandarizar también cambia los pesos de las otras columnas).');
+})();
+
+/* ================= 6b: el óvalo de las escalas ================= */
+(function(){
+  const host=document.getElementById('w6b');const wrap=H('div',{class:'cols'},host);
+  const idx=109;const Q=X.map(r=>[r[2],r[1]*100]);
+  const m=[0,1].map(c=>Q.reduce((s,r)=>s+r[c],0)/150),sd=[0,1].map(c=>Math.sqrt(Q.reduce((s,r)=>s+(r[c]-m[c])**2,0)/150));
+  const Qs=Q.map(r=>[(r[0]-m[0])/sd[0],(r[1]-m[1])/sd[1]]);
+  function panel(M,title,o){const box=H('div',{},wrap);H('h3',{style:'margin:4px 0;font-size:16px'},box,title);
+    const P=new Plot(box,Object.assign({w:340,pad:34,label:title},o));const bg=P.g();M.forEach((p,i)=>P.dot(bg,p,3.6,SPC[Y[i]],{opacity:.5}));
+    const d=order(M[idx],M,eu,idx);const j=d[0][1],r=d[0][0];const g=P.g();
+    const pts=[];for(let t=0;t<=64;t++){const a=2*Math.PI*t/64;pts.push(P.P([M[idx][0]+r*Math.cos(a),M[idx][1]+r*Math.sin(a)]).join(','))}
+    E('polyline',{points:pts.join(' '),fill:'none',stroke:ink,'stroke-width':1.3,'stroke-dasharray':'5 4'},g);
+    P.line(g,M[idx],M[j],{stroke:C.red,'stroke-width':2.2});P.dot(g,M[j],7,SPC[Y[j]],{stroke:ink,'stroke-width':1.6});P.dot(g,M[idx],9,C.red,{stroke:ink,'stroke-width':1.6});
+    H('div',{class:'calc',style:'white-space:normal'},box,`vecino más cercano de la flor ${idx}: <span class="hy">${SPECIES[Y[j]]}</span> (flor ${j}), distancia ${f(r,2)}`)}
+  panel(Q,'sepal_ample ×100, sin escalar',{x:[0,7.5],y:[150,480],gx:1,gy:50,h:300,free:true,xl:'petal_llarg →'});
+  panel(Qs,'Después de StandardScaler',{x:[-1.8,1.9],y:[-2.6,3.4],gx:1,gy:1,xl:'petal_llarg →'});
+  speciesLegend(host);
+  H('p',{class:'hint'},host,'Estrella roja = flor 109 (virginica). Línea roja = hacia su vecino más cercano; el óvalo, tantas veces esa distancia como haga falta. A la izquierda el óvalo sale casi plano porque el eje vertical «vale» 100 veces más.');
+})();
+
+/* ================= 7: círculo contra rombo (datos inventados) ================= */
+(function(){
+  const host=document.getElementById('w7');
+  const r=rngSeed(5),pts=[...Array(40)].map(()=>[4*r(),4*r()]),q=[2,2];
+  const nb=(dist)=>order(q,pts,dist).slice(0,5);
+  const ne=nb(eu).map(e=>e[1]),nm=nb(mh).map(e=>e[1]);const both=new Set(ne.filter(i=>nm.includes(i)));
+  const P=new Plot(host,{x:[0,4],y:[0,4],gx:1,w:520,maxw:480,label:'Vecinos con dos distancias distintas'});
+  const bg=P.g();pts.forEach(p=>P.dot(bg,p,5,'#a1a1a6',{opacity:.7}));
+  const g=P.g();const shape=E('polyline',{fill:'rgba(37,99,235,.08)',stroke:C.blue,'stroke-width':1.6},g);
+  const lines=[],dots=[],rings=[];for(let i=0;i<5;i++){lines.push(P.line(g,q,q,{stroke:C.blue,'stroke-width':1.2}));dots.push(P.dot(g,q,6,C.blue,{stroke:ink}));rings.push(P.dot(g,q,11,'none',{stroke:C.red,'stroke-width':2.4}))}
+  P.dot(g,q,10,C.red,{stroke:ink,'stroke-width':1.6});
+  const bar=H('div',{class:'bar'},host);const b1=H('button',{class:'on'},bar,'metric="euclidean"'),b2=H('button',{},bar,'metric="manhattan"');
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(man){b1.classList.toggle('on',!man);b2.classList.toggle('on',man);const d=nb(man?mh:eu),R=d[4][0];
+    d.forEach((e,i)=>{P.setLine(lines[i],q,pts[e[1]]);P.setDot(dots[i],pts[e[1]]);P.setDot(rings[i],pts[e[1]]);rings[i].style.display=both.has(e[1])?'none':''});
+    const s=[];for(let t=0;t<=(man?4:64);t++){const a=man?[[1,0],[0,1],[-1,0],[0,-1],[1,0]][t]:[Math.cos(2*Math.PI*t/64),Math.sin(2*Math.PI*t/64)];s.push(P.P([q[0]+R*a[0],q[1]+R*a[1]]).join(','))}
+    shape.setAttribute('points',s.join(' '));
+    const only=d.filter(e=>!both.has(e[1])).length;
+    calc.innerHTML=`${man?'rombo':'círculo'} de radio ${f(R,3)} (pasa por el 5.º vecino) · vecinos: ${d.map(e=>e[1]).join(', ')}<br>vecinos que <b>no</b> comparten las dos distancias: <span class="${only?'hr':'hg'}">${only}</span> de 5`}
+  b1.onclick=()=>draw(false);b2.onclick=()=>draw(true);draw(false);
+  H('p',{class:'hint'},host,'Datos inventados (40 puntos y la estrella en (2, 2)); no son los del cuaderno, pero la idea es la misma.');
+})();
+
+</script>
+</body>
+</html>

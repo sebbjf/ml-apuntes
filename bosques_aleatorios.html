@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bosques aleatorios — apuntes animados</title>
+<style>
+:root{
+  --bg:#f2f2f7;--card:#ffffff;--ink:#1d1d1f;--muted:#6e6e73;--line:#d8d8dc;--grid:#e5e5ea;--axis:#aeaeb2;--soft:rgba(118,118,128,.12);
+  --hl:#ffefb0;--hlink:#6b4e00;--hl2:#d6e8ff;--hl2ink:#0040dd;--ok:#d3f5dc;--okink:#1b6e31;--bad:#ffe0de;--badink:#b0001a;
+  --accent:#007aff;--code:rgba(118,118,128,.1);--red:#d70015;--green:#248a3d;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--serif:ui-serif,"New York",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e;--card:#2a2a2d;--ink:#f5f5f7;--muted:#98989d;--line:#3d3d40;--grid:#3a3a3d;--axis:#636366;--soft:rgba(118,118,128,.24);
+  --hl:#4d3d00;--hlink:#ffd60a;--hl2:#0a2e5c;--hl2ink:#a8d0ff;--ok:#0f3d1c;--okink:#7ee3a0;--bad:#4d1210;--badink:#ff9a92;
+  --accent:#0a84ff;--code:rgba(118,118,128,.18);--red:#ff6961;--green:#30d158;
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{transition:none!important}}
+main{max-width:900px;margin:0 auto;padding:20px 18px 96px}
+h1{font-size:clamp(30px,5vw,40px);line-height:1.12;margin:14px 0 8px;font-weight:700;letter-spacing:-.022em}
+h2{font-size:28px;line-height:1.2;margin:72px 0 12px;font-weight:700;letter-spacing:-.018em;scroll-margin-top:16px}
+h3{font-size:20px;margin:30px 0 6px;font-weight:600;letter-spacing:-.01em}
+p{margin:8px 0}
+.sub{color:var(--muted);font-size:19px;margin:0 0 22px}
+.big{font-size:21px;line-height:1.4;letter-spacing:-.012em;padding:20px 22px;border-radius:18px;background:var(--card);margin:18px 0}
+.idea{background:var(--card);border-radius:14px;padding:12px 16px;margin:14px 0}
+.idea b{color:var(--accent)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+nav.toc a{font-size:15px;text-decoration:none;color:var(--accent);background:var(--card);padding:6px 14px;border-radius:999px;min-height:32px;display:inline-flex;align-items:center}
+nav.toc a:hover{background:var(--hl2)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--code);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);padding:14px 16px;border-radius:14px;overflow:auto;font-size:14px;line-height:1.55;margin:12px 0}
+.f{font-family:var(--serif);font-size:21px;text-align:center;margin:14px 0;padding:14px 12px;background:var(--card);border-radius:14px}
+.f:has(+ .leg){margin-bottom:0;border-radius:14px 14px 0 0}
+.w{background:var(--card);border-radius:20px;padding:16px 18px;margin:18px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.w .hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+svg.plot{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+svg.plot text{fill:var(--ink);font:13px var(--sans)}
+svg.plot .tick{fill:var(--muted);font-size:11px}
+svg.plot .gr{stroke:var(--grid);stroke-width:1}
+svg.plot .ax{stroke:var(--axis);stroke-width:1.2}
+svg.plot .lbl{font-weight:600;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+button,select{font:inherit;font-size:15px;font-weight:500;color:var(--accent);background:var(--soft);border:0;border-radius:999px;padding:6px 16px;min-height:34px;cursor:pointer;transition:filter .15s,transform .1s}
+button:hover{filter:brightness(.95)}
+button:active{transform:scale(.97)}
+button.on{background:var(--accent);color:#fff}
+select{color:var(--ink)}
+input[type=range]{accent-color:var(--accent);min-height:28px}
+@media (pointer:coarse){button,select{min-height:44px}}
+.dots{font-size:13px;color:var(--muted);margin-left:4px}
+.msg{min-height:26px;font-size:15px;margin:6px 0}
+.calc{font-family:var(--mono);font-size:14.5px;line-height:1.9;background:var(--soft);border-radius:12px;padding:8px 12px;margin:8px 0;min-height:44px;overflow-x:auto;white-space:nowrap}
+.sl{display:grid;grid-template-columns:auto 1fr 64px;gap:4px 12px;align-items:center;font-size:15px;margin:8px 0}
+.sl input{width:100%}
+.sl output{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.hy{background:var(--hl);color:var(--hlink);border-radius:4px;padding:0 3px}
+.hb{background:var(--hl2);color:var(--hl2ink);border-radius:4px;padding:0 3px}
+.hg{background:var(--ok);color:var(--okink);border-radius:4px;padding:0 3px}
+.hr{background:var(--bad);color:var(--badink);border-radius:4px;padding:0 3px}
+table.comp{border-collapse:separate;border-spacing:4px;font-family:ui-monospace,Menlo,monospace;font-size:14px;margin:4px 0}
+table.comp th{font-family:var(--sans);font-weight:500;color:var(--muted);font-size:13px;text-align:right;padding:2px 8px}
+table.comp thead th{text-align:center}
+table.comp td{min-width:82px;text-align:center;padding:5px 8px;border-radius:6px;background:var(--soft);transition:background .3s,color .3s}
+table.comp td.hi{background:var(--hl);color:var(--hlink)}
+table.comp td.res{background:var(--ok);color:var(--okink)}
+.scroll{overflow-x:auto}
+.mx{display:inline-grid;gap:4px;padding:5px 8px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:7px;vertical-align:middle}
+.cell{min-width:50px;height:32px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:14.5px;border-radius:6px;padding:0 6px;transition:background .3s,color .3s,transform .3s}
+.cell.row{background:var(--soft)}
+.cell.hi{background:var(--hl);color:var(--hlink);transform:scale(1.08)}
+.cell.hi2{background:var(--hl2);color:var(--hl2ink);transform:scale(1.08)}
+.cell.done{background:var(--ok);color:var(--okink)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}
+.eq .op{font-size:20px}
+.eq .nm{font-size:13px;color:var(--muted);text-align:center;margin-top:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.list{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.list div{padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px}
+.list div.cur{background:var(--soft);font-weight:600}
+.sw{width:11px;height:11px;border-radius:50%;flex:none}
+.tp{position:relative;margin:10px 0}
+.tp .c{position:absolute;width:74px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;transition:left .9s cubic-bezier(.6,0,.3,1),top .9s cubic-bezier(.6,0,.3,1)}
+.tp .h{position:absolute;font-size:12px;white-space:nowrap;color:var(--muted);display:flex;align-items:center;transition:left .9s,top .9s,opacity .4s}
+table.heat{border-collapse:separate;border-spacing:3px;font-family:ui-monospace,monospace;font-size:13.5px}
+table.heat td{width:86px;height:46px;text-align:center;border-radius:6px;cursor:pointer;transition:outline .2s}
+table.heat td.sel{outline:3px solid #f59e0b}
+table.heat th{font-family:var(--sans);font-weight:500;font-size:12px;color:var(--muted);padding:2px 6px}
+table.sum{border-collapse:collapse;width:100%;font-size:15px;margin:12px 0;background:var(--card);border-radius:14px;overflow:hidden}
+table.sum th,table.sum td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+table.sum th{color:var(--muted);font-weight:500;font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.err{color:var(--red);font-weight:600}
+.good{color:var(--green);font-weight:600}
+.f sub,.f sup{font-size:.65em}
+.f .sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 3px}
+.f .sum b{font-size:1.6em;font-weight:400}
+.f .sum small{font-size:.6em}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:0 0 16px;padding:12px 16px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 14px 14px}
+.leg dt{font-family:var(--serif);text-align:right;white-space:nowrap}
+.leg dd{margin:0;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;margin-top:64px}
+.back{margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:17px;text-decoration:none;color:var(--accent);min-height:44px}
+.back:hover{text-decoration:underline}
+/* ===== Minimalismo ===== */
+:root{
+  --sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --serif:"Iowan Old Style","Charter","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:"SF Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);--t:.3s;--ring:rgba(128,128,128,.16)}
+body{font-family:var(--sans);text-rendering:optimizeLegibility}
+main>p,.idea,.big,.sub,.leg dd,table.sum td{font-family:var(--sans)}
+main>p,.idea{font-size:17px;line-height:1.6}
+.sub{font-size:19px}
+h1{font-weight:650;letter-spacing:-.03em}
+h2{font-weight:650;margin-top:88px;padding-top:0;border:0}
+h3{font-weight:600}
+.big{background:none;border:0;box-shadow:none;border-left:2px solid var(--accent);border-radius:0;padding:4px 0 4px 20px;font-size:22px;margin:28px 0}
+.idea{background:none;border:0;box-shadow:none;border-left:2px solid var(--line);border-radius:0;padding:2px 0 2px 16px}
+.idea b{color:var(--ink)}
+.w{background:var(--card);border:0;box-shadow:none;border-radius:16px}
+.f,pre,table.sum,.leg{box-shadow:none;background:var(--card)}
+.f{background:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0}
+.f:has(+ .leg){border-bottom:0;margin-bottom:0}
+.leg{background:none;border-top:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 4px}
+code,pre,.calc,table.comp,.cell,.list,table.heat,.tp .c,.sl output,.mono{font-family:var(--mono)}
+.calc{border:0}
+nav.toc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:12px -18px 0;padding:8px 18px;gap:2px;background:color-mix(in srgb,var(--bg) 85%,transparent);border-bottom:1px solid var(--line)}
+nav.toc a{background:none;box-shadow:none;color:var(--muted);padding:4px 10px;transition:color var(--t) var(--ease),background var(--t) var(--ease)}
+nav.toc a:hover{background:var(--soft);color:var(--ink)}
+h2{scroll-margin-top:64px}
+button,select{font-weight:500;transition:background var(--t) var(--ease),color var(--t) var(--ease),transform .2s var(--ease)}
+button:hover{filter:none;background:var(--line)}
+button.on:hover{background:var(--accent);filter:brightness(1.08)}
+button.on{box-shadow:none}
+.cell,table.comp td,table.heat td,.tp .c{transition-duration:.45s;transition-timing-function:var(--ease)}
+.cell.hi,.cell.hi2{transform:scale(1.04)}
+.tp .c{transition:left .8s var(--ease),top .8s var(--ease),background .4s,color .4s}
+.tp .h{transition:left .8s var(--ease),top .8s var(--ease),opacity .4s var(--ease)}
+.msg{transition:opacity .25s var(--ease)}
+table.sum tbody tr:hover{background:none}
+table.sum{border-radius:0;background:none;border-top:1px solid var(--line)}
+table.sum th,table.sum td{padding:12px 10px}
+footer{border-top:0;padding-top:0}
+@media (max-width:560px){main{padding-left:16px;padding-right:16px}h2{font-size:24px;margin-top:64px}.big{font-size:19px;padding-left:16px}nav.toc{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}}
+@media (prefers-reduced-motion:reduce){.tp .c,.tp .h{transition:none!important}}
+</style>
+<style>
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.chip{display:inline-block;font-family:var(--mono);font-size:13px;padding:2px 9px;border-radius:999px;background:var(--soft);margin:2px}
+.chip.on{background:var(--ok);color:var(--okink)}.chip.off{opacity:.45}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:14px;margin:8px 0}
+.bars i{display:block;height:16px;border-radius:5px;background:var(--accent);transition:width .5s var(--ease)}
+.bars span.n{font-family:var(--mono);font-size:13px;text-align:right}
+.bars label{white-space:nowrap}
+nav.toc a{white-space:nowrap}
+svg.plot rect.cellbg{shape-rendering:crispEdges}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Volver a los apuntes</a>
+
+<h1>Bosques aleatorios</h1>
+<p class="sub">Apuntes directos y animados del cuaderno <i>ML_03 · Boscos aleatoris</i>. Todos los gráficos se mueven: desliza, arrastra o dale a <b>Reproducir</b>.</p>
+
+<div class="big">La frase que tienes que entender al final: <b>un árbol suelto memoriza; cientos de árboles distintos votando se equivocan de maneras distintas, y los errores se cancelan.</b> Pero solo si de verdad son distintos.</div>
+
+<nav class="toc">
+<a href="#s1">1 · El problema</a><a href="#s2">2 · Por qué votar funciona</a><a href="#s3">3 · Hacerlos diferentes</a><a href="#s4">4 · Un bosque a mano</a><a href="#s5">5 · El caso incómodo</a><a href="#s6">6 · Importancias</a><a href="#s7">7 · Práctica</a><a href="#res">Resumen</a>
+</nav>
+
+<p>Este cuaderno sigue al de los árboles de decisión. Los datos reales son las 150 flores de Iris (con el mismo reparto entrenamiento/examen: 105 y 45 flores). Cuando un dibujo usa <b>datos inventados</b>, la página lo dice.</p>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1">1 · El problema que hereda</h2>
+<div class="idea"><b>Idea:</b> un árbol de decisión que crece sin límite deja de encontrar reglas generales y empieza a <b>memorizar filas</b>: acierta el 100 % en clase y falla en el examen. La solución de hoy no es «un árbol más listo»: es <b>muchos árboles distintos que votan por mayoría</b>.</div>
+<p>Eso es un <b>bosque aleatorio</b> (<i>random forest</i>): centenares de árboles, cada uno un poco diferente. El cuaderno responde a dos preguntas: <b>por qué votar funciona</b> y <b>qué hace falta para que funcione de verdad</b>.</p>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2">2 · Por qué votar funciona</h2>
+<div class="idea"><b>Idea:</b> antes de tocar ningún árbol, hacemos el experimento con clasificadores imaginarios. 100 votantes, cada uno acierta solo el <b>60 %</b>, y <b>se equivocan de forma independiente</b> (el error de uno no tiene nada que ver con el de otro). ¿Qué dice la mayoría?</div>
+<div class="f">P(mayoría acierta) = <span class="sum"><small>n</small><b>Σ</b><small>j &gt; n/2</small></span> C(n, j) · p<sup>j</sup> · (1 − p)<sup>n−j</sup></div>
+<dl class="leg">
+<dt>n</dt><dd>cuántos clasificadores votan</dd>
+<dt>p</dt><dd>la probabilidad de que <b>uno solo</b> acierte (aquí 0.60)</dd>
+<dt>j</dt><dd>cuántos de los <i>n</i> aciertan en una simulación; la mayoría acierta si <i>j</i> es más de la mitad</dd>
+<dt>C(n, j)</dt><dd>de cuántas maneras se pueden elegir los <i>j</i> que aciertan entre los <i>n</i></dd>
+<dt>p<sup>j</sup> (1 − p)<sup>n−j</sup></dt><dd>la probabilidad de que justo esos <i>j</i> acierten y los otros fallen</dd>
+<dt>Σ</dt><dd>suma todos los casos con <i>j</i> &gt; <i>n</i>/2</dd>
+</dl>
+<p>El cuaderno lo simula con numpy (10 000 repeticiones): la mayoría de 100 acierta el <b>97.2 %</b>. Aquí tienes el cálculo exacto y un botón para simular tú. <b>Mueve n y p</b>; el punto rojo es tu combinación. Nadie ha aprendido nada nuevo: solo hemos contado votos.</p>
+<div class="w" id="w2a"></div>
+<pre>np.random.seed(42)
+vots = np.random.rand(10_000, 100) &lt; 0.60        # True = ha acertado
+majoria_encerta = vots.sum(axis=1) &gt; 100 / 2
+majoria_encerta.mean()                            # → 0.972  (97.2 %)</pre>
+<p>Con 1 votante tienes el 60 %. Con 101 ya rozas el <b>98 %</b>. Ninguno sabe más que antes: solo se aprovecha que sus errores <b>no coinciden</b>.</p>
+
+<h3>2.2 · El matiz honesto: si los errores van juntos, votar no arregla nada</h3>
+<div class="idea"><b>Trampa típica:</b> todo lo anterior depende de que los errores sean <b>independientes</b>. Si los 100 clasificadores fallan en los mismos casos (porque en el fondo son el mismo repetido), la mayoría falla igual que uno solo. El truco del bosque no es «hacer muchos árboles», es <b>hacer muchos árboles que se equivoquen de maneras diferentes</b>.</div>
+<p>Cada fila es un clasificador y cada columna un caso (12 × 40, <b>datos inventados</b>): verde = acierta, rojo = falla. Con <b>c</b> = 0 votan cada uno por su cuenta. Sube <b>c</b>: cada clasificador copia el voto del primero con probabilidad c. Fíjate en las <b>columnas</b>: los errores se apilan en los mismos casos. Con c = 0.8 es justo el ejercicio 7.4 del cuaderno.</p>
+<div class="w" id="w2b"></div>
+<pre># ejercicio 7.4: copiar el voto del primero el 80 % de las veces
+copia = np.random.rand(10_000, 99) &lt; 0.8
+propio = np.random.rand(10_000, 99) &lt; 0.6
+resto = np.where(copia, primero[:, None], propio)
+# la mayoría acierta ≈ 61 %  (con semilla 42 sale 0.6108): casi lo mismo que uno solo, no el 97 %</pre>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3">3 · Cómo se hacen diferentes: bootstrap y azar en las columnas</h2>
+<p>Un bosque aleatorio hace distintos a sus árboles de <b>dos maneras</b>, las dos basadas en el azar.</p>
+
+<h3>3.1 · Bootstrap: cada árbol ve una muestra diferente</h3>
+<div class="idea"><b>Idea:</b> cada árbol no se entrena con todas las filas, sino con una muestra <b>del mismo tamaño, sacada al azar y con reemplazo</b>: una fila puede salir 0, 1, 2 o más veces. Como hay reemplazo, unas cuantas no salen nunca. ¿Cuántas, de media?</div>
+<div class="f">P(una fila no sale) = ( 1 − 1/n )<sup>n</sup> &nbsp;&nbsp;→&nbsp;&nbsp; 1/e ≈ 0.368 &nbsp;&nbsp; cuando n crece</div>
+<dl class="leg">
+<dt>n</dt><dd>cuántas filas tiene el entrenamiento (y cuántos sorteos se hacen)</dd>
+<dt>1/n</dt><dd>la probabilidad de que un sorteo concreto elija <b>esa</b> fila</dd>
+<dt>1 − 1/n</dt><dd>la probabilidad de que un sorteo <b>no</b> la elija</dd>
+<dt>( … )<sup>n</sup></dt><dd>que no la elija en <b>ninguno</b> de los <i>n</i> sorteos (son independientes, se multiplican)</dd>
+<dt>e</dt><dd>el número 2.718…; el límite de esa expresión es 1/e</dd>
+</dl>
+<p>Cada árbol ve, de media, un <b>63 %</b> de las filas (algunas repetidas) y deja fuera un <b>37 %</b>, distinto en cada árbol. Con eso ya son diferentes. Pulsa para sacar muestras de <b>20 filas</b>: las barras dicen cuántas veces sale cada fila y la cruz roja marca las que ese árbol <b>no verá nunca</b>. Mira que <b>no son las mismas</b> en cada muestra.</p>
+<div class="w" id="w3a"></div>
+<p>La fórmula en números: con <i>n</i> = 20 sale 35.8 % y con <i>n</i> = 200, 36.7 %. En el cuaderno, 2 000 simulaciones con 200 filas dieron <b>36.7 %</b> contra el 36.8 % teórico.</p>
+<div class="w" id="w3b"></div>
+<pre>mostra = np.random.randint(0, n_files, size=n_files)   # con reemplazo
+len(set(mostra))                                         # filas distintas que han salido
+1 / np.e                                                 # → 0.3679 (36.8 %)</pre>
+
+<h3>3.2 · Azar en las columnas: cada corte ve pocas opciones</h3>
+<div class="idea"><b>Idea:</b> variar las filas no basta. Si una columna es mucho mejor que las demás, <b>todos los árboles</b> la elegirán para el primer corte y volverán a parecerse. Por eso, en cada corte, el árbol <b>no puede mirar todas las columnas</b>: solo un subconjunto al azar.</div>
+<div class="f">max_features = √( nº de columnas )</div>
+<dl class="leg">
+<dt>max_features</dt><dd>cuántas columnas puede mirar un árbol en cada corte (parámetro de scikit-learn; es el valor por defecto en clasificación)</dd>
+<dt>√</dt><dd>raíz cuadrada</dd>
+<dt>nº de columnas</dt><dd>cuántas medidas tiene cada fila (en Iris, 4)</dd>
+</dl>
+<p>En Iris: √4 = 2 de 4 columnas por corte. Un árbol que no ve la columna más fuerte tiene que apoyarse en otra, y así los árboles acaban apostando por columnas diferentes en los primeros niveles. <b>Sortea cortes:</b> en cada uno salen 2 columnas al azar; el verde marca los que incluyen la más fuerte (<code>petal_ample</code>, la de más peso como verás en el apartado 6).</p>
+<div class="w" id="w3c"></div>
+
+<h3>3.3 · Cómo se ve en el plano</h3>
+<p>Datos <b>inventados</b> (mitades de luna con ruido, generadas aquí; no son las de scikit-learn). Aquí se entrena de verdad: un árbol sin límite de profundidad por muestra bootstrap, mirando una sola de las 2 columnas en cada corte (√2 → 1). Con <b>N = 1</b> ves un solo árbol: frontera llena de racones, porque se ha creído el ruido de sus filas. Sube N: los racones de cada árbol van a sitios distintos y, al promediar, se borran. Cambia entre el <b>voto de la mayoría</b> y la <b>fracción de árboles</b> que votan naranja.</p>
+<div class="w" id="w3d"></div>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4">4 · Construye un bosque a mano</h2>
+<div class="idea"><b>Idea:</b> se usa <code>DecisionTreeClassifier</code> como pieza, pero el <b>bootstrap</b> y la <b>votación</b> los haces tú, para ver que no hay magia escondida.</div>
+<pre>rng = np.random.RandomState(42)
+prediccions = np.zeros((n_arbres, len(X_examen)), dtype=int)
+for i in range(n_arbres):
+    idx = rng.randint(0, n_files_entrena, size=n_files_entrena)   # bootstrap
+    arbre = DecisionTreeClassifier(max_depth=3, random_state=i)
+    arbre.fit(X_entrena_idx.iloc[idx], y_entrena_num[idx])
+    prediccions[i] = arbre.predict(X_examen)
+vot_majoria, _ = stats.mode(prediccions, axis=0, keepdims=False)   # la clase más votada por flor</pre>
+<p>Resultados reales del cuaderno (Iris, 45 flores de examen): un solo árbol <b>97.8 %</b>, tu bosque de 50 árboles a mano <b>93.3 %</b>, <code>RandomForestClassifier</code> (100 árboles) <b>91.1 %</b>. Sorprende, y el apartado 5 lo explica.</p>
+<p>Aquí tienes el mecanismo con <b>50 árboles entrenados en esta página</b> (profundidad 3, bootstrap, 2 columnas por corte; <b>otro azar que numpy</b>, así que los votos no coinciden con los del cuaderno). Elige una flor del examen y mira cómo votan.</p>
+<div class="w" id="w4"></div>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5">5 · El caso incómodo de Iris</h2>
+<div class="idea"><b>Idea:</b> en Iris el bosque sale <b>peor</b> que el árbol solo, y no es un error de código. Iris es un conjunto minúsculo y fácil (150 flores, 4 columnas, grupos que casi se separan a ojo): no hay margen para mejorar, y el bosque solo añade ruido, porque cada árbol ve un poco menos de filas y un poco menos de columnas. <b>Los bosques ganan cuando hay mucho que aprovechar</b>: muchas columnas, relaciones complicadas y ruido que confunde a un árbol.</div>
+<p>Montamos un problema así con <code>make_classification</code>: 2 000 muestras, 20 columnas, de las que solo 5 informan de verdad (5 son combinaciones de las otras y 10 son ruido puro), más un 5 % de etiquetas cambiadas. Resultados reales del cuaderno:</p>
+<div class="w" id="w5a"></div>
+<p>Con 20 columnas, ruido y relaciones que un solo corte no captura, el árbol sin límite de profundidad <b>se sobreajusta</b> y el bosque lo supera con claridad. <b>Un modelo más complicado no gana siempre</b>: gana cuando hay suficiente «ruido independiente» para que votar ayude.</p>
+
+<h3>5.2 · ¿Cuántos árboles hacen falta?</h3>
+<p>El <b>error</b> en el examen (1 − exactitud) de este mismo problema difícil, añadiendo árboles. La línea gris es el árbol solo (17.7 % de error). Con 1 o 2 árboles el bosque es incluso peor (cada uno ve menos filas y columnas); con 3 ya lo ha pasado, con una docena está cerca del mínimo y a partir de ahí cada árbol aporta muy poco: la curva se aplana y solo baila. <b>Añadir árboles no sobreajusta</b>, pero tampoco mejora para siempre. Haz clic en la curva.</p>
+<div class="w" id="w5b"></div>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6">6 · Qué columnas usa más el bosque</h2>
+<div class="idea"><b>Idea:</b> un bosque entrenado te dice <b>qué columnas ha usado más</b> para decidir. Es el atributo <code>feature_importances_</code> (las importancias suman 1).</div>
+<pre>rf = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=42).fit(X_entrena, y_entrena)
+pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)</pre>
+<p>Las del pétalo pesan mucho más que las del sépalo: justo las que ya se eligieron a ojo en el cuaderno de la demostración. <b>Haz clic en una barra</b>.</p>
+<div class="w" id="w6a"></div>
+<p><b>Aviso honesto:</b> esta medida tiene un <b>sesgo conocido</b>: tiende a dar más importancia a las columnas con <b>muchos valores distintos</b> (continuas), aunque no sean las que mejor explican el problema, simplemente porque tienen más puntos de corte posibles. No es una medida perfecta, es una pista.</p>
+<p>Para saber si dicen algo sensato hace falta un problema donde <b>conozcamos la respuesta</b>. <code>make_classification</code> con <code>shuffle=False</code> ordena las columnas: primero las 5 informativas, luego las 5 redundantes (combinaciones de las informativas) y al final las 10 de ruido puro. Bosque de 200 árboles, barras coloreadas por tipo:</p>
+<div class="w" id="w6b"></div>
+<p>Las de ruido quedan todas abajo; las informativas y las redundantes, arriba y mezcladas: el bosque no distingue una columna «original» de una que es combinación de otras, porque llevan la <b>misma información</b>. La importancia dice <b>qué ha usado</b> el bosque, no <b>qué causa</b> la etiqueta.</p>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7">7 · Práctica</h2>
+<p>Cuatro ejercicios, en orden. Aquí van la idea de cada uno y, al final de la página, lo que te tiene que salir. El 7.4 ya lo tienes jugable en el apartado 2.2.</p>
+
+<h3>7.1 · ¿Cuántos árboles hacen falta?</h3>
+<p>Entrena boscos con <code>n_estimators</code> = 1, 5, 10, 25, 50, 100, 200 sobre Iris y dibuja la exactitud en el examen. ¿A partir de cuántos árboles deja de valer la pena? Una manera de medirlo: una <b>banda de ±1 punto</b> alrededor de la exactitud del último valor y el primer <i>n</i> a partir del cual la curva ya no sale de ella (círculo rojo). Elige la curva: una <b>inventada</b> (la del cuaderno) y la <b>mía</b> con Iris.</p>
+<div class="w" id="w7a"></div>
+
+<h3>7.2 · Árbol contra bosque con Wine</h3>
+<p>Con <code>load_wine()</code> (13 columnas, 3 clases), mismos parámetros que con Iris. Antes de decir quién gana, mira <b>cuánto se mueve la exactitud solo con cambiar la partición</b>: un árbol sobre datos <b>inventados</b> (mitades de luna, 180 puntos), evaluado con 40 particiones distintas (<code>random_state</code> de 0 a 39). La línea roja es la que habrías visto con una sola partición; el ancho del histograma es el ruido que tiene cualquier comparación hecha así.</p>
+<div class="w" id="w7b"></div>
+
+<h3>7.3 · El precio de tantos árboles</h3>
+<p>Mide cuánto tarda un bosque de 10 árboles y uno de 500 con <code>time.time()</code> y decide si compensa. Idea de cómo medir: aquí no hay bosque, cronometramos una ordenación de vectores de varios tamaños, <b>cinco veces cada uno</b> (con <code>performance.now()</code>, el equivalente en JavaScript). Las cinco medidas de un mismo tamaño no salen iguales: por eso conviene repetir y quedarse con la media o la mediana. Pulsa para cronometrar en tu máquina.</p>
+<div class="w" id="w7c"></div>
+
+<!-- ============ RESUMEN ============ -->
+<h2 id="res">Resumen en una tabla</h2>
+<div class="scroll">
+<table class="sum">
+<tr><th>Concepto</th><th>Qué es</th><th>Numpy / sklearn</th><th>Número para comprobar</th></tr>
+<tr><td><b>Votar</b></td><td>La mayoría de clasificadores independientes acierta más que uno</td><td><code>vots.sum(axis=1) &gt; n / 2</code></td><td>100 al 60 % → 97.2 % (exacto 97.29 %)</td></tr>
+<tr><td><b>Independencia</b></td><td>Si los errores coinciden, votar no ayuda</td><td><code>np.where(copia, primero, propio)</code></td><td>copiando al 80 % → ≈ 61 %</td></tr>
+<tr><td><b>Bootstrap</b></td><td>Mostra con reemplazo; cada árbol ve ~63 % de las filas</td><td><code>np.random.randint(0, n, size=n)</code></td><td>36.7 % fuera (simulado) · 1/e = 36.8 %</td></tr>
+<tr><td><b>Azar en columnas</b></td><td>Cada corte mira solo un subconjunto</td><td><code>max_features="sqrt"</code></td><td>√4 = 2 de 4 columnas</td></tr>
+<tr><td><b>Bosque</b></td><td>Muchos árboles distintos votando</td><td><code>RandomForestClassifier(n_estimators=100)</code></td><td>Iris: árbol 97.8 % · bosque 91.1 %</td></tr>
+<tr><td><b>Cuándo gana</b></td><td>Muchas columnas, ruido, relaciones complicadas</td><td><code>make_classification(...)</code></td><td>árbol 82.3 % → bosque 88.7 %</td></tr>
+<tr><td><b>Importancias</b></td><td>Qué columnas ha usado más (con sesgo)</td><td><code>rf.feature_importances_</code></td><td>petal_ample 0.449 · petal_llarg 0.410</td></tr>
+</table>
+</div>
+<div class="big">Un bosque no es un árbol más listo: es una votación de árboles distintos. Funciona cuando se equivocan de maneras diferentes, y por eso el bootstrap y el azar en las columnas son imprescindibles.</div>
+
+<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
+<ul>
+<li><b>7.1</b> (Iris, <code>random_state=42</code>, profundidad sin límite; mi ejecución con scikit-learn 1.9.1): 1 → 86.7 %, 5 → 91.1 %, 10 → 91.1 %, 25 → 88.9 %, 50 → 88.9 %, 100 → 88.9 %, 200 → 91.1 %. Con 45 flores, una sola flor son 2.2 puntos: la curva es casi plana y ruidosa, así que «deja de valer la pena» ya a partir de unos 5 árboles. Tu curva puede salir distinta según versión y semilla.</li>
+<li><b>7.2</b> (Wine, 70/30, <code>stratify</code>, <code>random_state=42</code>, <code>max_depth=3</code>): un árbol <b>96.3 %</b> (52 de 54), el bosque <b>100 %</b> (54 de 54). Gana el bosque, como en el punto 5: 13 columnas y relaciones más ricas que en Iris. Aun así, una flor de diferencia son 1.9 puntos: no te fíes de una sola partición.</li>
+<li><b>7.3</b>: el tiempo crece más o menos <b>en proporción al número de árboles</b> (500 árboles tardan unas 50 veces lo de 10). Los segundos exactos dependen de tu máquina. Con Iris casi no compensa: ya has visto que más árboles no mejoran.</li>
+<li><b>7.4</b> (copiar el 80 % del primero): la mayoría acierta <b>≈ 61 %</b> (0.6108 con la semilla 42), contra el <b>97.2 %</b> del caso independiente. Sin independencia, 100 clasificadores valen casi lo mismo que uno.</li>
+</ul>
+<p>Siguiente cuaderno: <b>la regresión logística</b>. Hasta ahora todos los modelos <i>cortan</i>; ese no corta nada, calcula una probabilidad con una fórmula.</p>
+<footer>Apuntes generados a partir del cuaderno ML_03 (Boscos aleatoris). Funciona sin conexión: todo está en este archivo. Los números de Iris, make_classification y los ejercicios son resultados reales de scikit-learn; los dibujos con luna, votos y tiempos usan datos inventados o medidos en tu navegador y lo dicen.</footer>
+
+</main>
+
+<script>
+const IRIS={"X":[[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4],[4.6,3.4,1.4,0.3],[5.0,3.4,1.5,0.2],[4.4,2.9,1.4,0.2],[4.9,3.1,1.5,0.1],[5.4,3.7,1.5,0.2],[4.8,3.4,1.6,0.2],[4.8,3.0,1.4,0.1],[4.3,3.0,1.1,0.1],[5.8,4.0,1.2,0.2],[5.7,4.4,1.5,0.4],[5.4,3.9,1.3,0.4],[5.1,3.5,1.4,0.3],[5.7,3.8,1.7,0.3],[5.1,3.8,1.5,0.3],[5.4,3.4,1.7,0.2],[5.1,3.7,1.5,0.4],[4.6,3.6,1.0,0.2],[5.1,3.3,1.7,0.5],[4.8,3.4,1.9,0.2],[5.0,3.0,1.6,0.2],[5.0,3.4,1.6,0.4],[5.2,3.5,1.5,0.2],[5.2,3.4,1.4,0.2],[4.7,3.2,1.6,0.2],[4.8,3.1,1.6,0.2],[5.4,3.4,1.5,0.4],[5.2,4.1,1.5,0.1],[5.5,4.2,1.4,0.2],[4.9,3.1,1.5,0.2],[5.0,3.2,1.2,0.2],[5.5,3.5,1.3,0.2],[4.9,3.6,1.4,0.1],[4.4,3.0,1.3,0.2],[5.1,3.4,1.5,0.2],[5.0,3.5,1.3,0.3],[4.5,2.3,1.3,0.3],[4.4,3.2,1.3,0.2],[5.0,3.5,1.6,0.6],[5.1,3.8,1.9,0.4],[4.8,3.0,1.4,0.3],[5.1,3.8,1.6,0.2],[4.6,3.2,1.4,0.2],[5.3,3.7,1.5,0.2],[5.0,3.3,1.4,0.2],[7.0,3.2,4.7,1.4],[6.4,3.2,4.5,1.5],[6.9,3.1,4.9,1.5],[5.5,2.3,4.0,1.3],[6.5,2.8,4.6,1.5],[5.7,2.8,4.5,1.3],[6.3,3.3,4.7,1.6],[4.9,2.4,3.3,1.0],[6.6,2.9,4.6,1.3],[5.2,2.7,3.9,1.4],[5.0,2.0,3.5,1.0],[5.9,3.0,4.2,1.5],[6.0,2.2,4.0,1.0],[6.1,2.9,4.7,1.4],[5.6,2.9,3.6,1.3],[6.7,3.1,4.4,1.4],[5.6,3.0,4.5,1.5],[5.8,2.7,4.1,1.0],[6.2,2.2,4.5,1.5],[5.6,2.5,3.9,1.1],[5.9,3.2,4.8,1.8],[6.1,2.8,4.0,1.3],[6.3,2.5,4.9,1.5],[6.1,2.8,4.7,1.2],[6.4,2.9,4.3,1.3],[6.6,3.0,4.4,1.4],[6.8,2.8,4.8,1.4],[6.7,3.0,5.0,1.7],[6.0,2.9,4.5,1.5],[5.7,2.6,3.5,1.0],[5.5,2.4,3.8,1.1],[5.5,2.4,3.7,1.0],[5.8,2.7,3.9,1.2],[6.0,2.7,5.1,1.6],[5.4,3.0,4.5,1.5],[6.0,3.4,4.5,1.6],[6.7,3.1,4.7,1.5],[6.3,2.3,4.4,1.3],[5.6,3.0,4.1,1.3],[5.5,2.5,4.0,1.3],[5.5,2.6,4.4,1.2],[6.1,3.0,4.6,1.4],[5.8,2.6,4.0,1.2],[5.0,2.3,3.3,1.0],[5.6,2.7,4.2,1.3],[5.7,3.0,4.2,1.2],[5.7,2.9,4.2,1.3],[6.2,2.9,4.3,1.3],[5.1,2.5,3.0,1.1],[5.7,2.8,4.1,1.3],[6.3,3.3,6.0,2.5],[5.8,2.7,5.1,1.9],[7.1,3.0,5.9,2.1],[6.3,2.9,5.6,1.8],[6.5,3.0,5.8,2.2],[7.6,3.0,6.6,2.1],[4.9,2.5,4.5,1.7],[7.3,2.9,6.3,1.8],[6.7,2.5,5.8,1.8],[7.2,3.6,6.1,2.5],[6.5,3.2,5.1,2.0],[6.4,2.7,5.3,1.9],[6.8,3.0,5.5,2.1],[5.7,2.5,5.0,2.0],[5.8,2.8,5.1,2.4],[6.4,3.2,5.3,2.3],[6.5,3.0,5.5,1.8],[7.7,3.8,6.7,2.2],[7.7,2.6,6.9,2.3],[6.0,2.2,5.0,1.5],[6.9,3.2,5.7,2.3],[5.6,2.8,4.9,2.0],[7.7,2.8,6.7,2.0],[6.3,2.7,4.9,1.8],[6.7,3.3,5.7,2.1],[7.2,3.2,6.0,1.8],[6.2,2.8,4.8,1.8],[6.1,3.0,4.9,1.8],[6.4,2.8,5.6,2.1],[7.2,3.0,5.8,1.6],[7.4,2.8,6.1,1.9],[7.9,3.8,6.4,2.0],[6.4,2.8,5.6,2.2],[6.3,2.8,5.1,1.5],[6.1,2.6,5.6,1.4],[7.7,3.0,6.1,2.3],[6.3,3.4,5.6,2.4],[6.4,3.1,5.5,1.8],[6.0,3.0,4.8,1.8],[6.9,3.1,5.4,2.1],[6.7,3.1,5.6,2.4],[6.9,3.1,5.1,2.3],[5.8,2.7,5.1,1.9],[6.8,3.2,5.9,2.3],[6.7,3.3,5.7,2.5],[6.7,3.0,5.2,2.3],[6.3,2.5,5.0,1.9],[6.5,3.0,5.2,2.0],[6.2,3.4,5.4,2.3],[5.9,3.0,5.1,1.8]],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]};
+const X=IRIS.X, Y=IRIS.y;
+const SPECIES=['setosa','versicolor','virginica'];
+const NS='http://www.w3.org/2000/svg';
+const C={blue:'#2563eb',orange:'#ea580c',green:'#16a34a',purple:'#7c3aed',red:'#dc2626',gray:'#8a877f',pink:'#db2777',teal:'#0d9488',amber:'#d97706',ink:'currentColor'};
+const SPC=[C.blue,C.orange,C.green];
+function E(tag,attrs,parent){const e=document.createElementNS(NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function H(tag,attrs,parent,html){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e}
+function f(x,d=4){const r=+(+x).toFixed(d);return (Object.is(r,-0)?0:r).toString()}
+const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;const RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+function tween(o,dur,fn,done){if(RM)dur=1;cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
+const dot=(a,b)=>a.reduce((s,ai,i)=>s+ai*b[i],0);
+const norm=a=>Math.sqrt(dot(a,a));
+const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];
+
+class Plot{
+  constructor(host,o){
+    const W=o.w||680,pad=o.pad??34,[x0,x1]=o.x,[y0,y1]=o.y;
+    this.sx=(W-2*pad)/(x1-x0);
+    let Hh;
+    if(o.h){Hh=o.h;this.sy=o.free?(Hh-2*pad)/(y1-y0):this.sx}else{this.sy=this.sx;Hh=Math.round((y1-y0)*this.sy+2*pad)}
+    Object.assign(this,{x0,x1,y0,y1,pad,W,H:Hh});
+    this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
+    this.grid=E('g',{},this.svg);
+    const gx=o.gx||1,gy=o.gy||gx;
+    const yAx=(y0<=0&&y1>=0)?this.Y(0):this.Y(y0), xAx=(x0<=0&&x1>=0)?this.X(0):this.X(x0);
+    for(let x=Math.ceil(x0/gx-1e-9)*gx;x<=x1+1e-9;x+=gx){const X=this.X(x);E('line',{x1:X,y1:this.Y(y1),x2:X,y2:this.Y(y0),class:Math.abs(x)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(x)>1e-9&&o.ticks!==false)E('text',{x:X,y:Math.min(yAx+14,Hh-4),'text-anchor':'middle',class:'tick'},this.grid).textContent=f(x,2)}
+    for(let y=Math.ceil(y0/gy-1e-9)*gy;y<=y1+1e-9;y+=gy){const Yp=this.Y(y);E('line',{x1:this.X(x0),y1:Yp,x2:this.X(x1),y2:Yp,class:Math.abs(y)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(y)>1e-9&&o.ticks!==false)E('text',{x:Math.max(xAx-5,22),y:Yp+4,'text-anchor':'end',class:'tick'},this.grid).textContent=f(y,2)}
+    if(o.xl)E('text',{x:this.X(x1),y:Hh-6,'text-anchor':'end',class:'tick'},this.grid).textContent=o.xl;
+    if(o.yl)E('text',{x:this.X(x0)+4,y:pad-12,class:'tick'},this.grid).textContent=o.yl;
+  }
+  X(x){return this.pad+(x-this.x0)*this.sx}
+  Y(y){return this.pad+(this.y1-y)*this.sy}
+  P(p){return [this.X(p[0]),this.Y(p[1])]}
+  g(){return E('g',{},this.svg)}
+  toWorld(ev){const pt=this.svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(this.svg.getScreenCTM().inverse());return [(q.x-this.pad)/this.sx+this.x0,this.y1-(q.y-this.pad)/this.sy]}
+  arrow(g,color,w=2.6,dash){const grp=E('g',{},g);const l=E('line',{stroke:color,'stroke-width':w,'stroke-linecap':'round'},grp);if(dash)l.setAttribute('stroke-dasharray',dash);const h=E('polygon',{fill:color},grp);const self=this;
+    return {el:grp,set(a,b){const [X1,Y1]=self.P(a),[X2,Y2]=self.P(b);const dx=X2-X1,dy=Y2-Y1,L=Math.hypot(dx,dy);if(L<2){grp.style.display='none';return}grp.style.display='';const hl=Math.min(10+w*1.6,L*.6),hw=hl*.45,ux=dx/L,uy=dy/L,bx=X2-ux*hl,by=Y2-uy*hl;
+      l.setAttribute('x1',X1);l.setAttribute('y1',Y1);l.setAttribute('x2',bx);l.setAttribute('y2',by);h.setAttribute('points',`${X2},${Y2} ${bx-uy*hw},${by+ux*hw} ${bx+uy*hw},${by-ux*hw}`)},
+      show(v){grp.style.opacity=v?1:0}}}
+  label(g,color,cls='lbl'){const t=E('text',{class:cls},g);if(color)t.style.fill=color;const self=this;return {el:t,set(p,s,dx=6,dy=-6,anchor='start'){const [X,Yp]=self.P(p);t.setAttribute('x',X+dx);t.setAttribute('y',Yp+dy);t.setAttribute('text-anchor',anchor);t.textContent=s},show(v){t.style.opacity=v?1:0}}}
+  line(g,a,b,attrs){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);return E('line',Object.assign({x1,y1,x2,y2},attrs),g)}
+  setLine(el,a,b){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2)}
+  poly(g,pts,attrs){return E('polygon',Object.assign({points:pts.map(p=>this.P(p).join(',')).join(' ')},attrs),g)}
+  setPoly(el,pts){el.setAttribute('points',pts.map(p=>this.P(p).join(',')).join(' '))}
+  dot(g,p,r,color,attrs){const [cx,cy]=this.P(p);return E('circle',Object.assign({cx,cy,r,fill:color},attrs||{}),g)}
+  setDot(el,p){const [cx,cy]=this.P(p);el.setAttribute('cx',cx);el.setAttribute('cy',cy)}
+}
+
+function stepper(host,n,render,o={}){
+  const bar=H('div',{class:'bar'},host);
+  const prev=H('button',{},bar,'← Anterior');
+  const play=H('button',{},bar,'▶ Reproducir');
+  const next=H('button',{},bar,'Siguiente →');
+  const rst=H('button',{title:'Volver al principio'},bar,'↺');
+  const dots=H('span',{class:'dots'},bar);
+  let step=0,timer=null;
+  const draw=()=>{render(step);dots.textContent=`Paso ${step+1} de ${n}`};
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  prev.onclick=()=>{stop();step=Math.max(0,step-1);draw()};
+  next.onclick=()=>{stop();step=Math.min(n-1,step+1);draw()};
+  rst.onclick=()=>{stop();step=0;draw()};
+  play.onclick=()=>{if(timer){stop();return}if(step>=n-1)step=0;draw();play.textContent='❚❚ Pausa';timer=setInterval(()=>{step++;draw();if(step>=n-1)stop()},o.interval||1800)};
+  return {bar,draw,reset(){stop();step=0;draw()},get step(){return step}};
+}
+
+/* Tabla de componentes animada: norma, distancia, producto escalar */
+function compTable(host,o){
+  const n=o.cols.length;
+  const msg=H('div',{class:'msg'},host);
+  const wrap=H('div',{class:'scroll'},host);
+  const t=H('table',{class:'comp'},wrap);
+  const th=H('thead',{},t),hr=H('tr',{},th);H('th',{},hr,'');o.cols.forEach(c=>H('th',{},hr,c));
+  const tb=H('tbody',{},t);const cells=[];
+  o.rows.forEach(r=>{const tr=H('tr',{},tb);H('th',{},tr,r.name);cells.push(r.vals.map(v=>H('td',{},tr,f(v))))});
+  const trO=H('tr',{},tb);H('th',{},trO,o.opName);const opC=o.cols.map(()=>H('td',{},trO,''));
+  const trS=H('tr',{},tb);H('th',{},trS,'suma acumulada');const sC=o.cols.map(()=>H('td',{},trS,''));
+  const out=H('div',{class:'calc'},host);
+  const vals=o.cols.map((_,i)=>o.op(i));const total=vals.reduce((a,b)=>a+b,0);
+  const N=n+2+(o.finals?o.finals.length:0);
+  const sp=stepper(host,N,s=>{
+    let run=0;
+    for(let i=0;i<n;i++){run+=vals[i];[...cells.map(r=>r[i]),opC[i],sC[i]].forEach(c=>c.classList.remove('hi','res'));
+      opC[i].textContent=s>i?f(vals[i]):'';sC[i].textContent=s>i?f(run):'';
+      if(s===i+1){cells.forEach(r=>r[i].classList.add('hi'));opC[i].classList.add('hi')}}
+    if(s>=n+1)sC[n-1].classList.add('res');
+    if(s===0){msg.innerHTML=o.intro;out.innerHTML='&nbsp;'}
+    else if(s<=n){msg.innerHTML=`Columna <b>${s}</b> (${o.cols[s-1]}): ${o.stepText||'se calcula'}`;out.innerHTML=o.opText(s-1)+' = <span class="hg">'+f(vals[s-1])+'</span>'}
+    else if(s===n+1){msg.innerHTML='Se suma todo:';out.innerHTML=vals.map(v=>f(v)).join(' + ')+' = <span class="hg">'+f(total)+'</span>'}
+    else{const k=s-n-2;msg.innerHTML=o.finals[k].msg;out.innerHTML=o.finals[k].html(total)}
+  },{interval:1500});
+  sp.draw();
+  return sp;
+}
+/* ===== utilidades comunes (azar con semilla y datos inventados) ===== */
+function rngSeed(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+/* "mitges llunes" inventadas (no son las de scikit-learn: otro generador de azar) */
+function moons(n,noise,seed){const r=rngSeed(seed),Xs=[],ys=[];for(let i=0;i<n;i++){const c=i%2,t=Math.PI*r();
+  const x=c?1-Math.cos(t):Math.cos(t),y=c?.5-Math.sin(t):Math.sin(t);Xs.push([x+noise*gauss(r),y+noise*gauss(r)]);ys.push(c)}return {X:Xs,y:ys}}
+const SPN=['setosa','versicolor','virginica'];
+
+/* ===== Bosques: árbol de decisión (CART, gini) hecho a mano ===== */
+const ink='currentColor';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const sum2=a=>a.reduce((s,v)=>s+v*v,0);
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function buildTree(Xs,ys,idx,nc,o,depth,r){
+  const cnt=new Array(nc).fill(0);idx.forEach(i=>cnt[ys[i]]++);const n=idx.length;let maj=0;for(let c=1;c<nc;c++)if(cnt[c]>cnt[maj])maj=c;
+  if(cnt[maj]===n||depth>=o.maxDepth||n<2)return {leaf:maj};
+  const nf=Xs[0].length,feats=shuffle([...Array(nf).keys()],r),mtry=o.mtry||nf;let best=null,tried=0;
+  for(const ft of feats){if(tried>=mtry&&best)break;tried++;
+    const s=idx.slice().sort((a,b)=>Xs[a][ft]-Xs[b][ft]);const L=new Array(nc).fill(0),R=cnt.slice();
+    for(let p=0;p<n-1;p++){const c=ys[s[p]];L[c]++;R[c]--;if(Xs[s[p]][ft]===Xs[s[p+1]][ft])continue;
+      const nl=p+1,nr=n-nl,score=sum2(L)/nl+sum2(R)/nr;if(!best||score>best.score+1e-12)best={score,ft,thr:(Xs[s[p]][ft]+Xs[s[p+1]][ft])/2}}}
+  if(!best)return {leaf:maj};
+  const li=[],ri=[];idx.forEach(i=>(Xs[i][best.ft]<=best.thr?li:ri).push(i));
+  return {ft:best.ft,thr:best.thr,l:buildTree(Xs,ys,li,nc,o,depth+1,r),r:buildTree(Xs,ys,ri,nc,o,depth+1,r)}}
+function treePredict(t,x){while(t.leaf===undefined)t=x[t.ft]<=t.thr?t.l:t.r;return t.leaf}
+function bootstrap(n,r){return Array.from({length:n},()=>Math.floor(r()*n))}
+const ln=Math.log;const lf=[0];for(let i=1;i<=400;i++)lf[i]=lf[i-1]+ln(i);
+/* P(más de n/2 aciertos) con n votantes que aciertan con prob. p */
+function majP(n,p){if(p>=1)return 1;let s=0;for(let j=Math.floor(n/2)+1;j<=n;j++)s+=Math.exp(lf[n]-lf[j]-lf[n-j]+j*ln(p)+(n-j)*ln(1-p));return s}
+const TR=[0,1,3,4,5,6,8,9,11,12,13,15,16,17,19,21,24,25,26,27,29,30,31,32,33,34,36,37,39,41,44,45,46,47,48,50,52,54,59,60,61,62,64,65,67,68,70,71,72,73,74,76,78,79,80,81,82,83,86,87,88,89,90,91,92,94,95,96,98,99,100,101,102,103,105,109,110,112,113,114,115,117,118,119,120,121,122,123,124,125,126,128,129,130,131,135,136,137,139,142,143,144,145,146,149]; // reparto real del cuaderno
+const trSet=new Set(TR),TE=[...Array(150).keys()].filter(i=>!trSet.has(i));
+const pc=(a,d=1)=>f(100*a,d)+' %';
+const logTicks=(P,xs,fx)=>xs.forEach(n=>E('text',{x:P.X(fx(n)),y:P.H-10,'text-anchor':'middle',class:'tick'},P.svg).textContent=n);
+
+/* ================= 2a: votar con binomial ================= */
+(function(){
+  const host=document.getElementById('w2a');
+  const ns=[];for(let n=1;n<=201;n+=2)ns.push(n);
+  const P=new Plot(host,{x:[0,205],y:[.4,1.02],gx:50,gy:.1,h:300,free:true,pad:38,xl:'nº de votantes →',yl:'P(la mayoría acierta)',label:'Exactitud de la mayoría según el número de votantes'});
+  const g=P.g();const curve=E('polyline',{fill:'none',stroke:C.blue,'stroke-width':2.4},g);
+  const ref=P.line(g,[0,.6],[205,.6],{stroke:'#8a877f','stroke-dasharray':'5 4'});const mk=P.dot(g,[100,.97],8,C.red,{stroke:ink});
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'votantes n');const iN=H('input',{type:'range',min:1,max:201,step:1,value:100},sl);const oN=H('output',{},sl);
+  H('label',{},sl,'acierto de uno, p');const iP=H('input',{type:'range',min:.5,max:.9,step:.01,value:.6},sl);const oP=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);const bs=H('button',{},bar,'▶ Simular 10 000 veces');const b2=H('button',{},bar,'n = 101, p = 0.60');
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  let sim='';
+  function draw(){const n=+iN.value,p=+iP.value;oN.textContent=n;oP.textContent=f(p,2);
+    curve.setAttribute('points',ns.map(m=>P.P([m,majP(m,p)]).join(',')).join(' '));P.setLine(ref,[0,p],[205,p]);
+    const v=majP(n,p);P.setDot(mk,[n,v]);
+    calc.innerHTML=`n = ${n}, p = ${f(p,2)} → la mayoría acierta (exacto): <span class="hg">${pc(v,2)}</span> &nbsp;· un votante solo: ${pc(p,0)}`+(sim?`<br>${sim}`:'')+(n%2===0?'<br><span class="hy">n par: un empate cuenta como fallo, por eso el punto queda justo bajo la curva</span>':'')}
+  iN.oninput=iP.oninput=()=>{sim='';draw()};
+  bs.onclick=()=>{const n=+iN.value,p=+iP.value;let ok=0;for(let s=0;s<10000;s++){let c=0;for(let j=0;j<n;j++)if(Math.random()<p)c++;if(c>n/2)ok++}sim=`simulación (Math.random, 10 000 veces): <span class="hy">${pc(ok/10000)}</span> — baila un poco entre ejecuciones`;draw()};
+  b2.onclick=()=>{iN.value=101;iP.value=.6;sim='';draw()};
+  draw();
+  H('p',{class:'hint'},host,'Con n = 100 y p = 0.60 el cuaderno obtuvo 97.2 % simulando con numpy; el cálculo exacto da 97.29 %.');
+})();
+
+/* ================= 2b: errores correlacionados ================= */
+(function(){
+  const host=document.getElementById('w2b');
+  const R=12,N=40,r=rngSeed(2);const U1=Array.from({length:N},r),UC=Array.from({length:R},()=>Array.from({length:N},r)),UO=Array.from({length:R},()=>Array.from({length:N},r));
+  const first=U1.map(u=>u<.6);
+  const vote=(i,j,c)=>i===0?first[j]:(UC[i][j]<c?first[j]:UO[i][j]<.6);
+  const wrap=H('div',{class:'cols'},host);const cw=10,ch=14;const panels=[];
+  [['Independientes (c = 0)',0],['Con copia: c = ',null]].forEach(([t,c0],k)=>{const b=H('div',{},wrap);const title=H('h3',{style:'font-size:16px;margin:4px 0'},b,t);
+    const svg=E('svg',{viewBox:`0 0 ${N*cw} ${R*ch+26}`,class:'plot',role:'img','aria-label':'Aciertos y fallos de 12 clasificadores en 40 casos'},b);
+    const cells=[];for(let i=0;i<R;i++)for(let j=0;j<N;j++)cells.push(E('rect',{x:j*cw,y:i*ch,width:cw-1,height:ch-1,rx:2},svg));
+    const maj=[];for(let j=0;j<N;j++)maj.push(E('rect',{x:j*cw,y:R*ch+6,width:cw-1,height:12,rx:2},svg));
+    panels.push({title,cells,maj,c0})});
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'copiar al primero, c');const iC=H('input',{type:'range',min:0,max:1,step:.05,value:.8},sl);const oC=H('output',{},sl);
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function paint(p,c){let okc=0;for(let j=0;j<N;j++){let s=0;for(let i=0;i<R;i++){const v=vote(i,j,c);if(v)s++;p.cells[i*N+j].setAttribute('fill',v?C.green:C.red);p.cells[i*N+j].setAttribute('opacity',.85)}
+      const ok=s>R/2;if(ok)okc++;p.maj[j].setAttribute('fill',ok?C.green:C.red)}return okc}
+  function draw(){const c=+iC.value;oC.textContent=f(c,2);panels[1].title.textContent='Con copia: c = '+f(c,2);
+    const a=paint(panels[0],0),b=paint(panels[1],c);
+    let ok=0;const S=3000;for(let s=0;s<S;s++){const fv=Math.random()<.6;let k=fv?1:0;for(let i=1;i<100;i++){const v=Math.random()<c?fv:Math.random()<.6;if(v)k++}if(k>50)ok++}
+    calc.innerHTML=`La barra de abajo (verde/rojo) es el vot de la mayoría en cada caso. De 40 casos: independientes <span class="hg">${a}</span> aciertan, con copia <span class="${b<a?'hr':'hg'}">${b}</span>.<br>Con 100 clasificadores (simulado ${S} veces aquí): la mayoría acierta <span class="hy">${pc(ok/S)}</span>`+(c===.8?' &nbsp;# ejercicio 7.4: ≈ 61 %':'')}
+  iC.oninput=draw;draw();
+  H('p',{class:'hint'},host,'Datos inventados (12 clasificadores, 40 casos, acierto individual 0.6). En los casos donde el primero falla, a la derecha casi todos fallan con él.');
+})();
+
+/* ================= 3a: bootstrap ================= */
+(function(){
+  const host=document.getElementById('w3a');const n=20;
+  const P=new Plot(host,{x:[-.7,n-.3],y:[0,5],gx:1,gy:1,h:240,free:true,pad:34,xl:'fila →',yl:'veces que sale',label:'Muestra bootstrap de 20 filas'});
+  const g=P.g();const bars=[],xs=[];
+  for(let i=0;i<n;i++){bars.push(E('rect',{x:P.X(i-.35),width:P.sx*.7,rx:3,fill:C.blue},g));xs.push(P.label(g,C.red,'lbl'))}
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  const bar=H('div',{class:'bar'},host);const b1=H('button',{},bar,'Sacar otra muestra'),b2=H('button',{},bar,'Sacar 1 000 muestras'),b3=H('button',{},bar,'↺');
+  let r=rngSeed(5),tot=0,cntm=0,last=0;
+  const draw=cnt=>{let out=0;cnt.forEach((c,i)=>{const h=c*P.sy;bars[i].setAttribute('y',P.Y(c));bars[i].setAttribute('height',h);xs[i].show(c===0);if(c===0){out++;xs[i].set([i,.3],'✕',0,0,'middle')}});last=out/n;return out};
+  const one=()=>{const cnt=new Array(n).fill(0);for(let i=0;i<n;i++)cnt[Math.floor(r()*n)]++;return cnt};
+  function show(out){tot+=out/n;cntm++;calc.innerHTML=`Esta muestra: <b>${out} de ${n}</b> filas fuera (${pc(out/n,0)}) · media de ${cntm} muestra${cntm>1?'s':''}: <span class="hy">${pc(tot/cntm)}</span> · teórico con n = 20: ${pc(Math.pow(1-1/n,n))} · límite 1/e = 36.8 %`}
+  b1.onclick=()=>{show(draw(one()))};
+  b2.onclick=()=>{let c=null;for(let k=0;k<1000;k++){c=one();let o=c.filter(v=>!v).length;tot+=o/n;cntm++}draw(c);calc.innerHTML=`Media de ${cntm} muestras: <span class="hy">${pc(tot/cntm)}</span> → se acerca a ${pc(Math.pow(1-1/n,n))} (n = 20) y al límite 1/e = 36.8 %`};
+  b3.onclick=()=>{r=rngSeed(5);tot=0;cntm=0;show(draw(one()))};
+  b3.onclick();
+  H('p',{class:'hint'},host,'Cada barra = una fila del entrenamiento. Altura 0 con ✕ rojo: esa fila no la verá el árbol.');
+})();
+(function(){
+  const host=document.getElementById('w3b');
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'filas n');const inp=H('input',{type:'range',min:2,max:1000,step:1,value:200},sl);const out=H('output',{},sl);
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(){const n=+inp.value;out.textContent=n;const v=Math.pow(1-1/n,n);calc.innerHTML=`(1 − 1/${n})<sup>${n}</sup> = <span class="hy">${pc(v,2)}</span> fuera · 1/e = 36.79 % · cada árbol ve de media <span class="hg">${pc(1-v)}</span> de las filas distintas`}
+  inp.oninput=draw;draw();
+})();
+
+/* ================= 3c: columnas al azar ================= */
+(function(){
+  const host=document.getElementById('w3c');
+  const cols=['sepal_llarg','sepal_ample','petal_llarg','petal_ample'];
+  const rows=H('div',{},host);const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  const bar=H('div',{class:'bar'},host);const b1=H('button',{},bar,'Sortear 8 cortes'),b2=H('button',{},bar,'Sortear 1 000 cortes');
+  let con=0,tot=0;
+  const pick=()=>{const a=shuffle([0,1,2,3],Math.random).slice(0,2);return a};
+  b1.onclick=()=>{rows.innerHTML='';for(let t=0;t<8;t++){const s=pick(),has=s.includes(3);con+=has;tot++;
+    H('div',{style:'margin:3px 0'},rows,`<span class="dots">corte ${t+1}:</span> `+cols.map((c,i)=>`<span class="chip ${s.includes(i)?'on':'off'}">${c}</span>`).join('')+(has?' <span class="hg">ve petal_ample</span>':' <span class="hr">no la ve</span>'))}
+    upd()};
+  b2.onclick=()=>{rows.innerHTML='';for(let t=0;t<1000;t++){const has=pick().includes(3);con+=has;tot++}upd()};
+  function upd(){calc.innerHTML=`Cortes sorteados: ${tot} · con <code>petal_ample</code> disponible: <span class="hy">${tot?pc(con/tot):'—'}</span> &nbsp;# esperado: 3 de 6 parejas posibles = 50 %`}
+  b1.onclick();
+  H('p',{class:'hint'},host,'La mitad de los cortes no puede usar la columna más fuerte: ese árbol tiene que apañarse con otra.');
+})();
+
+/* ================= 3d: bosque en el plano (inventado) ================= */
+(function(){
+  const host=document.getElementById('w3d');
+  const D=moons(300,.3,0),T=moons(300,.3,1);const GW=60,GH=46,x0=-2,x1=3,y0=-1.6,y1=2.1,NT=100;
+  const P=new Plot(host,{x:[x0,x1],y:[y0,y1],gx:1,gy:1,w:560,maxw:560,label:'Frontera de un bosque con datos inventados'});
+  const bgG=P.g(),cells=[];const grid=[];
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){grid.push([x0+(i+.5)*(x1-x0)/GW,y1-(j+.5)*(y1-y0)/GH]);
+    cells.push(E('rect',{x:P.X(x0+i*(x1-x0)/GW),y:P.Y(y1-j*(y1-y0)/GH),width:P.sx*(x1-x0)/GW+.6,height:P.sy*(y1-y0)/GH+.6,class:'cellbg'},bgG))}
+  const g=P.g();D.X.forEach((p,i)=>P.dot(g,p,3,D.y[i]?'#ea580c':'#2563eb',{stroke:'#222','stroke-width':.5}));
+  const r=rngSeed(7),predG=[],predTr=[],predTe=[];
+  for(let t=0;t<NT;t++){const idx=bootstrap(300,r);const tr=buildTree(D.X,D.y,idx,2,{maxDepth:99,mtry:1},0,r);
+    predG.push(Uint8Array.from(grid,q=>treePredict(tr,q)));predTr.push(D.X.map(q=>treePredict(tr,q)));predTe.push(T.X.map(q=>treePredict(tr,q)))}
+  const accN=(preds,ys,n)=>{let ok=0;ys.forEach((y,i)=>{let s=0;for(let t=0;t<n;t++)s+=preds[t][i];if((s*2>n?1:0)===y)ok++});return ok/ys.length};
+  const single=ys=>{let s=0;for(let t=0;t<NT;t++){let ok=0;ys.forEach((y,i)=>{if(ys===D.y?predTr[t][i]===y:predTe[t][i]===y)ok++});s+=ok/ys.length}return s/NT};
+  const sTr=single(D.y),sTe=single(T.y);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'árboles N');const inp=H('input',{type:'range',min:1,max:NT,step:1,value:1},sl);const out=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);const bm=H('button',{class:'on'},bar,'Vot de la mayoría'),bf=H('button',{},bar,'Fracción de votos naranja');[1,4,25,100].forEach(n=>{const b=H('button',{},bar,'N = '+n);b.onclick=()=>{inp.value=n;draw()}});
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  let soft=false;
+  const mix=(u)=>{ // 0 azul → 1 naranja
+    const a=[37,99,235],b=[234,88,12],w=[255,255,255];const t=Math.abs(u-.5)*2,c=u<.5?a:b;return `rgb(${w.map((v,k)=>Math.round(v+(c[k]-v)*t*.55)).join(',')})`};
+  function draw(){const n=+inp.value;out.textContent=n;
+    for(let k=0;k<grid.length;k++){let s=0;for(let t=0;t<n;t++)s+=predG[t][k];const u=s/n;cells[k].setAttribute('fill',soft?mix(u):(u>.5?'rgb(246,200,170)':'rgb(190,210,240)'))}
+    bm.classList.toggle('on',!soft);bf.classList.toggle('on',soft);
+    calc.innerHTML=`N = ${n}: bosque → entrenamiento <span class="hb">${pc(accN(predTr,D.y,n))}</span> · examen <span class="hy">${pc(accN(predTe,T.y,n))}</span><br>un árbol suelto (media de los ${NT}): entrenamiento ${pc(sTr)} · examen ${pc(sTe)}`}
+  inp.oninput=draw;bm.onclick=()=>{soft=false;draw()};bf.onclick=()=>{soft=true;draw()};draw();
+  H('p',{class:'hint'},host,'Datos inventados: 300 puntos de entrenamiento (dibujados) y 300 de examen. Los porcentajes salen de este bosque y de este azar, no del cuaderno. Con empate (N par) la mayoría cuenta como azul.');
+})();
+
+/* ================= 4: 50 árboles votando sobre Iris ================= */
+(function(){
+  const host=document.getElementById('w4');
+  const Xtr=TR.map(i=>X[i]),ytr=TR.map(i=>Y[i]),r=rngSeed(42);const NA=50;
+  const trees=Array.from({length:NA},()=>buildTree(Xtr,ytr,bootstrap(Xtr.length,r),3,{maxDepth:3,mtry:2},0,r));
+  const solo=buildTree(Xtr,ytr,[...Array(Xtr.length).keys()],3,{maxDepth:3},0,r);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'flor del examen');const inp=H('input',{type:'range',min:0,max:TE.length-1,step:1,value:0},sl);const out=H('output',{},sl);
+  const bars=H('div',{class:'bars'},host);const rows=SPECIES.map((s,i)=>{H('label',{},bars,`<i class="sw" style="background:${SPC[i]};display:inline-block"></i> ${s}`);const b=H('div',{},bars);const bi=H('i',{style:`background:${SPC[i]};width:0`},b);const n=H('span',{class:'n'},bars);return {bi,n}});
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  const bar=H('div',{class:'bar'},host);const nx=H('button',{},bar,'Siguiente flor →');
+  function draw(){const k=+inp.value,i=TE[k];out.textContent=`${k+1} / 45`;const v=[0,0,0];trees.forEach(t=>v[treePredict(t,X[i])]++);
+    let b=0;for(let c=1;c<3;c++)if(v[c]>v[b])b=c;rows.forEach((o,c)=>{o.bi.style.width=(v[c]/NA*100)+'%';o.n.textContent=v[c]+' / '+NA});
+    const sp=treePredict(solo,X[i]);
+    calc.innerHTML=`flor ${i}: [${X[i].map(v=>f(v)).join(', ')}] · real: <b>${SPECIES[Y[i]]}</b><br>bosque (mayoría): <span class="${b===Y[i]?'hg':'hr'}">${SPECIES[b]}</span> · un solo árbol (profundidad 3, sin bootstrap): <span class="${sp===Y[i]?'hg':'hr'}">${SPECIES[sp]}</span>`}
+  inp.oninput=draw;nx.onclick=()=>{inp.value=(+inp.value+1)%TE.length;draw()};draw();
+  H('p',{class:'hint'},host,'Casi todas las flores se deciden por unanimidad; las que tienen votos repartidos son las de la frontera entre versicolor y virginica.');
+})();
+
+/* ================= 5a: tabla comparativa (resultados del cuaderno) ================= */
+(function(){
+  const host=document.getElementById('w5a');
+  const data=[['Iris (fácil, 4 columnas)',[['Un solo árbol',97.8,C.gray],['Mi bosque a mano (50 árboles)',93.3,C.blue],['RandomForest (100 árboles)',91.1,C.blue]],'gana el árbol'],
+    ['make_classification (difícil, 20 columnas, ruido)',[['Un solo árbol',82.3,C.gray],['RandomForest (100 árboles)',88.7,C.green]],'gana el bosque']];
+  const els=[];data.forEach(([t,rows,w])=>{H('h3',{style:'font-size:16px;margin:10px 0 2px'},host,t+' — <span class="'+(w.includes('bosque')?'hg':'hy')+'">'+w+'</span>');
+    const b=H('div',{class:'bars'},host);rows.forEach(([n,v,c])=>{H('label',{},b,n);const bx=H('div',{style:'background:var(--soft);border-radius:5px'},b);const bi=H('i',{style:`background:${c};width:0`},bx);H('span',{class:'n'},b,f(v,1)+' %');els.push([bi,v])})});
+  setTimeout(()=>els.forEach(([e,v])=>e.style.width=v+'%'),50);
+  H('p',{class:'hint'},host,'Exactitud en el examen. Iris: 45 flores de examen (105 de entrenamiento). make_classification: 2 000 muestras, 70/30, <code>random_state=42</code>.');
+})();
+
+/* ================= 5b: error según nº de árboles ================= */
+(function(){
+  const host=document.getElementById('w5b');
+  const ns=[1,2,3,5,8,12,20,30,50,75,100,150,200],err=[.23,.23,.17,.1317,.1233,.1,.1067,.11,.1067,.1033,.1133,.105,.1083],tree=1-.8233;
+  const fx=n=>Math.log10(n);
+  const P=new Plot(host,{x:[-.1,2.4],y:[.08,.26],gx:5,gy:.04,h:300,free:true,pad:38,ticks:false,yl:'error en el examen',xl:'nº de árboles (escala log) →',label:'Error del bosque según el número de árboles'});
+  [.08,.12,.16,.2,.24].forEach(v=>E('text',{x:28,y:P.Y(v)+4,'text-anchor':'end',class:'tick'},P.svg).textContent=f(v,2));
+  logTicks(P,ns,fx);
+  const g=P.g();P.line(g,[-.1,tree],[2.4,tree],{stroke:'#8a877f','stroke-width':1.8,'stroke-dasharray':'6 4'});
+  P.label(g,'#8a877f','tick').set([2.4,tree],'un solo árbol: 17.7 %',-4,-6,'end');
+  E('polyline',{points:ns.map((n,i)=>P.P([fx(n),err[i]]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':2.2},g);
+  ns.forEach((n,i)=>P.dot(g,[fx(n),err[i]],4.5,C.blue));const sel=P.dot(g,[fx(100),err[10]],10,'none',{stroke:C.red,'stroke-width':2.5});
+  const calc=H('div',{class:'calc'},host);H('p',{class:'hint'},host,'Haz clic cerca de un punto.');
+  function show(i){P.setDot(sel,[fx(ns[i]),err[i]]);calc.innerHTML=`${ns[i]} árbol${ns[i]>1?'es':''}: error <span class="${err[i]<tree?'hg':'hr'}">${pc(err[i],2)}</span> (exactitud ${pc(1-err[i],2)}) · un solo árbol: ${pc(tree)}`}
+  P.svg.addEventListener('click',ev=>{const x=P.toWorld(ev)[0];let b=0;ns.forEach((n,i)=>{if(Math.abs(fx(n)-x)<Math.abs(fx(ns[b])-x))b=i});show(b)});show(10);
+})();
+
+/* ================= 6a: importancias en Iris ================= */
+(function(){
+  const host=document.getElementById('w6a');
+  const imp=[['petal_ample',.449482],['petal_llarg',.409993],['sepal_llarg',.126178],['sepal_ample',.014347]];
+  const bars=H('div',{class:'bars'},host);const els=[];
+  imp.forEach(([n,v],i)=>{H('label',{},bars,n);const bx=H('div',{style:'background:var(--soft);border-radius:5px;cursor:pointer'},bars);const bi=H('i',{style:`background:${C.green};width:0`},bx);H('span',{class:'n'},bars,f(v,6));els.push(bi);bx.onclick=()=>{calc.innerHTML=`<b>${n}</b>: importancia ${f(v,6)} → ${pc(v)} del peso total · ${n.startsWith('petal')?'columna del pétalo':'columna del sépalo'}`}});
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);calc.innerHTML=`suma de las 4 = ${f(imp.reduce((s,a)=>s+a[1],0),6)}`;
+  setTimeout(()=>els.forEach((e,i)=>e.style.width=imp[i][1]/.45*100+'%'),50);
+})();
+
+/* ================= 6b: importancias con respuesta conocida ================= */
+(function(){
+  const host=document.getElementById('w6b');
+  const imp=[.0768,.1037,.0655,.1101,.0478,.0766,.1078,.0379,.1193,.0815,.0159,.0168,.0186,.0168,.0176,.017,.0189,.0169,.0164,.0181];
+  const tipo=i=>i<5?['informativa',C.green]:i<10?['redundante',C.orange]:['ruido','#8a877f'];
+  const P=new Plot(host,{x:[-.7,19.7],y:[0,.14],gx:1,gy:.02,h:280,free:true,pad:34,ticks:false,yl:'importancia',xl:'columna →',label:'Importancias del bosque con respuesta conocida'});
+  [0,.04,.08,.12].forEach(v=>E('text',{x:28,y:P.Y(v)+4,'text-anchor':'end',class:'tick'},P.svg).textContent=f(v,2));
+  imp.forEach((v,i)=>E('text',{x:P.X(i),y:P.H-10,'text-anchor':'middle',class:'tick'},P.svg).textContent='c'+i);
+  const g=P.g();imp.forEach((v,i)=>{const r=E('rect',{x:P.X(i-.38),y:P.Y(v),width:P.sx*.76,height:P.Y(0)-P.Y(v),rx:3,fill:tipo(i)[1],style:'cursor:pointer'},g);r.onclick=()=>show(i)});
+  H('div',{class:'legend'},host,['informativa','redundante','ruido'].map((t,i)=>`<span><i class="sw" style="background:${[C.green,C.orange,'#8a877f'][i]}"></i>${t}</span>`).join(''));
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function show(i){calc.innerHTML=`columna c${i} (${tipo(i)[0]}): importancia <span class="hy">${f(imp[i],4)}</span>`}
+  const sN=imp.slice(10).reduce((s,v)=>s+v,0),sI=imp.slice(0,10).reduce((s,v)=>s+v,0);
+  show(8);calc.innerHTML+=`<br>las 10 de ruido suman ${pc(sN)}; las 10 informativas + redundantes, ${pc(sI)}`;
+  H('p',{class:'hint'},host,'Haz clic en una barra. Valores reales: make_classification(shuffle=False, random_state=42) y RandomForestClassifier(n_estimators=200, random_state=42).');
+})();
+
+/* ================= 7a: ¿dónde se aplana la curva? ================= */
+(function(){
+  const host=document.getElementById('w7a');
+  const ns=[1,5,10,25,50,100,200];
+  const curves={inv:['Curva inventada (la del cuaderno)',[.780,.845,.872,.884,.893,.889,.891]],mia:['Mi ejecución con Iris (sklearn 1.9.1)',[.8667,.9111,.9111,.8889,.8889,.8889,.9111]]};
+  const sel=H('select',{},H('div',{class:'bar'},host));Object.keys(curves).forEach(k=>H('option',{value:k},sel,curves[k][0]));
+  const wrap=H('div',{},host);const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(){wrap.innerHTML='';const [name,acc]=curves[sel.value];const fin=acc[acc.length-1];
+    const dins=acc.map(a=>Math.abs(a-fin)<=.01+1e-9);let first=0;for(let i=0;i<ns.length;i++)if(dins.slice(i).every(Boolean)){first=i;break}
+    const lo=sel.value==='inv'?.76:.84,hi=sel.value==='inv'?.91:.95;
+    const P=new Plot(wrap,{x:[-.1,2.4],y:[lo,hi],h:280,free:true,pad:38,ticks:false,gx:5,gy:.02,yl:'exactitud en el examen',xl:'n_estimators (escala log) →',label:'Exactitud según n_estimators'});
+    const fx=n=>Math.log10(n);logTicks(P,ns,fx);for(let v=Math.ceil(lo*50)/50;v<=hi+1e-9;v+=.02)E('text',{x:28,y:P.Y(v)+4,'text-anchor':'end',class:'tick'},P.svg).textContent=f(v,2);
+    const g=P.g();E('rect',{x:P.X(-.1),y:P.Y(fin+.01),width:P.X(2.4)-P.X(-.1),height:P.Y(fin-.01)-P.Y(fin+.01),fill:'#8a877f',opacity:.2},g);
+    E('polyline',{points:ns.map((n,i)=>P.P([fx(n),acc[i]]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':2.2},g);ns.forEach((n,i)=>P.dot(g,[fx(n),acc[i]],4.5,C.blue));
+    P.dot(g,[fx(ns[first]),acc[first]],10,'none',{stroke:C.red,'stroke-width':2.5});
+    calc.innerHTML=`${name}<br>valor final (200): ${pc(fin)} · banda ±1 punto: ${pc(fin-.01)} – ${pc(fin+.01)} · primer n a partir del cual no sale de la banda: <span class="hr">${ns[first]}</span>`}
+  sel.onchange=draw;draw();
+  H('p',{class:'hint'},host,'Con tus datos la curva puede ser casi plana o ruidosa: con 45 flores de examen, una flor mueve la exactitud 2.2 puntos y ya sale de la banda de ±1 punto.');
+})();
+
+/* ================= 7b: ruido de la partición (inventado) ================= */
+(function(){
+  const host=document.getElementById('w7b');
+  const D=moons(180,.35,3);const accs=[];
+  for(let s=0;s<40;s++){const r=rngSeed(1000+s),idx=shuffle([...Array(180).keys()],r),nt=Math.round(180*.3),te=idx.slice(0,nt),tr=idx.slice(nt);
+    const t=buildTree(D.X,D.y,tr,2,{maxDepth:99},0,rngSeed(0));let ok=0;te.forEach(i=>{if(treePredict(t,D.X[i])===D.y[i])ok++});accs.push(ok/nt)}
+  const mn=Math.min(...accs),mx=Math.max(...accs),B=10;const lo=Math.floor(mn*100)/100,hi=Math.ceil(mx*100)/100;
+  const hist=new Array(B).fill(0);accs.forEach(a=>hist[Math.min(B-1,Math.floor((a-lo)/(hi-lo)*B))]++);
+  const P=new Plot(host,{x:[lo-.01,hi+.01],y:[0,Math.max(...hist)+1],h:260,free:true,pad:38,ticks:false,gx:1,gy:1,yl:'nº de particiones',xl:'exactitud en el examen →',label:'Exactitud de un árbol con 40 particiones distintas'});
+  const g=P.g();hist.forEach((c,b)=>{const a0=lo+(hi-lo)*b/B,a1=lo+(hi-lo)*(b+1)/B;E('rect',{x:P.X(a0)+1,y:P.Y(c),width:P.X(a1)-P.X(a0)-2,height:P.Y(0)-P.Y(c),fill:C.blue,rx:2},g)});
+  for(let v=Math.ceil(lo*20)/20;v<=hi+1e-9;v+=.05)E('text',{x:P.X(v),y:P.H-10,'text-anchor':'middle',class:'tick'},P.svg).textContent=f(100*v,0)+'%';
+  P.line(g,[accs[0],0],[accs[0],Math.max(...hist)+1],{stroke:C.red,'stroke-width':2.4,'stroke-dasharray':'6 4'});
+  H('div',{class:'calc',style:'white-space:normal'},host,`Mismo árbol, 40 particiones: de <span class="hr">${pc(mn,0)}</span> a <span class="hg">${pc(mx,0)}</span>. La línea roja (<code>random_state=0</code>): ${pc(accs[0])}.`);
+  H('p',{class:'hint'},host,'Datos inventados (180 puntos, 54 de examen en cada partición). Con una sola partición podrías ver cualquier punto de este histograma.');
+})();
+
+/* ================= 7c: cronometrar ================= */
+(function(){
+  const host=document.getElementById('w7c');
+  const bar=H('div',{class:'bar'},host);const b=H('button',{},bar,'▶ Cronometrar');const wrap=H('div',{},host);const calc=H('div',{class:'calc',style:'white-space:normal'},host);calc.innerHTML='Pulsa para medir en tu máquina.';
+  b.onclick=()=>{b.disabled=true;calc.textContent='Midiendo…';setTimeout(()=>{
+    const sizes=[100000,200000,400000,800000,1600000],rr=rngSeed(0),meds=[],all=[];
+    sizes.forEach(n=>{const t=[];for(let k=0;k<5;k++){const v=Float64Array.from({length:n},rr);const t0=performance.now();v.sort();t.push(performance.now()-t0)}all.push(t);const s=t.slice().sort((a,c)=>a-c);meds.push(s[2])});
+    wrap.innerHTML='';const ymax=Math.max(...all.flat())*1.1;
+    const P=new Plot(wrap,{x:[0,1.8e6],y:[0,ymax],h:260,free:true,pad:44,ticks:false,gx:1e9,gy:1e9,yl:'milisegundos',xl:'mida del vector →',label:'Tiempo de ordenar vectores de distintos tamaños'});
+    sizes.forEach(n=>E('text',{x:P.X(n),y:P.H-10,'text-anchor':'middle',class:'tick'},P.svg).textContent=n>=1e6?(n/1e6)+' M':(n/1e3)+' k');
+    for(let k=0;k<=4;k++){const v=ymax*k/4;E('text',{x:38,y:P.Y(v)+4,'text-anchor':'end',class:'tick'},P.svg).textContent=f(v,0)}
+    const g=P.g();sizes.forEach((n,i)=>{all[i].forEach(t=>P.dot(g,[n,t],4,C.blue,{opacity:.5}));P.line(g,[n-60000,meds[i]],[n+60000,meds[i]],{stroke:C.red,'stroke-width':3})});
+    calc.innerHTML=`mediana por tamaño: `+sizes.map((n,i)=>`${n>=1e6?n/1e6+' M':n/1e3+' k'}: <span class="hy">${f(meds[i],1)} ms</span>`).join(' · ')+`<br>Las 5 medidas de un mismo tamaño no son iguales: repetir y quedarse con la mediana (raya roja).`;b.disabled=false},30)};
+  H('p',{class:'hint'},host,'Aquí se ordenan números al azar en tu navegador (no es el bosque del cuaderno). Los milisegundos dependen de tu máquina.');
+})();
+
+</script>
+</body>
+</html>
