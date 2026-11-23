@@ -4,9 +4,11 @@ Apuntes animados de ML en español, hechos a partir de los cuadernos de clase (e
 
 ## Estructura del repo
 
-- `index.html`: portada con una tarjeta por tema.
-- `<tema>.html`: una página por cuaderno, nombre en `snake_case` sin tildes (`algebra_lineal.html`).
+- `index.html`: portada en modo lista (una fila por tema, agrupados en «Bases» y «Modelos»). Tiene su propio CSS.
+- `<tema>.html`: una página por cuaderno, nombre en `snake_case` sin tildes (`algebra_lineal.html`). Hoy: `algebra_lineal`, `como_aprende_un_modelo`, `knn`, `arboles_decision`, `bosques_aleatorios`, `regresion_logistica`.
 - Nada más: sin build, sin dependencias, sin carpetas de assets.
+
+Al ser autocontenidas, los cambios de utilidades (`Plot`, `stepper`…) o de estilo hay que repetirlos a mano en cada página. No hay generador en el repo: edita los HTML directamente.
 
 ## Reglas duras
 
@@ -14,6 +16,8 @@ Apuntes animados de ML en español, hechos a partir de los cuadernos de clase (e
 - **Sin librerías ni CDN.** Ni MathJax, ni D3, ni Plotly, ni fuentes externas. Gráficos en SVG generado con JS; fórmulas en HTML/Unicode.
 - **Modo claro y oscuro.** Todos los colores de la interfaz salen de las variables CSS de `:root` y su bloque `prefers-color-scheme:dark`. Los colores de datos (`C.blue`, `C.orange`…) son los únicos fijos.
 - **Los números tienen que ser los del cuaderno.** Cada resultado que aparezca (MSE, pesos, distancias…) se copia de las salidas del cuaderno o se recalcula y se comprueba que coincide. Nunca se inventa un número "de ejemplo" que parezca real. Si un ejemplo es inventado, se dice.
+- **Diseño sobrio compartido.** Todas las páginas de tema terminan su `<head>` con un bloque `<style id="pro">` idéntico (paleta neutra, un solo acento, bordes finos, sin sombras, índice con subrayado, `details.opt`). Si cambias el aspecto, cambia ese bloque igual en todas. La portada no lo lleva.
+- **Los números de los widgets, verificados.** Si un árbol o un ajuste hecho en JS desempata distinto que scikit-learn, no lo presentes como el del cuaderno: incrusta el resultado de scikit-learn (exactitudes, árboles exportados) y di cuál es cuál.
 - **Español**, aunque el cuaderno esté en catalán. Nombres de variables del código se dejan como están (`entrena`, `historial`) para que el alumno los reconozca.
 
 ## Plantilla de una página
@@ -23,7 +27,7 @@ Copiar de `algebra_lineal.html`, en este orden:
 1. `<head>` con el mismo bloque `:root` y el mismo CSS (quitar las clases que no se usen).
 2. `<a class="back" href="index.html">← Volver a los apuntes</a>`
 3. `<h1>` + `<p class="sub">` que nombra el cuaderno de origen y dice que los gráficos se mueven.
-4. `<div class="big">` con **la frase** que el alumno tiene que entender al final.
+4. `<div class="big">` con **la frase** que el alumno tiene que entender al final, y justo debajo un `<div class="idea"><b>Antes de empezar:</b> …</div>` con el mini-glosario de la página (numpy, entrenamiento/examen, exactitud… solo lo que se usa) y el aviso de que el código es opcional.
 5. `<nav class="toc">` con una pastilla por sección (`<a href="#s1">1 · Nombre</a>`) y `Resumen`.
 6. Las secciones `<h2 id="sN">N · Título</h2>`, siguiendo el orden del cuaderno.
 7. `<h2 id="res">` con una `table.sum` (Concepto · Qué es · Numpy · Número para comprobar) y otro `.big` de cierre.
@@ -49,6 +53,12 @@ Tono:
 - Resaltados en línea: `.hg` verde (bien/positivo), `.hr` rojo (mal/negativo), `.hy` amarillo (lo importante ahora), `.hb` azul (secundario).
 - Trampas típicas en un `.idea` con `<b>Trampa típica:</b>`.
 - Nada de relleno ("En esta sección veremos…"). Al grano.
+
+Escribe para alguien que sabe casi 0 de mates y de programación:
+
+- Ninguna palabra técnica sin definir la primera vez (residuo, gradiente, sobreajuste, bootstrap, softmax…). Una frase llana o una analogía cotidiana (el profesor que guarda preguntas del examen, la moneda trucada, el reparto de un pastel).
+- Antes de una fórmula densa, un ejemplo con números pequeños. Si la fórmula es avanzada, va dentro de `<details class="opt"><summary>Opcional: …</summary>…</details>` y la idea cotidiana queda visible fuera.
+- Cada `<pre>` lleva debajo (o como comentarios) una línea en lenguaje llano de qué hace. El código nunca es imprescindible para entender la página.
 
 ## Widgets
 
@@ -82,7 +92,7 @@ Tipos de widget, de más a menos usado:
 - **Paso a paso** (`stepper`): explica una cuenta o una construcción. Cada paso cambia `msg` y `calc`.
 - **Deslizadores** (`.sl` con `<input type="range">` + `<output>`): para parámetros (pesos, η, matriz 2×2). Redibujar en `oninput`.
 - **Arrastrar** (`pointerdown/move/up` + `P.toWorld`): para vectores o puntos que el alumno mueve.
-- **Clic / hover** sobre puntos o celdas para ver su detalle.
+- **Clic** sobre puntos o celdas para ver su detalle (en la portada no hay hovers; en las páginas, los detalles van por clic o deslizador).
 
 Reglas de los widgets:
 
@@ -99,7 +109,7 @@ Reglas de los widgets:
 
 ## Portada
 
-Al crear una página, añadir su tarjeta en `index.html` copiando la existente: miniatura SVG de 120×120 que represente el tema, `num` (`02 · N secciones`), título, una frase, y `tags` con los conceptos.
+Al crear una página, añadir su fila en `index.html` copiando una existente (`<a class="card">`): miniatura SVG de 120×120 que represente el tema, número y `N secciones` en `.meta`, título, una frase, y 4 `tags`. Va en «Bases» o «Modelos», en orden de estudio, y se actualiza el «N temas» de la cabecera. Sin efectos de hover.
 
 ## Antes de dar una página por terminada
 
