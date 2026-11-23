@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Árboles de decisión: por qué 2,45 — apuntes animados</title>
+<style>
+:root{
+  --bg:#f2f2f7;--card:#ffffff;--ink:#1d1d1f;--muted:#6e6e73;--line:#d8d8dc;--grid:#e5e5ea;--axis:#aeaeb2;--soft:rgba(118,118,128,.12);
+  --hl:#ffefb0;--hlink:#6b4e00;--hl2:#d6e8ff;--hl2ink:#0040dd;--ok:#d3f5dc;--okink:#1b6e31;--bad:#ffe0de;--badink:#b0001a;
+  --accent:#007aff;--code:rgba(118,118,128,.1);--red:#d70015;--green:#248a3d;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--serif:ui-serif,"New York",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e;--card:#2a2a2d;--ink:#f5f5f7;--muted:#98989d;--line:#3d3d40;--grid:#3a3a3d;--axis:#636366;--soft:rgba(118,118,128,.24);
+  --hl:#4d3d00;--hlink:#ffd60a;--hl2:#0a2e5c;--hl2ink:#a8d0ff;--ok:#0f3d1c;--okink:#7ee3a0;--bad:#4d1210;--badink:#ff9a92;
+  --accent:#0a84ff;--code:rgba(118,118,128,.18);--red:#ff6961;--green:#30d158;
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{transition:none!important}}
+main{max-width:900px;margin:0 auto;padding:20px 18px 96px}
+h1{font-size:clamp(30px,5vw,40px);line-height:1.12;margin:14px 0 8px;font-weight:700;letter-spacing:-.022em}
+h2{font-size:28px;line-height:1.2;margin:72px 0 12px;font-weight:700;letter-spacing:-.018em;scroll-margin-top:16px}
+h3{font-size:20px;margin:30px 0 6px;font-weight:600;letter-spacing:-.01em}
+p{margin:8px 0}
+.sub{color:var(--muted);font-size:19px;margin:0 0 22px}
+.big{font-size:21px;line-height:1.4;letter-spacing:-.012em;padding:20px 22px;border-radius:18px;background:var(--card);margin:18px 0}
+.idea{background:var(--card);border-radius:14px;padding:12px 16px;margin:14px 0}
+.idea b{color:var(--accent)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+nav.toc a{font-size:15px;text-decoration:none;color:var(--accent);background:var(--card);padding:6px 14px;border-radius:999px;min-height:32px;display:inline-flex;align-items:center}
+nav.toc a:hover{background:var(--hl2)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--code);padding:1px 5px;border-radius:5px}
+pre{background:var(--card);padding:14px 16px;border-radius:14px;overflow:auto;font-size:14px;line-height:1.55;margin:12px 0}
+.f{font-family:var(--serif);font-size:21px;text-align:center;margin:14px 0;padding:14px 12px;background:var(--card);border-radius:14px}
+.f:has(+ .leg){margin-bottom:0;border-radius:14px 14px 0 0}
+.w{background:var(--card);border-radius:20px;padding:16px 18px;margin:18px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.w .hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+svg.plot{width:100%;height:auto;display:block;touch-action:none;user-select:none}
+svg.plot text{fill:var(--ink);font:13px var(--sans)}
+svg.plot .tick{fill:var(--muted);font-size:11px}
+svg.plot .gr{stroke:var(--grid);stroke-width:1}
+svg.plot .ax{stroke:var(--axis);stroke-width:1.2}
+svg.plot .lbl{font-weight:600;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+button,select{font:inherit;font-size:15px;font-weight:500;color:var(--accent);background:var(--soft);border:0;border-radius:999px;padding:6px 16px;min-height:34px;cursor:pointer;transition:filter .15s,transform .1s}
+button:hover{filter:brightness(.95)}
+button:active{transform:scale(.97)}
+button.on{background:var(--accent);color:#fff}
+select{color:var(--ink)}
+input[type=range]{accent-color:var(--accent);min-height:28px}
+@media (pointer:coarse){button,select{min-height:44px}}
+.dots{font-size:13px;color:var(--muted);margin-left:4px}
+.msg{min-height:26px;font-size:15px;margin:6px 0}
+.calc{font-family:var(--mono);font-size:14.5px;line-height:1.9;background:var(--soft);border-radius:12px;padding:8px 12px;margin:8px 0;min-height:44px;overflow-x:auto;white-space:nowrap}
+.sl{display:grid;grid-template-columns:auto 1fr 64px;gap:4px 12px;align-items:center;font-size:15px;margin:8px 0}
+.sl input{width:100%}
+.sl output{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.hy{background:var(--hl);color:var(--hlink);border-radius:4px;padding:0 3px}
+.hb{background:var(--hl2);color:var(--hl2ink);border-radius:4px;padding:0 3px}
+.hg{background:var(--ok);color:var(--okink);border-radius:4px;padding:0 3px}
+.hr{background:var(--bad);color:var(--badink);border-radius:4px;padding:0 3px}
+table.comp{border-collapse:separate;border-spacing:4px;font-family:ui-monospace,Menlo,monospace;font-size:14px;margin:4px 0}
+table.comp th{font-family:var(--sans);font-weight:500;color:var(--muted);font-size:13px;text-align:right;padding:2px 8px}
+table.comp thead th{text-align:center}
+table.comp td{min-width:82px;text-align:center;padding:5px 8px;border-radius:6px;background:var(--soft);transition:background .3s,color .3s}
+table.comp td.hi{background:var(--hl);color:var(--hlink)}
+table.comp td.res{background:var(--ok);color:var(--okink)}
+.scroll{overflow-x:auto}
+.mx{display:inline-grid;gap:4px;padding:5px 8px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:7px;vertical-align:middle}
+.cell{min-width:50px;height:32px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:14.5px;border-radius:6px;padding:0 6px;transition:background .3s,color .3s,transform .3s}
+.cell.row{background:var(--soft)}
+.cell.hi{background:var(--hl);color:var(--hlink);transform:scale(1.08)}
+.cell.hi2{background:var(--hl2);color:var(--hl2ink);transform:scale(1.08)}
+.cell.done{background:var(--ok);color:var(--okink)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}
+.eq .op{font-size:20px}
+.eq .nm{font-size:13px;color:var(--muted);text-align:center;margin-top:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;align-items:start}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.list{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.list div{padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px}
+.list div.cur{background:var(--soft);font-weight:600}
+.sw{width:11px;height:11px;border-radius:50%;flex:none}
+.tp{position:relative;margin:10px 0}
+.tp .c{position:absolute;width:74px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:ui-monospace,monospace;font-size:14px;transition:left .9s cubic-bezier(.6,0,.3,1),top .9s cubic-bezier(.6,0,.3,1)}
+.tp .h{position:absolute;font-size:12px;white-space:nowrap;color:var(--muted);display:flex;align-items:center;transition:left .9s,top .9s,opacity .4s}
+table.heat{border-collapse:separate;border-spacing:3px;font-family:ui-monospace,monospace;font-size:13.5px}
+table.heat td{width:86px;height:46px;text-align:center;border-radius:6px;cursor:pointer;transition:outline .2s}
+table.heat td.sel{outline:3px solid #f59e0b}
+table.heat th{font-family:var(--sans);font-weight:500;font-size:12px;color:var(--muted);padding:2px 6px}
+table.sum{border-collapse:collapse;width:100%;font-size:15px;margin:12px 0;background:var(--card);border-radius:14px;overflow:hidden}
+table.sum th,table.sum td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+table.sum th{color:var(--muted);font-weight:500;font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.err{color:var(--red);font-weight:600}
+.good{color:var(--green);font-weight:600}
+.f sub,.f sup{font-size:.65em}
+.f .sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 3px}
+.f .sum b{font-size:1.6em;font-weight:400}
+.f .sum small{font-size:.6em}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:0 0 16px;padding:12px 16px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 14px 14px}
+.leg dt{font-family:var(--serif);text-align:right;white-space:nowrap}
+.leg dd{margin:0;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;margin-top:64px}
+.back{margin-top:4px;display:inline-flex;align-items:center;gap:6px;font-size:17px;text-decoration:none;color:var(--accent);min-height:44px}
+.back:hover{text-decoration:underline}
+/* ===== Minimalismo ===== */
+:root{
+  --sans:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --serif:"Iowan Old Style","Charter","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:"SF Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,1,.36,1);--t:.3s;--ring:rgba(128,128,128,.16)}
+body{font-family:var(--sans);text-rendering:optimizeLegibility}
+main>p,.idea,.big,.sub,.leg dd,table.sum td{font-family:var(--sans)}
+main>p,.idea{font-size:17px;line-height:1.6}
+.sub{font-size:19px}
+h1{font-weight:650;letter-spacing:-.03em}
+h2{font-weight:650;margin-top:88px;padding-top:0;border:0}
+h3{font-weight:600}
+.big{background:none;border:0;box-shadow:none;border-left:2px solid var(--accent);border-radius:0;padding:4px 0 4px 20px;font-size:22px;margin:28px 0}
+.idea{background:none;border:0;box-shadow:none;border-left:2px solid var(--line);border-radius:0;padding:2px 0 2px 16px}
+.idea b{color:var(--ink)}
+.w{background:var(--card);border:0;box-shadow:none;border-radius:16px}
+.f,pre,table.sum,.leg{box-shadow:none;background:var(--card)}
+.f{background:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0}
+.f:has(+ .leg){border-bottom:0;margin-bottom:0}
+.leg{background:none;border-top:0;border-bottom:1px solid var(--line);border-radius:0;padding:10px 4px}
+code,pre,.calc,table.comp,.cell,.list,table.heat,.tp .c,.sl output,.mono{font-family:var(--mono)}
+.calc{border:0}
+nav.toc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:12px -18px 0;padding:8px 18px;gap:2px;background:color-mix(in srgb,var(--bg) 85%,transparent);border-bottom:1px solid var(--line)}
+nav.toc a{background:none;box-shadow:none;color:var(--muted);padding:4px 10px;transition:color var(--t) var(--ease),background var(--t) var(--ease)}
+nav.toc a:hover{background:var(--soft);color:var(--ink)}
+h2{scroll-margin-top:64px}
+button,select{font-weight:500;transition:background var(--t) var(--ease),color var(--t) var(--ease),transform .2s var(--ease)}
+button:hover{filter:none;background:var(--line)}
+button.on:hover{background:var(--accent);filter:brightness(1.08)}
+button.on{box-shadow:none}
+.cell,table.comp td,table.heat td,.tp .c{transition-duration:.45s;transition-timing-function:var(--ease)}
+.cell.hi,.cell.hi2{transform:scale(1.04)}
+.tp .c{transition:left .8s var(--ease),top .8s var(--ease),background .4s,color .4s}
+.tp .h{transition:left .8s var(--ease),top .8s var(--ease),opacity .4s var(--ease)}
+.msg{transition:opacity .25s var(--ease)}
+table.sum tbody tr:hover{background:none}
+table.sum{border-radius:0;background:none;border-top:1px solid var(--line)}
+table.sum th,table.sum td{padding:12px 10px}
+footer{border-top:0;padding-top:0}
+@media (max-width:560px){main{padding-left:16px;padding-right:16px}h2{font-size:24px;margin-top:64px}.big{font-size:19px;padding-left:16px}nav.toc{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}}
+@media (prefers-reduced-motion:reduce){.tp .c,.tp .h{transition:none!important}}
+</style>
+<style>
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.chip{display:inline-block;font-family:var(--mono);font-size:13px;padding:2px 9px;border-radius:999px;background:var(--soft);margin:2px}
+.chip.on{background:var(--ok);color:var(--okink)}.chip.off{opacity:.45}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:14px;margin:8px 0}
+.bars i{display:block;height:16px;border-radius:5px;background:var(--accent);transition:width .5s var(--ease)}
+.bars span.n{font-family:var(--mono);font-size:13px;text-align:right}
+.bars label{white-space:nowrap}
+nav.toc a{white-space:nowrap}
+svg.plot rect.cellbg{shape-rendering:crispEdges}
+.tree{display:flex;flex-direction:column;align-items:center}.tkids{display:flex;gap:10px;align-items:flex-start;margin-top:8px}
+.tn{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12.5px;text-align:center;background:var(--soft);font-family:var(--mono);white-space:nowrap}
+.tn b{font-family:var(--sans)}
+</style>
+<style id="pro">
+/* ===== Diseño sobrio ===== */
+:root{
+  --bg:#fafafa;--card:#ffffff;--ink:#18181b;--muted:#71717a;--line:#e4e4e7;--grid:#ececef;--axis:#a1a1aa;--soft:#f4f4f5;
+  --hl:#fef3c7;--hlink:#92400e;--hl2:#dbeafe;--hl2ink:#1e40af;--ok:#dcfce7;--okink:#166534;--bad:#fee2e2;--badink:#991b1b;
+  --accent:#2563eb;--code:#f4f4f5;--red:#dc2626;--green:#16a34a;
+  --sans:Inter,"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --serif:"Iowan Old Style",Charter,Georgia,serif;--mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f0f11;--card:#18181b;--ink:#f4f4f5;--muted:#a1a1aa;--line:#2e2e33;--grid:#27272a;--axis:#52525b;--soft:#232327;
+  --hl:#3b2f0a;--hlink:#fcd34d;--hl2:#172554;--hl2ink:#93c5fd;--ok:#052e16;--okink:#86efac;--bad:#450a0a;--badink:#fca5a5;
+  --accent:#60a5fa;--code:#232327;--red:#f87171;--green:#4ade80;
+}}
+body{background:var(--bg);color:var(--ink);font:16px/1.65 var(--sans);letter-spacing:0}
+main{max-width:800px;padding:28px 20px 96px}
+.back{font-size:14px;color:var(--muted);min-height:36px}.back:hover{color:var(--ink);text-decoration:none}
+h1{font-size:clamp(28px,4.4vw,36px);font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:12px 0 10px}
+.sub{font-size:17px;color:var(--muted);margin:0 0 24px;max-width:640px}
+h2{font-size:22px;font-weight:650;letter-spacing:-.01em;margin:72px 0 14px;padding-top:28px;border-top:1px solid var(--line);scroll-margin-top:64px}
+h2#s1,h2:first-of-type{margin-top:48px}
+h3{font-size:17px;font-weight:650;margin:32px 0 6px;letter-spacing:0}
+h4{font-size:15px;font-weight:650;margin:22px 0 4px}
+.big{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:16px 20px;font-size:17.5px;line-height:1.5;margin:22px 0}
+.idea{background:none;border:0;border-left:2px solid var(--line);border-radius:0;padding:2px 0 2px 16px;margin:16px 0;font-size:16px}
+.idea b:first-child{color:var(--ink);font-weight:650}
+nav.toc{position:sticky;top:0;z-index:5;display:flex;flex-wrap:nowrap;overflow-x:auto;gap:0;margin:18px -20px 8px;padding:0 20px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);scrollbar-width:none}
+nav.toc a{font-size:14px;color:var(--muted);background:none;border-radius:0;padding:12px 12px;min-height:0;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;text-decoration:none}
+nav.toc a:hover{background:none;color:var(--ink);border-bottom-color:var(--line)}
+code,.mono{font-family:var(--mono);font-size:.875em}
+code{background:var(--code);border-radius:4px;padding:1px 5px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.6}
+.f{background:var(--card);border:1px solid var(--line);border-radius:8px;font-size:20px;padding:14px 12px;margin:16px 0}
+.f:has(+ .leg){border-bottom:0;border-radius:8px 8px 0 0;margin-bottom:0}
+.leg{background:var(--card);border:1px solid var(--line);border-top:1px dashed var(--line);border-radius:0 0 8px 8px;padding:12px 16px;margin:0 0 18px;font-size:14.5px}
+.leg dd{color:var(--muted)}
+.w{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:18px 0;box-shadow:none}
+.w .hint{font-size:13px;color:var(--muted)}
+.msg{font-size:15px}
+.calc{background:var(--soft);border:0;border-radius:6px;font-size:13.5px;padding:8px 12px}
+.bar{gap:6px}
+button,select{font:inherit;font-size:14px;font-weight:500;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 12px;min-height:32px;box-shadow:none}
+button:hover,select:hover{background:var(--soft);filter:none}
+button:active{transform:none;background:var(--line)}
+button.on,button.on:hover{background:var(--ink);color:var(--bg);border-color:var(--ink);filter:none}
+button:disabled{opacity:.5}
+@media (pointer:coarse){button,select{min-height:42px}}
+.dots{font-size:13px}
+table.sum{background:var(--card);border:1px solid var(--line);border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden;font-size:14.5px;margin:14px 0}
+table.sum th{background:var(--soft);color:var(--muted);font-weight:600;font-size:12.5px;text-transform:none}
+table.sum th,table.sum td{border-bottom:1px solid var(--line);padding:10px 12px}
+table.sum tr:last-child td{border-bottom:0}
+.hy,.hb,.hg,.hr{border-radius:4px;padding:0 4px}
+.chip{background:var(--soft)}
+.tn{background:var(--card)}
+footer{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px;margin-top:64px}
+svg.plot .lbl{font-weight:600}
+/* portada */
+.kicker{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin:0}
+.sub{margin-bottom:36px}
+a.card{display:grid;grid-template-columns:104px 1fr;gap:20px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:0 0 12px;box-shadow:none;transition:border-color .15s,background .15s;color:var(--ink)}
+a.card:hover{background:var(--card);border-color:var(--accent);opacity:1;transform:none;box-shadow:none}
+a.card:hover .go{transform:none;text-decoration:underline}
+.thumb{width:104px;height:104px;border-radius:8px;background:var(--soft);box-shadow:none}
+.card h3{font-size:18px;font-weight:650;margin:2px 0 4px}
+.card p{font-size:15px;color:var(--muted);margin:0 0 10px}
+.num{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.tags span{font-size:12px;background:var(--soft);color:var(--muted);padding:2px 9px;border-radius:6px}
+.go{font-size:14px;margin-top:10px}
+@media (max-width:560px){main{padding-left:16px;padding-right:16px}h2{font-size:20px;margin-top:56px}nav.toc{margin-left:-16px;margin-right:-16px;padding:0 16px}a.card{grid-template-columns:1fr}.thumb{width:100%;height:96px}.big{font-size:16.5px}}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Volver a los apuntes</a>
+
+<h1>Árboles de decisión: ¿por qué 2,45?</h1>
+<p class="sub">Apuntes directos y animados del cuaderno <i>ML_02 · Per què 2,45? La matemàtica dels arbres de decisió</i>. Todos los gráficos se mueven: desliza, arrastra o dale a <b>Reproducir</b>.</p>
+
+<div class="big">La frase que tienes que entender al final: <b>un árbol prueba todas las columnas y todos los cortes posibles, y se queda con el que más baja el desorden (la impureza).</b> El 2,45 no lo puso nadie: salió de ahí.</div>
+
+<nav class="toc">
+<a href="#s1">1 · La pregunta</a><a href="#s2">2 · Medir el desorden</a><a href="#s3">3 · Elegir el corte</a><a href="#s4">4 · Ganancia por umbral</a><a href="#s5">5 · Contra sklearn</a><a href="#s6">6 · Hasta dónde crecer</a><a href="#s7">7 · Práctica</a><a href="#res">Resumen</a>
+</nav>
+
+<!-- ============ 1 ============ -->
+<h2 id="s1">1 · La pregunta</h2>
+<div class="idea"><b>Idea:</b> en la demo viste un árbol cuyo nodo de arriba preguntaba <code>petal_llarg &lt;= 2.45</code>. La máquina encontró ese número sola mirando 105 flores. ¿Por qué 2,45, y por qué el pétalo y no otra columna? Al final lo calcularás a mano y con código.</div>
+<p>Los datos son las <b>150 flores de Iris</b> (3 especies, 4 medidas). Las columnas se llaman <code>sepal_llarg</code>, <code>sepal_ample</code>, <code>petal_llarg</code>, <code>petal_ample</code>, como en el cuaderno.</p>
+
+<!-- ============ 2 ============ -->
+<h2 id="s2">2 · Medir el desorden: la impureza de Gini</h2>
+<div class="idea"><b>Idea:</b> para elegir un corte, la máquina necesita medir <b>si un grupo de flores está mezclado o no</b>. Un grupo es <span class="hg">puro</span> si todas son de la misma especie e <span class="hr">impuro</span> si hay mezcla; cuanto más equilibrada la mezcla, más impuro.</div>
+<div class="f">G = 1 − <span class="sum"><small>&nbsp;</small><b>Σ</b><small>i</small></span> p<sub>i</sub><sup>2</sup></div>
+<dl class="leg">
+<dt>G</dt><dd>la impureza de Gini del grupo (0 = puro)</dd>
+<dt>p<sub>i</sub></dt><dd>la proporción de flores de la clase <i>i</i> dentro del grupo (cuántas hay de esa clase entre el total del grupo)</dd>
+<dt>p<sub>i</sub><sup>2</sup></dt><dd>esa proporción al cuadrado</dd>
+<dt>Σ</dt><dd>«suma todos» los valores de <i>i</i>, es decir, todas las clases</dd>
+</dl>
+<p>Con 50 setosa y nada más, <i>p</i><sub>setosa</sub> = 1 y G = 1 − 1² = 0. <b>Mueve los deslizadores</b> (cuántas flores de cada especie hay en el grupo) y mira cómo suben G y la entropía. Los tres botones son los tres casos del cuaderno: <b>0</b>, <b>0.5</b> y <b>0.667</b>.</p>
+<div class="w" id="w2a"></div>
+<pre>def gini(etiquetes):
+    proporcions = pd.Series(etiquetes).value_counts(normalize=True)
+    return 1 - (proporcions ** 2).sum()
+
+gini(["setosa"] * 50)                                   # → 0.0
+gini(["setosa"] * 25 + ["versicolor"] * 25)             # → 0.5
+gini(["setosa"] * 10 + ["versicolor"] * 10 + ["virginica"] * 10)   # → 0.667</pre>
+
+<h3>La alternativa: la entropía</h3>
+<div class="idea"><b>Idea:</b> Gini no es la única medida. La otra habitual es la <b>entropía</b>, de la teoría de la información. Se calcula distinto (hay un logaritmo), pero mide lo mismo: 0 si el grupo es puro y más alta cuanto más mezclado. En la práctica los dos dan árboles casi idénticos; scikit-learn usa Gini por defecto porque es un poco más rápido (no hay logaritmo).</div>
+<div class="f">H = − <span class="sum"><small>&nbsp;</small><b>Σ</b><small>i</small></span> p<sub>i</sub> · log<sub>2</sub>( p<sub>i</sub> )</div>
+<dl class="leg">
+<dt>H</dt><dd>la entropía del grupo, en bits</dd>
+<dt>p<sub>i</sub></dt><dd>la proporción de la clase <i>i</i> en el grupo</dd>
+<dt>log<sub>2</sub></dt><dd>logaritmo en base 2: «a cuántas veces hay que partir por la mitad». Es negativo para proporciones menores que 1, por eso va el signo «−» delante</dd>
+</dl>
+<p>Con <b>dos</b> clases todo el grupo se resume en un número: la proporción <i>p</i> de la primera clase. Aquí están las dos curvas para todas las mezclas posibles. Las dos valen 0 en los extremos y tienen el máximo en el empate; solo cambia la escala (Gini 0.5, entropía 1 bit), pero la <b>forma</b> es la misma. Por eso casi siempre ordenan igual los cortes candidatos.</p>
+<div class="w" id="w2b"></div>
+
+<!-- ============ 3 ============ -->
+<h2 id="s3">3 · Cómo elige la máquina el corte</h2>
+<div class="idea"><b>Idea:</b> es una <b>búsqueda bruta</b>. Para cada columna y cada umbral posible, se parten las flores en dos grupos (las que cumplen la condición y las que no) y se mide la impureza <b>ponderada</b> de los dos hijos. Gana el corte que más baja la impureza respecto al grupo padre.</div>
+<div class="f">G<sub>hijos</sub> = <span class="frac">n<sub>izq</sub>⁄n</span> · G<sub>izq</sub> + <span class="frac">n<sub>der</sub>⁄n</span> · G<sub>der</sub> &nbsp;&nbsp;&nbsp;&nbsp; ganancia = G<sub>padre</sub> − G<sub>hijos</sub></div>
+<dl class="leg">
+<dt>n<sub>izq</sub>, n<sub>der</sub></dt><dd>cuántas flores caen a cada lado del corte</dd>
+<dt>n</dt><dd>el total de flores del grupo (n<sub>izq</sub> + n<sub>der</sub>)</dd>
+<dt>G<sub>izq</sub>, G<sub>der</sub></dt><dd>la impureza de Gini de cada lado</dd>
+<dt>n<sub>izq</sub>/n</dt><dd>el peso de ese lado: se pondera porque dejar puro un grupo de 2 flores vale mucho menos que dejar puro uno de 80</dd>
+<dt>G<sub>padre</sub></dt><dd>la impureza del grupo antes de cortarlo</dd>
+<dt>ganancia</dt><dd>cuánto baja la impureza al cortar: cuanto más alta, mejor corte</dd>
+</dl>
+<p>Primero, <b>barrer un umbral</b> con 20 puntos <b>inventados</b> de una sola columna y dos clases (10 de A y 10 de B; no son los puntos del cuaderno). <b>Desliza el umbral</b>: en los extremos un hijo tiene pocos puntos y la impureza ponderada casi no baja; en medio, donde las clases se separan, los dos hijos casi puros y la ponderada toca fondo. La ganancia es la distancia hasta la línea gris.</p>
+<div class="w" id="w3a"></div>
+<p>Ahora con Iris de verdad. <code>millor_tall</code> hace exactamente eso con <b>todas</b> las columnas a la vez. Aquí está la mejor ganancia de cada columna sobre las 150 flores:</p>
+<div class="w" id="w3b"></div>
+<pre>resultat = millor_tall(X, y)
+# Millor columna: petal_llarg
+# Millor llindar: 2.45
+# Guany de Gini:  0.333</pre>
+<p><b>Ahí está la respuesta del principio:</b> sin que nadie le dijera nada de iris, la función probó todas las columnas y todos los cortes y encontró <code>petal_llarg</code> con umbral <b>2.45</b>. Es el nodo de arriba del árbol de la demo: es el mismo cálculo que hace <code>DecisionTreeClassifier</code> por dentro.</p>
+
+<!-- ============ 4 ============ -->
+<h2 id="s4">4 · La ganancia de cada umbral</h2>
+<div class="idea"><b>Idea:</b> para ver por qué sale justo 2,45 y no otro número, mira la ganancia que daría <b>cada</b> umbral posible. La curva sube de golpe hacia 1.5–2 cm, se queda arriba en una <b>meseta</b> y vuelve a bajar. La meseta es el hueco entre la última setosa y la primera flor de otra especie: sin ninguna flor dentro. 2,45 cae justo en el medio de ese hueco.</div>
+<p>Elige columna y <b>haz clic en la curva</b> para ver la ganancia de ese umbral. Cualquier umbral de la meseta separa las setosa igual de bien; el algoritmo se queda con el del medio del hueco: (1.9 + 3.0) / 2 = 2.45.</p>
+<div class="w" id="w4"></div>
+<pre>valors = np.sort(X["petal_llarg"].unique())
+llindars = (valors[:-1] + valors[1:]) / 2       # puntos medios entre valores consecutivos</pre>
+
+<!-- ============ 5 ============ -->
+<h2 id="s5">5 · Comparamos con scikit-learn</h2>
+<div class="idea"><b>Idea:</b> si eso es lo que hace un árbol por dentro, uno de <code>max_depth=1</code> (un único corte) tiene que elegir el mismo umbral.</div>
+<pre>arbre = DecisionTreeClassifier(max_depth=1, random_state=42).fit(X, y)
+X.columns[arbre.tree_.feature[0]], arbre.tree_.threshold[0]   # → petal_llarg, 2.45</pre>
+<p>Coinciden. <code>tree_.feature</code> y <code>tree_.threshold</code> guardan, para cada nodo, la columna y el umbral elegidos; el nodo 0 es la raíz. <code>millor_tall</code> no es una aproximación docente: es <b>el mismo algoritmo</b> escrito a mano. Aquí tienes el árbol que sale de aplicarlo de forma repetida sobre las 150 flores (calculado en esta página; a profundidad 1 coincide con scikit-learn, y a partir de la 3 pueden aparecer cortes distintos pero equivalentes cuando hay empates). <b>Cambia la profundidad.</b></p>
+<div class="w" id="w5"></div>
+
+<!-- ============ 6 ============ -->
+<h2 id="s6">6 · Hasta dónde dejar crecer el árbol</h2>
+<div class="idea"><b>Idea:</b> un solo corte solo separa las setosa. La solución obvia es repetir el proceso dentro de cada hijo, una y otra vez: así crece un árbol. ¿Hasta dónde? Si no se para nunca, hace un corte para cada flor, <b>memoriza</b> el entrenamiento y deja de generalizar: <span class="hr">sobreajuste</span>. <b>Trampa típica:</b> mirar solo la exactitud de entrenamiento, que siempre sube.</div>
+<p>Con los datos reales (105 de entrenamiento, 45 de examen, el reparto del cuaderno): la exactitud según <code>max_depth</code> de 1 a 10. Con <code>max_depth=1</code> es 66.7 % en los dos lados (solo separa la setosa). El entrenamiento sube hasta el <b>100 %</b>; el examen se queda atrás, en torno al 93 %. <b>Haz clic</b> en un punto.</p>
+<div class="w" id="w6a"></div>
+<p>Para evitarlo, el árbol se <b>poda</b> limitando su crecimiento:</p>
+<ul>
+<li><code>max_depth</code>: cuántos cortes seguidos puede hacer como máximo desde la raíz.</li>
+<li><code>min_samples_leaf</code>: cuántas flores como mínimo debe tener cada hoja final. Si un corte dejaría una hoja con menos, no se hace.</li>
+</ul>
+<p>Ninguno tiene un valor «correcto» universal: se prueba con el examen.</p>
+
+<h3>El sobreajuste en el plano</h3>
+<p>Un árbol solo hace preguntas «columna ≤ umbral», así que <b>parte el plano en rectángulos</b>, y cada rectángulo es una hoja. Con solo las dos columnas del sépalo (donde las especies se mezclan más), entrenadas con el reparto real. <b>Desliza max_depth</b>: a profundidad 8 aparecen <b>islas</b> pequeñas alrededor de flores concretas, y por eso mejora en entrenamiento y no en el examen.</p>
+<div class="w" id="w6b"></div>
+
+<!-- ============ 7 ============ -->
+<h2 id="s7">7 · Práctica</h2>
+<p>Los cuatro ejercicios del cuaderno, cada uno con su dibujo de <b>datos inventados</b> y, al final de la página, lo que te tiene que salir.</p>
+
+<h3>7.1 · Implementa la entropía</h3>
+<p>Escribe <code>entropia(etiquetes)</code> con la fórmula de arriba (<code>np.log2</code>) y comprueba que da 0 para un grupo puro y el máximo para uno repartido a partes iguales. Después, una versión de <code>millor_tall</code> con entropía en lugar de Gini: ¿elige el mismo corte? <b>Idea del dibujo:</b> cada clase aporta un trozo −p<sub>i</sub> log<sub>2</sub> p<sub>i</sub>, y la entropía es la pila de todos los trozos. Cuatro grupos <b>inventados</b>.</p>
+<div class="w" id="w7a"></div>
+
+<h3>7.2 · Un árbol de profundidad 2 a mano</h3>
+<p><code>millor_tall</code> solo hace un corte. Uno de profundidad 2 es lo mismo aplicado dos veces: primero sobre todo, y luego <b>por separado</b> dentro de cada grupo. <b>Idea del dibujo:</b> el primer corte atraviesa todo el plano; los del segundo nivel se buscan en cada mitad y por eso cada uno puede usar una columna distinta y ocupa solo su mitad. Puntos <b>inventados</b> y cortes puestos a mano (a ≤ 4, luego b ≤ 5 a la izquierda y a ≤ 7 a la derecha); los de Iris los tienes que encontrar tú.</p>
+<div class="w" id="w7b"></div>
+
+<h3>7.3 · Otro dataset: Wine</h3>
+<p>Con <code>load_wine()</code> (178 muestras, 13 columnas químicas, 3 clases) aplica <code>millor_tall</code> y compáralo con <code>DecisionTreeClassifier(max_depth=1)</code>. <b>Idea del dibujo:</b> tres columnas <b>inventadas</b> en unidades muy distintas; se dibuja la ganancia de cada una en sus unidades y gana el máximo de los máximos. Las escalas no afectan: solo se comparan ganancias. (La del peso es ruido puro.)</p>
+<div class="w" id="w7c"></div>
+
+<h3>7.4 · La profundidad óptima</h3>
+<p>Con las listas <code>exactitud_examen</code> y <code>profunditats</code>, encuentra qué profundidad da la mejor exactitud de examen. <b>Trampa típica:</b> <code>np.argmax</code> te da la <b>posición</b> en la lista, que empieza en 0; el <code>max_depth</code> está en esa misma posición de <code>profunditats</code>. Curva <b>inventada</b>:</p>
+<div class="w" id="w7d"></div>
+<pre>pos = int(np.argmax(exactitud_examen))
+print(profunditats[pos], exactitud_examen[pos])      # la posición NO es el max_depth</pre>
+
+<!-- ============ RESUMEN ============ -->
+<h2 id="res">Resumen en una tabla</h2>
+<div class="scroll">
+<table class="sum">
+<tr><th>Concepto</th><th>Qué es</th><th>Código</th><th>Número para comprobar</th></tr>
+<tr><td><b>Gini</b></td><td>Desorden de un grupo: 1 − Σ p²</td><td><code>1 - (proporcions ** 2).sum()</code></td><td>0 · 0.5 · 0.667</td></tr>
+<tr><td><b>Entropía</b></td><td>Otra medida del desorden (bits)</td><td><code>-(p * np.log2(p)).sum()</code></td><td>0 · 1 · 1.585</td></tr>
+<tr><td><b>Ganancia</b></td><td>Cuánto baja la impureza al cortar (ponderada)</td><td><code>gini_pare - gini_ponderat(esq, dre)</code></td><td>0.333</td></tr>
+<tr><td><b>Mejor corte</b></td><td>Probar todas las columnas y umbrales</td><td><code>millor_tall(X, y)</code></td><td>petal_llarg ≤ 2.45</td></tr>
+<tr><td><b>Contra sklearn</b></td><td>Es el mismo algoritmo</td><td><code>arbre.tree_.threshold[0]</code></td><td>2.45</td></tr>
+<tr><td><b>Profundidad</b></td><td>Sin límite, memoriza</td><td><code>max_depth</code>, <code>min_samples_leaf</code></td><td>entrenamiento 100 % · examen 93.3 %</td></tr>
+</table>
+</div>
+<div class="big">Un árbol es una búsqueda bruta del corte que más baja el desorden, repetida dentro de cada hijo. Sin límite de profundidad acaba memorizando, y por eso hay que podarlo.</div>
+
+<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
+<ul>
+<li><b>7.1</b>: <code>entropia</code> da <b>0</b> (50 setosa), <b>1.0</b> (25 + 25) y <b>1.585</b> (10 + 10 + 10). Con entropía, <code>millor_tall</code> elige el <b>mismo corte</b>: <code>petal_llarg &lt;= 2.45</code> (ganancia 0.918 bits).</li>
+<li><b>7.2</b>: primer corte <code>petal_llarg &lt;= 2.45</code>; la izquierda es pura (50 setosa), así que no hay corte útil. A la derecha, <code>petal_ample &lt;= 1.75</code> (ganancia 0.390). En <code>if</code>/<code>else</code>: si <code>petal_llarg &lt;= 2.45</code> → setosa; si no, si <code>petal_ample &lt;= 1.75</code> → versicolor (casi todas), si no → virginica.</li>
+<li><b>7.3</b> (Wine): <code>millor_tall</code> da <b>proline ≤ 755.0</b> (ganancia 0.252) y <code>DecisionTreeClassifier(max_depth=1)</code> también: <code>proline</code>, <code>755.0</code>.</li>
+<li><b>7.4</b>: la mejor profundidad es <b>3</b> (posición 2 de la lista), con <b>97.8 %</b> de exactitud en el examen.</li>
+</ul>
+<p>Siguiente cuaderno: <b>boscos aleatoris</b>. Un solo árbol es inestable: cambia un poco los datos y puede salir otro distinto. La solución es entrenar cientos y hacerlos votar.</p>
+<footer>Apuntes generados a partir del cuaderno ML_02 (árboles de decisión). Funciona sin conexión: todo está en este archivo. Las ganancias y el árbol del apartado 5 se calculan en esta página con los datos reales; las exactitudes y los rectángulos del apartado 6 son resultados reales de scikit-learn con el reparto del cuaderno; los dibujos del apartado 7 y el barrido del apartado 3 usan datos inventados y lo dicen.</footer>
+
+</main>
+
+<script>
+<div class="f">d(a, c) ≤ d(a, b) + d(b, c)</div>
+<dl class="leg">
+<dt>a, b, c</dt><dd>tres puntos (tres flores): ir de <i>a</i> a <i>c</i> pasando por <i>b</i> nunca es un atajo</dd>
+</dl>
+<p>Los buscadores rápidos de vecinos de k-NN (<code>KDTree</code>, <code>BallTree</code>) se apoyan en ella para descartar flores sin medirlas.</p>
+<div class="idea"><b>Trampa típica:</b> <code>np.abs(p)</code> <b>no</b> es ‖p‖. <code>np.abs</code> quita el signo a cada componente y devuelve 4 números; la norma es <b>un solo número</b>: <code>np.linalg.norm(p)</code>. Con <code>seed(0)</code>: ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖ + ‖q‖ = 3.041634 + 2.316986 = <b>5.358619</b> (el ángulo entre <i>p</i> y <i>q</i> es de unos 60°). Con <code>q = 3 * p</code>, los dos lados dan <b>12.166536</b>.</div>
+
+<h2 id="s12">12 · El bucle que hay dentro de A @ w</h2>
+<div class="idea"><b>Idea:</b> <code>A @ w</code> no es magia: es un doble bucle. El de fuera recorre las filas; el de dentro multiplica cada número de la fila por su peso y lo va sumando. Cada fila acaba siendo <b>un</b> número.</div>
+<div class="f">(A w)<sub>i</sub> = <span class="sum"><small>d</small><b>Σ</b><small>j=1</small></span> A<sub>ij</sub> w<sub>j</sub> &nbsp;&nbsp;&nbsp;&nbsp; para i = 1, …, m</div>
+<dl class="leg">
+<dt>A</dt><dd>la matriz de datos, con <i>m</i> filas y <i>d</i> columnas (200 × 5)</dd>
+<dt>A<sub>ij</sub></dt><dd>el número de la fila <i>i</i>, columna <i>j</i> (<code>A[i, j]</code>)</dd>
+<dt>w, w<sub>j</sub></dt><dd>el vector de pesos (5 números) y su componente <i>j</i></dd>
+<dt>(A w)<sub>i</sub></dt><dd>la casilla <i>i</i> del resultado: la puntuación de la fila <i>i</i></dd>
+<dt>i, j</dt><dd><i>i</i> = bucle de fuera (filas, 1…<i>m</i>); <i>j</i> = bucle de dentro (columnas, 1…<i>d</i>)</dd>
+</dl>
+<p>Sigue el doble bucle multiplicación a multiplicación con una matriz pequeña:</p>
+<div class="w" id="wE4"></div>
+<p><b>La regla de las formas</b>, escrita en mates:</p>
+<div class="f">A ∈ ℝ<sup>m×d</sup>, &nbsp; w ∈ ℝ<sup>d</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; A w ∈ ℝ<sup>m</sup> &nbsp;&nbsp;&nbsp;&nbsp; (200, <u>5</u>) @ (<u>5</u>,) → (200,)</div>
+<dl class="leg">
+<dt>∈</dt><dd>"pertenece a" / "es un…"</dd>
+<dt>ℝ<sup>m×d</sup></dt><dd>tabla de números reales con <i>m</i> filas y <i>d</i> columnas</dd>
+<dt>ℝ<sup>d</sup></dt><dd>vector de <i>d</i> números reales</dd>
+</dl>
+<p><b>¿Por qué <code>np.allclose</code> y no <code>==</code>?</b> El ordenador guarda los decimales con unos 16 dígitos, así que cada suma redondea un poquito. El bucle y <code>@</code> suman en distinto orden (numpy agrupa las operaciones para ir más rápido), y el redondeo sale ligeramente distinto. Pasa hasta con <code>0.1 + 0.2 == 0.3</code>, que da <code>False</code>. Por eso se compara con margen:</p>
+<div class="f">|a<sub>i</sub> − b<sub>i</sub>| ≤ atol + rtol · |b<sub>i</sub>| &nbsp;&nbsp; para todo i</div>
+<dl class="leg">
+<dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>los dos resultados que comparas (el del bucle y el de <code>@</code>)</dd>
+<dt>atol</dt><dd>tolerancia absoluta: un margen fijo (por defecto 10<sup>−8</sup>)</dd>
+<dt>rtol</dt><dd>tolerancia relativa: un margen proporcional al tamaño del número (por defecto 10<sup>−5</sup>)</dd>
+<dt>ε ≈ 2.2·10<sup>−16</sup></dt><dd>la precisión de un <code>float64</code>: por eso la diferencia máxima sale del orden de 10<sup>−16</sup> o 10<sup>−15</sup></dd>
+</dl>
+<pre>np.random.seed(1); A = np.random.randn(200, 5); w = np.random.randn(5)
+bucle = np.zeros(200)
+for i in range(200):          # filas
+    for j in range(5):        # columnas
+        bucle[i] += A[i, j] * w[j]
+np.allclose(bucle, A @ w)     # True
+np.max(np.abs(bucle - A @ w)) # ~1e-16 / 1e-15, nunca un número grande</pre>
+
+<!-- ============ RESUMEN ============ -->
+<h2 id="res">Resumen en una tabla</h2>
+<div class="scroll">
+<table class="sum">
+<tr><th>Concepto</th><th>Qué es</th><th>Numpy</th><th>Número para comprobar</th></tr>
+<tr><td><b>Vector</b></td><td>Lista de números = punto = flecha</td><td><code>X[0]</code></td><td>[5.1, 3.5, 1.4, 0.2]</td></tr>
+<tr><td><b>Norma</b></td><td>Longitud de la flecha (Pitágoras)</td><td><code>np.linalg.norm(v)</code></td><td>6.345077 (flor 0)</td></tr>
+<tr><td><b>Distancia</b></td><td>Norma de la resta</td><td><code>np.linalg.norm(a - b)</code></td><td>4.003748 (flores 0 y 50)</td></tr>
+<tr><td><b>Producto escalar</b></td><td>Multiplica y suma → 1 número. Signo = hacia dónde apuntan</td><td><code>a @ b</code></td><td>53.76 · ángulo 21.8°</td></tr>
+<tr><td><b>Proyección</b></td><td>Sombra de <i>a</i> sobre <i>b</i></td><td><code>(a @ b) / np.linalg.norm(b)</code></td><td>5.890645 (4D)</td></tr>
+<tr><td><b>Matriz · vector</b></td><td>Cada fila · el vector → un número por fila</td><td><code>X @ w</code></td><td>(150,4) @ (4,) → (150,)</td></tr>
+<tr><td><b>Modelo</b></td><td>z = w·x + b; el signo decide</td><td><code>X @ coef_[0] + intercept_[0]</code></td><td>150 de 150 = <code>predict</code></td></tr>
+<tr><td><b>Transpuesta</b></td><td>Filas ↔ columnas</td><td><code>X.T</code>, <code>X.T @ X</code></td><td>(4, 4), simétrica</td></tr>
+</table>
+</div>
+<div class="big">Cuando haces <code>fit</code>, se buscan unos números. Cuando haces <code>predict</code>, se multiplica. No hay nada más dentro.</div>
+
+<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
+<ul>
+<li><b>Manhattan vs euclídea</b> (flores 0 y 50): Manhattan <code>np.sum(np.abs(a - b))</code> = <b>6.7</b>; euclídea = <b>4.003748</b>. Manhattan es más grande porque va "por las calles" en vez de en línea recta.</li>
+<li><b>Las dos flores más lejanas</b>: distancia <b>7.085196</b>, flores <b>13</b> y <b>118</b>. La matriz de distancias tiene que ser simétrica y con la diagonal a cero.</li>
+<li><b>Desigualdad triangular</b> (<code>seed(0)</code>): ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖+‖q‖ = <b>5.358619</b>. Con <code>q = 3 * p</code> salen iguales.</li>
+<li><b>Bucle vs @</b> (<code>seed(1)</code>, 200 × 5): <code>np.allclose</code> → <b>True</b>, diferencia del orden de 10⁻¹⁵.</li>
+</ul>
+<p>Siguiente cuaderno: <b>de dónde salen los pesos</b> (descenso del gradiente).</p>
+<footer>Apuntes generados a partir del cuaderno MA_01. Funciona sin conexión: todo está en este archivo.</footer>
+</main>
+
+<script>
+const IRIS={"X":[[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4],[4.6,3.4,1.4,0.3],[5.0,3.4,1.5,0.2],[4.4,2.9,1.4,0.2],[4.9,3.1,1.5,0.1],[5.4,3.7,1.5,0.2],[4.8,3.4,1.6,0.2],[4.8,3.0,1.4,0.1],[4.3,3.0,1.1,0.1],[5.8,4.0,1.2,0.2],[5.7,4.4,1.5,0.4],[5.4,3.9,1.3,0.4],[5.1,3.5,1.4,0.3],[5.7,3.8,1.7,0.3],[5.1,3.8,1.5,0.3],[5.4,3.4,1.7,0.2],[5.1,3.7,1.5,0.4],[4.6,3.6,1.0,0.2],[5.1,3.3,1.7,0.5],[4.8,3.4,1.9,0.2],[5.0,3.0,1.6,0.2],[5.0,3.4,1.6,0.4],[5.2,3.5,1.5,0.2],[5.2,3.4,1.4,0.2],[4.7,3.2,1.6,0.2],[4.8,3.1,1.6,0.2],[5.4,3.4,1.5,0.4],[5.2,4.1,1.5,0.1],[5.5,4.2,1.4,0.2],[4.9,3.1,1.5,0.2],[5.0,3.2,1.2,0.2],[5.5,3.5,1.3,0.2],[4.9,3.6,1.4,0.1],[4.4,3.0,1.3,0.2],[5.1,3.4,1.5,0.2],[5.0,3.5,1.3,0.3],[4.5,2.3,1.3,0.3],[4.4,3.2,1.3,0.2],[5.0,3.5,1.6,0.6],[5.1,3.8,1.9,0.4],[4.8,3.0,1.4,0.3],[5.1,3.8,1.6,0.2],[4.6,3.2,1.4,0.2],[5.3,3.7,1.5,0.2],[5.0,3.3,1.4,0.2],[7.0,3.2,4.7,1.4],[6.4,3.2,4.5,1.5],[6.9,3.1,4.9,1.5],[5.5,2.3,4.0,1.3],[6.5,2.8,4.6,1.5],[5.7,2.8,4.5,1.3],[6.3,3.3,4.7,1.6],[4.9,2.4,3.3,1.0],[6.6,2.9,4.6,1.3],[5.2,2.7,3.9,1.4],[5.0,2.0,3.5,1.0],[5.9,3.0,4.2,1.5],[6.0,2.2,4.0,1.0],[6.1,2.9,4.7,1.4],[5.6,2.9,3.6,1.3],[6.7,3.1,4.4,1.4],[5.6,3.0,4.5,1.5],[5.8,2.7,4.1,1.0],[6.2,2.2,4.5,1.5],[5.6,2.5,3.9,1.1],[5.9,3.2,4.8,1.8],[6.1,2.8,4.0,1.3],[6.3,2.5,4.9,1.5],[6.1,2.8,4.7,1.2],[6.4,2.9,4.3,1.3],[6.6,3.0,4.4,1.4],[6.8,2.8,4.8,1.4],[6.7,3.0,5.0,1.7],[6.0,2.9,4.5,1.5],[5.7,2.6,3.5,1.0],[5.5,2.4,3.8,1.1],[5.5,2.4,3.7,1.0],[5.8,2.7,3.9,1.2],[6.0,2.7,5.1,1.6],[5.4,3.0,4.5,1.5],[6.0,3.4,4.5,1.6],[6.7,3.1,4.7,1.5],[6.3,2.3,4.4,1.3],[5.6,3.0,4.1,1.3],[5.5,2.5,4.0,1.3],[5.5,2.6,4.4,1.2],[6.1,3.0,4.6,1.4],[5.8,2.6,4.0,1.2],[5.0,2.3,3.3,1.0],[5.6,2.7,4.2,1.3],[5.7,3.0,4.2,1.2],[5.7,2.9,4.2,1.3],[6.2,2.9,4.3,1.3],[5.1,2.5,3.0,1.1],[5.7,2.8,4.1,1.3],[6.3,3.3,6.0,2.5],[5.8,2.7,5.1,1.9],[7.1,3.0,5.9,2.1],[6.3,2.9,5.6,1.8],[6.5,3.0,5.8,2.2],[7.6,3.0,6.6,2.1],[4.9,2.5,4.5,1.7],[7.3,2.9,6.3,1.8],[6.7,2.5,5.8,1.8],[7.2,3.6,6.1,2.5],[6.5,3.2,5.1,2.0],[6.4,2.7,5.3,1.9],[6.8,3.0,5.5,2.1],[5.7,2.5,5.0,2.0],[5.8,2.8,5.1,2.4],[6.4,3.2,5.3,2.3],[6.5,3.0,5.5,1.8],[7.7,3.8,6.7,2.2],[7.7,2.6,6.9,2.3],[6.0,2.2,5.0,1.5],[6.9,3.2,5.7,2.3],[5.6,2.8,4.9,2.0],[7.7,2.8,6.7,2.0],[6.3,2.7,4.9,1.8],[6.7,3.3,5.7,2.1],[7.2,3.2,6.0,1.8],[6.2,2.8,4.8,1.8],[6.1,3.0,4.9,1.8],[6.4,2.8,5.6,2.1],[7.2,3.0,5.8,1.6],[7.4,2.8,6.1,1.9],[7.9,3.8,6.4,2.0],[6.4,2.8,5.6,2.2],[6.3,2.8,5.1,1.5],[6.1,2.6,5.6,1.4],[7.7,3.0,6.1,2.3],[6.3,3.4,5.6,2.4],[6.4,3.1,5.5,1.8],[6.0,3.0,4.8,1.8],[6.9,3.1,5.4,2.1],[6.7,3.1,5.6,2.4],[6.9,3.1,5.1,2.3],[5.8,2.7,5.1,1.9],[6.8,3.2,5.9,2.3],[6.7,3.3,5.7,2.5],[6.7,3.0,5.2,2.3],[6.3,2.5,5.0,1.9],[6.5,3.0,5.2,2.0],[6.2,3.4,5.4,2.3],[5.9,3.0,5.1,1.8]],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]};
+const X=IRIS.X, Y=IRIS.y;
+const SPECIES=['setosa','versicolor','virginica'];
+const NS='http://www.w3.org/2000/svg';
+const C={blue:'#2563eb',orange:'#ea580c',green:'#16a34a',purple:'#7c3aed',red:'#dc2626',gray:'#8a877f',pink:'#db2777',teal:'#0d9488',amber:'#d97706',ink:'currentColor'};
+const SPC=[C.blue,C.orange,C.green];
+function E(tag,attrs,parent){const e=document.createElementNS(NS,tag);if(attrs)for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function H(tag,attrs,parent,html){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k])}if(html!=null)e.innerHTML=html;if(parent)parent.appendChild(e);return e}
+function f(x,d=4){const r=+(+x).toFixed(d);return (Object.is(r,-0)?0:r).toString()}
+const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;const RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+function tween(o,dur,fn,done){if(RM)dur=1;cancelAnimationFrame(o._raf);const t0=performance.now();const go=now=>{const u=Math.min(1,(now-t0)/dur);fn(ease(u));if(u<1)o._raf=requestAnimationFrame(go);else if(done)done()};o._raf=requestAnimationFrame(go)}
+const dot=(a,b)=>a.reduce((s,ai,i)=>s+ai*b[i],0);
+const norm=a=>Math.sqrt(dot(a,a));
+const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];
+
+class Plot{
+  constructor(host,o){
+    const W=o.w||680,pad=o.pad??34,[x0,x1]=o.x,[y0,y1]=o.y;
+    this.sx=(W-2*pad)/(x1-x0);
+    let Hh;
+    if(o.h){Hh=o.h;this.sy=o.free?(Hh-2*pad)/(y1-y0):this.sx}else{this.sy=this.sx;Hh=Math.round((y1-y0)*this.sy+2*pad)}
+    Object.assign(this,{x0,x1,y0,y1,pad,W,H:Hh});
+    this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
+    this.grid=E('g',{},this.svg);
+    const gx=o.gx||1,gy=o.gy||gx;
+/* ===== utilidades comunes ===== */
+function rngSeed(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+const ink='currentColor';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const pc=(a,d=1)=>f(100*a,d)+' %';
+const SPN=['setosa','versicolor','virginica'];
+function draggable(P,cb){let d=false;P.svg.addEventListener('pointerdown',ev=>{d=true;P.svg.setPointerCapture(ev.pointerId);cb(P.toWorld(ev))});
+  P.svg.addEventListener('pointermove',ev=>{if(d)cb(P.toWorld(ev))});P.svg.addEventListener('pointerup',()=>d=false)}
+const speciesLegend=host=>{const l=H('div',{class:'legend'},host);SPECIES.forEach((s,i)=>H('span',{},l,`<i class="sw" style="background:${SPC[i]}"></i>${s}`))};
+const sum2=a=>a.reduce((s,v)=>s+v*v,0);
+/* reparto real entrenamiento/examen de Iris (random_state=42, stratify) */
+const TR=[0,1,3,4,5,6,8,9,11,12,13,15,16,17,19,21,24,25,26,27,29,30,31,32,33,34,36,37,39,41,44,45,46,47,48,50,52,54,59,60,61,62,64,65,67,68,70,71,72,73,74,76,78,79,80,81,82,83,86,87,88,89,90,91,92,94,95,96,98,99,100,101,102,103,105,109,110,112,113,114,115,117,118,119,120,121,122,123,124,125,126,128,129,130,131,135,136,137,139,142,143,144,145,146,149];
+const trSet=new Set(TR),TE=[...Array(150).keys()].filter(i=>!trSet.has(i));
+/* impureza */
+const giniC=c=>{const n=c.reduce((a,b)=>a+b,0);return n?1-sum2(c)/(n*n):0};
+const entC=c=>{const n=c.reduce((a,b)=>a+b,0);return n?-c.reduce((s,v)=>v?s+v/n*Math.log2(v/n):s,0):0};
+/* árbol de decisión determinista (gini), como millor_tall aplicado recursivamente */
+function buildT(Xs,ys,idx,nc,maxDepth,depth=0){
+  const cnt=new Array(nc).fill(0);idx.forEach(i=>cnt[ys[i]]++);const n=idx.length;let maj=0;for(let c=1;c<nc;c++)if(cnt[c]>cnt[maj])maj=c;
+  const node={cnt,n,gini:giniC(cnt),leaf:maj};
+  if(cnt[maj]===n||depth>=maxDepth||n<2)return node;
+  let best=null;const nf=Xs[0].length;
+  for(let ft=0;ft<nf;ft++){const s=idx.slice().sort((a,b)=>Xs[a][ft]-Xs[b][ft]);const L=new Array(nc).fill(0),Rr=cnt.slice();
+    for(let p=0;p<n-1;p++){const c=ys[s[p]];L[c]++;Rr[c]--;if(Xs[s[p]][ft]===Xs[s[p+1]][ft])continue;
+      const nl=p+1,nr=n-nl,score=sum2(L)/nl+sum2(Rr)/nr;if(!best||score>best.score+1e-12)best={score,ft,thr:(Xs[s[p]][ft]+Xs[s[p+1]][ft])/2}}}
+  if(!best)return node;
+  const li=[],ri=[];idx.forEach(i=>(Xs[i][best.ft]<=best.thr?li:ri).push(i));
+  Object.assign(node,{ft:best.ft,thr:best.thr,l:buildT(Xs,ys,li,nc,maxDepth,depth+1),r:buildT(Xs,ys,ri,nc,maxDepth,depth+1)});return node}
+const isLeaf=t=>t.ft===undefined;
+function predT(t,x){while(!isLeaf(t))t=x[t.ft]<=t.thr?t.l:t.r;return t.leaf}
+const leavesT=t=>isLeaf(t)?1:leavesT(t.l)+leavesT(t.r);
+
+const SK_FULL=[[0.6667, 0.6667, 2], [0.9714, 0.8889, 3], [0.981, 0.9778, 5], [0.9905, 0.8889, 7], [1.0, 0.9333, 8], [1.0, 0.9333, 8], [1.0, 0.9333, 8], [1.0, 0.9333, 8], [1.0, 0.9333, 8], [1.0, 0.9333, 8]];
+const SK_SEP=[[[0,5.45,0,2],0.6381,0.6,2],[[0,5.45,[1,2.8,1,0],[0,6.25,1,2]],0.8,0.7111,4],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,1,0],[0,7.05,2,2]]],0.8381,0.7333,7],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,1],0],[0,7.05,[1,3.15,1,2],2]]],0.8381,0.6,9],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,[1,2.85,1,1]],0],[0,7.05,[1,3.15,[1,2.4,1,2],[0,6.95,2,1]],2]]],0.8571,0.7333,12],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,[1,2.85,[0,5.9,1,1],[0,5.8,1,1]]],0],[0,7.05,[1,3.15,[1,2.4,1,[0,6.45,2,1]],[0,6.95,2,1]],2]]],0.8762,0.6667,15],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,[1,2.85,[0,5.9,[1,2.55,2,1],[0,6.15,1,1]],[0,5.8,1,[0,5.95,1,1]]]],0],[0,7.05,[1,3.15,[1,2.4,1,[0,6.45,[1,2.6,1,2],[1,2.9,1,1]]],[0,6.95,2,1]],2]]],0.8857,0.6444,20],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,[1,2.85,[0,5.9,[1,2.55,2,[1,2.65,1,1]],[0,6.15,[1,2.45,1,1],[1,2.5,1,2]]],[0,5.8,1,[0,5.95,[1,3.1,1,1],1]]]],0],[0,7.05,[1,3.15,[1,2.4,1,[0,6.45,[1,2.6,1,[1,2.85,2,2]],[1,2.9,1,[1,3.05,2,1]]]],[0,6.95,2,1]],2]]],0.9143,0.6444,26],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,[1,2.85,[0,5.9,[1,2.55,2,[1,2.65,1,[0,5.75,1,2]]],[0,6.15,[1,2.45,1,1],[1,2.5,1,2]]],[0,5.8,1,[0,5.95,[1,3.1,1,1],1]]]],0],[0,7.05,[1,3.15,[1,2.4,1,[0,6.45,[1,2.6,1,[0,6.35,2,[1,2.85,2,1]]],[1,2.9,1,[1,3.05,2,[0,6.8,1,1]]]]],[0,6.95,2,1]],2]]],0.9238,0.6444,29],[[0,5.45,[1,2.8,[0,4.75,0,1],0],[0,6.25,[1,3.35,[0,5.55,1,[1,2.85,[0,5.9,[1,2.55,2,[1,2.65,1,[0,5.75,[0,5.65,1,1],[1,2.75,1,2]]]],[0,6.15,[1,2.45,1,1],[1,2.5,1,2]]],[0,5.8,1,[0,5.95,[1,3.1,1,1],1]]]],0],[0,7.05,[1,3.15,[1,2.4,1,[0,6.45,[1,2.6,1,[1,2.85,2,[0,6.35,2,[1,3.0,1,2]]]],[1,2.9,1,[1,3.05,2,[0,6.8,1,1]]]]],[0,6.95,2,1]],2]]],0.9333,0.6444,32]];
+const COLS=['sepal_llarg','sepal_ample','petal_llarg','petal_ample'];
+const Xtr=TR.map(i=>X[i]),ytr=TR.map(i=>Y[i]),Xte=TE.map(i=>X[i]),yte=TE.map(i=>Y[i]);
+const ALL=[...Array(150).keys()];
+const accT=(t,Xs,ys)=>Xs.filter((x,i)=>predT(t,x)===ys[i]).length/ys.length;
+/* ganancia de cada umbral de una columna */
+function gains(vals,ys,nc){const idx=vals.map((_,i)=>i).sort((a,b)=>vals[a]-vals[b]);const n=idx.length,tot=new Array(nc).fill(0);ys.forEach(c=>tot[c]++);
+  const gp=giniC(tot),L=new Array(nc).fill(0),R=tot.slice(),out=[];
+  for(let p=0;p<n-1;p++){const c=ys[idx[p]];L[c]++;R[c]--;const a=vals[idx[p]],b=vals[idx[p+1]];if(a===b)continue;out.push({t:(a+b)/2,g:gp-((p+1)/n*giniC(L)+(n-p-1)/n*giniC(R))})}return out}
+const best=gs=>gs.reduce((b,e)=>e.g>b.g?e:b,gs[0]);
+const bars=(host,rows,max)=>{const b=H('div',{class:'bars'},host);return rows.map(([n,c])=>{H('label',{},b,n);const bx=H('div',{style:'background:var(--soft);border-radius:5px'},b);const i=H('i',{style:`background:${c};width:0`},bx);const s=H('span',{class:'n'},b,'');return v=>{i.style.width=(v/max*100)+'%';return s}})};
+
+/* ================= 2a: Gini y entropía de un grupo ================= */
+(function(){
+  const host=document.getElementById('w2a');const sl=H('div',{class:'sl'},host);const inp=[],out=[];
+  SPECIES.forEach((s,i)=>{H('label',{},sl,s);inp.push(H('input',{type:'range',min:0,max:50,step:1,value:i?0:50},sl));out.push(H('output',{},sl))});
+  const bar=H('div',{class:'bar'},host);
+  [['50 / 0 / 0',[50,0,0]],['25 / 25 / 0',[25,25,0]],['10 / 10 / 10',[10,10,10]]].forEach(([t,v])=>{const b=H('button',{},bar,t);b.onclick=()=>{v.forEach((x,i)=>inp[i].value=x);draw()}});
+  const pb=H('div',{},host);const setb=bars(pb,SPECIES.map((s,i)=>['p '+s,SPC[i]]),1);
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(){const c=inp.map(i=>+i.value),n=c.reduce((a,b)=>a+b,0);c.forEach((v,i)=>out[i].textContent=v);
+    setb.forEach((s,i)=>s(n?c[i]/n:0).textContent=f(n?c[i]/n:0,3));
+    if(!n){calc.innerHTML='Grupo vacío: G = 0 por convenio (el cuaderno hace <code>return 0.0</code>).';return}
+    const g=giniC(c);calc.innerHTML=`G = 1 − (${c.map(v=>f(v/n,3)+'²').join(' + ')}) = <span class="${g<1e-9?'hg':'hy'}">${f(g,3)}</span> &nbsp;·&nbsp; entropía H = <span class="hb">${f(entC(c),3)}</span> bits`}
+  inp.forEach(i=>i.oninput=draw);draw();
+})();
+
+/* ================= 2b: curvas Gini y entropía ================= */
+(function(){
+  const host=document.getElementById('w2b');
+  const P=new Plot(host,{x:[0,1],y:[0,1.05],gx:.25,gy:.25,h:280,free:true,pad:38,xl:'p (proporción de la 1.ª clase) →',yl:'impureza',label:'Gini y entropía de un grupo de dos clases'});
+  const g=P.g(),pts=n=>[...Array(n+1).keys()].map(i=>i/n);
+  const G=p=>1-p*p-(1-p)*(1-p),Hh=p=>p<=0||p>=1?0:-p*Math.log2(p)-(1-p)*Math.log2(1-p);
+  E('polyline',{points:pts(200).map(p=>P.P([p,G(p)]).join(',')).join(' '),fill:'none',stroke:C.orange,'stroke-width':2.4},g);
+  E('polyline',{points:pts(200).map(p=>P.P([p,Hh(p)]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':2.4},g);
+  const m1=P.dot(g,[.5,.5],6,C.orange,{stroke:ink}),m2=P.dot(g,[.5,1],6,C.blue,{stroke:ink});
+  H('div',{class:'legend'},host,`<span><i class="sw" style="background:${C.orange}"></i>Gini 1 − p² − (1−p)²</span><span><i class="sw" style="background:${C.blue}"></i>entropía (bits)</span>`);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'p');const inp=H('input',{type:'range',min:0,max:1,step:.01,value:.5},sl);const out=H('output',{},sl);
+  const calc=H('div',{class:'calc'},host);
+  function draw(){const p=+inp.value;out.textContent=f(p,2);P.setDot(m1,[p,G(p)]);P.setDot(m2,[p,Hh(p)]);
+    calc.innerHTML=`p = ${f(p,2)}: Gini = <span class="hy">${f(G(p),3)}</span> · entropía = <span class="hb">${f(Hh(p),3)}</span> bits`+(p===.5?' &nbsp;# empate 50/50: Gini 0.5, entropía 1 bit':'')}
+  inp.oninput=draw;draw();
+})();
+
+/* ================= 3a: barrer un umbral (inventado) ================= */
+function toyData(){const r=rngSeed(4),x=[],y=[];for(let i=0;i<20;i++){x.push(Math.round((i<10?3:6)*100+gauss(r)*100)/100);y.push(i<10?0:1)}return {x,y}}
+(function(){
+  const host=document.getElementById('w3a');const {x,y}=toyData();
+  const gs=(()=>{const v=[...new Set(x)].sort((a,b)=>a-b);return v.slice(0,-1).map((a,i)=>({t:(a+v[i+1])/2}))})();
+  const eval_=t=>{const L=[0,0],R=[0,0];x.forEach((v,i)=>(v<=t?L:R)[y[i]]++);const nl=L[0]+L[1],nr=R[0]+R[1];return {L,R,nl,nr,gl:giniC(L),gr:giniC(R),gp:(nl*giniC(L)+nr*giniC(R))/20}};
+  gs.forEach(e=>Object.assign(e,eval_(e.t)));const par=giniC([10,10]);const bi=gs.reduce((b,e,i)=>e.gp<gs[b].gp?i:b,0);
+  const lo=Math.min(...x)-.5,hi=Math.max(...x)+.5;
+  const P=new Plot(host,{x:[lo,hi],y:[-.08,.7],gx:1,gy:.1,h:300,free:true,pad:34,xl:'umbral →',yl:'impureza de Gini',label:'Impureza según el umbral de corte'});
+  const g=P.g();P.line(g,[lo,par],[hi,par],{stroke:'#8a877f','stroke-dasharray':'4 4'});
+  const poly=(k,c,o)=>E('polyline',{points:gs.map(e=>P.P([e.t,e[k]]).join(',')).join(' '),fill:'none',stroke:c,'stroke-width':o||1.6,opacity:o?1:.55},g);
+  poly('gl',C.blue);poly('gr',C.orange);poly('gp',C.red,2.8);
+  x.forEach((v,i)=>P.dot(g,[v,-.04],5,y[i]?C.orange:C.blue,{stroke:'#222','stroke-width':.6}));
+  const ln=P.line(g,[0,-.08],[0,.7],{stroke:ink,'stroke-width':1.6,'stroke-dasharray':'5 3'});
+  H('div',{class:'legend'},host,`<span><i class="sw" style="background:${C.blue}"></i>Gini izquierda</span><span><i class="sw" style="background:${C.orange}"></i>Gini derecha</span><span><i class="sw" style="background:${C.red}"></i>Gini ponderado</span><span>línea gris: Gini del padre (${f(par,2)})</span>`);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'umbral nº');const inp=H('input',{type:'range',min:0,max:gs.length-1,step:1,value:3},sl);const out=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);const bb=H('button',{},bar,'Ir al mejor umbral');
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(){const e=gs[+inp.value];out.textContent=f(e.t,2);P.setLine(ln,[e.t,-.08],[e.t,.7]);const isb=+inp.value===bi;
+    calc.innerHTML=`umbral ${f(e.t,2)}: izquierda ${e.nl} puntos (A ${e.L[0]}, B ${e.L[1]}) → G = ${f(e.gl,3)} · derecha ${e.nr} (A ${e.R[0]}, B ${e.R[1]}) → G = ${f(e.gr,3)}<br>ponderado = ${e.nl}/20·${f(e.gl,3)} + ${e.nr}/20·${f(e.gr,3)} = <span class="hy">${f(e.gp,3)}</span> · ganancia = ${f(par,3)} − ${f(e.gp,3)} = <span class="${isb?'hg':'hb'}">${f(par-e.gp,3)}</span>`+(isb?' &nbsp;# el mejor':'')}
+  inp.oninput=draw;bb.onclick=()=>{inp.value=bi;draw()};draw();
+  H('p',{class:'hint'},host,'Datos inventados (20 puntos, azar con semilla): no son los del cuaderno, pero el comportamiento es el mismo.');
+})();
+
+/* ================= 3b: mejor corte por columna en Iris ================= */
+const BEST=COLS.map((c,j)=>best(gains(X.map(r=>r[j]),Y,3)));
+(function(){
+  const host=document.getElementById('w3b');const mx=Math.max(...BEST.map(b=>b.g));
+  const set=bars(host,COLS.map((c,j)=>[c,j>1?C.green:C.gray]),.4);
+  const tb=host.querySelector('.bars');const spans=tb.querySelectorAll('span.n');
+  BEST.forEach((b,j)=>{set[j](b.g);spans[j].textContent=`ganancia ${f(b.g,3)} en ≤ ${f(b.t,2)}`});
+  const bj=BEST.findIndex(b=>b.g>=mx-1e-12);
+  H('div',{class:'calc',style:'white-space:normal'},host,`mejor columna (se recorren en orden y gana el primero que supera al anterior): <span class="hg">${COLS[bj]} ≤ ${f(BEST[bj].t,2)}</span>, ganancia <b>${f(BEST[bj].g,3)}</b><br>padre: G = ${f(giniC([50,50,50]),3)}`);
+  H('p',{class:'hint'},host,'Calculado aquí con las 150 flores. Nota: petal_ample ≤ 0.8 empata exactamente (separa las mismas 50 setosa); scikit-learn y el cuaderno se quedan con petal_llarg.');
+})();
+
+/* ================= 4: curva de ganancia por columna ================= */
+(function(){
+  const host=document.getElementById('w4');
+  const bar=H('div',{class:'bar'},host);const sel=H('select',{},bar);COLS.forEach((c,i)=>H('option',{value:i},sel,c));sel.value=2;
+  const wrap=H('div',{},host);const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(){wrap.innerHTML='';const j=+sel.value,vals=X.map(r=>r[j]),gs=gains(vals,Y,3),b=best(gs);
+    const lo=Math.min(...vals)-.3,hi=Math.max(...vals)+.3;
+    const P=new Plot(wrap,{x:[lo,hi],y:[0,.36],gx:1,gy:.1,h:280,free:true,pad:38,xl:COLS[j]+' (cm) →',yl:'ganancia de Gini',label:'Ganancia de cada umbral'});
+    const g=P.g();E('polyline',{points:gs.map(e=>P.P([e.t,e.g]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':2.2},g);
+    P.line(g,[b.t,0],[b.t,.36],{stroke:C.red,'stroke-width':1.8,'stroke-dasharray':'6 4'});const m=P.dot(g,[b.t,b.g],6,C.red,{stroke:ink});
+    const show=e=>{P.setDot(m,[e.t,e.g]);calc.innerHTML=`umbral ${f(e.t,2)}: ganancia <span class="${e===b?'hg':'hy'}">${f(e.g,3)}</span>`+(e===b?` &nbsp;# el mejor de ${COLS[j]}`:`<br>el mejor: ${f(b.t,2)} con ${f(b.g,3)}`)};
+    P.svg.addEventListener('click',ev=>{const x=P.toWorld(ev)[0];show(gs.reduce((q,e)=>Math.abs(e.t-x)<Math.abs(q.t-x)?e:q,gs[0]))});show(b)}
+  sel.onchange=draw;draw();
+})();
+
+/* ================= 5: el árbol que sale ================= */
+(function(){
+  const host=document.getElementById('w5');
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'max_depth');const inp=H('input',{type:'range',min:1,max:3,step:1,value:1},sl);const out=H('output',{},sl);
+  const wrap=H('div',{class:'scroll'},host);const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  const box=t=>{const d=H('div',{class:'tn'});d.innerHTML=(isLeaf(t)?'':`<b>${COLS[t.ft]} ≤ ${f(t.thr,2)}</b><br>`)+`gini = ${f(t.gini,3)} · n = ${t.n}<br>[${t.cnt.join(', ')}]`+(isLeaf(t)?`<br><b style="color:${SPC[t.leaf]}">${SPECIES[t.leaf]}</b>`:'');return d};
+  const draw_=(t,parent)=>{const w=H('div',{class:'tree'},parent);w.appendChild(box(t));if(!isLeaf(t)){const k=H('div',{class:'tkids'},w);draw_(t.l,k);draw_(t.r,k)}};
+  function draw(){const d=+inp.value;out.textContent=d;wrap.innerHTML='';const t=buildT(X,Y,ALL,3,d);draw_(t,wrap);
+    calc.innerHTML=`Árbol con las 150 flores, max_depth = ${d}: raíz <span class="hg">${COLS[t.ft]} ≤ ${f(t.thr,2)}</span> (el mismo que scikit-learn) · ${leavesT(t)} hojas`}
+  inp.oninput=draw;draw();
+  H('p',{class:'hint'},host,'Cada caja: la condición, la impureza, cuántas flores [setosa, versicolor, virginica] y, en las hojas, la especie que predice.');
+})();
+
+/* ================= 6a: exactitud según profundidad (resultados reales de scikit-learn) ================= */
+(function(){
+  const host=document.getElementById('w6a');
+  const atr=SK_FULL.map(r=>r[0]),ate=SK_FULL.map(r=>r[1]);
+  const P=new Plot(host,{x:[0,11],y:[.6,1.02],gx:1,gy:.1,h:300,free:true,pad:38,xl:'max_depth →',yl:'exactitud',label:'Exactitud en entrenamiento y examen según max_depth'});
+  const g=P.g(),ds=[1,2,3,4,5,6,7,8,9,10];
+  [[atr,C.blue],[ate,C.orange]].forEach(([a,c])=>{E('polyline',{points:ds.map((d,i)=>P.P([d,a[i]]).join(',')).join(' '),fill:'none',stroke:c,'stroke-width':2.2},g);ds.forEach((d,i)=>P.dot(g,[d,a[i]],4.5,c))});
+  const sel=P.dot(g,[3,ate[2]],11,'none',{stroke:C.red,'stroke-width':2.4});
+  H('div',{class:'legend'},host,`<span><i class="sw" style="background:${C.blue}"></i>entrenamiento</span><span><i class="sw" style="background:${C.orange}"></i>examen</span>`);
+  const calc=H('div',{class:'calc'},host);
+  const show=d=>{P.setDot(sel,[d,ate[d-1]]);calc.innerHTML=`max_depth = ${d}: entrenamiento <span class="hb">${pc(atr[d-1])}</span> · examen <span class="hy">${pc(ate[d-1])}</span> · ${SK_FULL[d-1][2]} hojas`};
+  P.svg.addEventListener('click',ev=>show(clamp(Math.round(P.toWorld(ev)[0]),1,10)));show(3);
+  H('p',{class:'hint'},host,'Valores reales de scikit-learn con el reparto del cuaderno. El examen tiene 45 flores: una sola mueve la exactitud 2.2 puntos; por eso depth 2 → 3 → 4 sube y baja (88.9 → 97.8 → 88.9).');
+})();
+
+/* ================= 6b: rectángulos con el sépalo (árboles reales de scikit-learn) ================= */
+(function(){
+  const host=document.getElementById('w6b');
+  const nest=(t,x)=>{while(Array.isArray(t))t=x[t[0]]<=t[1]?t[2]:t[3];return t};
+  const Xs=Xtr.map(r=>[r[0],r[1]]);const GW=84,GH=56,x0=4,x1=8.2,y0=1.8,y1=4.6;
+  const P=new Plot(host,{x:[x0,x1],y:[y0,y1],gx:1,gy:.5,w:560,maxw:560,xl:'sepal_llarg →',yl:'↑ sepal_ample',label:'Rectángulos de un árbol con las dos columnas del sépalo'});
+  const bg=P.g(),cells=[],grid=[];
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){grid.push([x0+(i+.5)*(x1-x0)/GW,y1-(j+.5)*(y1-y0)/GH]);cells.push(E('rect',{x:P.X(x0+i*(x1-x0)/GW),y:P.Y(y1-j*(y1-y0)/GH),width:P.sx*(x1-x0)/GW+.6,height:P.sy*(y1-y0)/GH+.6,class:'cellbg',opacity:.28},bg))}
+  const g=P.g();Xs.forEach((p,i)=>P.dot(g,p,4,SPC[ytr[i]],{stroke:'#222','stroke-width':.6}));
+  speciesLegend(host);
+  const sl=H('div',{class:'sl'},host);H('label',{},sl,'max_depth');const inp=H('input',{type:'range',min:1,max:10,step:1,value:3},sl);const out=H('output',{},sl);
+  const bar=H('div',{class:'bar'},host);[1,2,3,8].forEach(d=>{const b=H('button',{},bar,'depth '+d);b.onclick=()=>{inp.value=d;draw()}});
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  function draw(){const d=+inp.value,[t,atr,ate,nl]=SK_SEP[d-1];out.textContent=d;
+    grid.forEach((q,k)=>cells[k].setAttribute('fill',SPC[nest(t,q)]));
+    calc.innerHTML=`max_depth = ${d}: <span class="hy">${nl} hojas</span> · entrena ${pc(atr,0)} · examen ${pc(ate,0)}`}
+  inp.oninput=draw;draw();
+  H('p',{class:'hint'},host,'Árboles entrenados con scikit-learn (random_state=42) y exportados a esta página. Cada color grande es una hoja (un rectángulo): fíjate en las islas diminutas a profundidad 8.');
+})();
+
+/* ================= 7a: entropía apilada (inventado) ================= */
+(function(){
+  const host=document.getElementById('w7a');
+  const gr=[['80 / 20',[.8,.2]],['60 / 30 / 10',[.6,.3,.1]],['45 / 45 / 10',[.45,.45,.1]],['40 / 35 / 25',[.4,.35,.25]]];
+  const P=new Plot(host,{x:[-.6,3.6],y:[0,1.8],gx:10,gy:.5,h:280,free:true,pad:38,ticks:false,yl:'−pᵢ log₂ pᵢ apilado (bits)',label:'Entropía de cuatro grupos como pila de trozos'});
+  [0,.5,1,1.5].forEach(v=>E('text',{x:30,y:P.Y(v)+4,'text-anchor':'end',class:'tick'},P.svg).textContent=f(v,1));
+  const g=P.g();const cc=[C.blue,C.orange,C.green];
+  gr.forEach(([n,ps],j)=>{let b=0;ps.forEach((p,k)=>{const h=-p*Math.log2(p);E('rect',{x:P.X(j-.32),y:P.Y(b+h),width:P.sx*.64,height:P.sy*h,fill:cc[k],stroke:'#fff'},g);b+=h});
+    E('text',{x:P.X(j),y:P.Y(b)-6,'text-anchor':'middle',class:'tick'},g).textContent=f(b,2)+' bits';
+    E('text',{x:P.X(j),y:P.H-8,'text-anchor':'middle',class:'tick'},P.svg).textContent=n});
+  H('p',{class:'hint'},host,'Cuatro grupos inventados (proporciones por clase). Cada color es lo que aporta una clase; la altura total es la entropía.');
+})();
+
+/* ================= 7b: dos niveles de cortes (inventado) ================= */
+(function(){
+  const host=document.getElementById('w7b');const msg=H('div',{class:'msg'},host);
+  const r=rngSeed(11),pts=[],lab=[];for(let i=0;i<160;i++){const a=10*r(),b=10*r();let y=(a<=4?b>5:a<=7)?1:0;if(r()<.05)y=1-y;pts.push([a,b]);lab.push(y)}
+  const P=new Plot(host,{x:[0,10],y:[0,10],gx:2,w:520,maxw:480,xl:'columna a →',yl:'↑ columna b',label:'Dos niveles de cortes sobre puntos inventados'});
+  const g=P.g();pts.forEach((p,i)=>P.dot(g,p,4.2,lab[i]?C.orange:C.blue,{stroke:'#222','stroke-width':.5}));
+  const c1=P.line(g,[4,0],[4,10],{stroke:C.red,'stroke-width':3}),c2=P.line(g,[0,5],[4,5],{stroke:C.green,'stroke-width':3}),c3=P.line(g,[7,0],[7,10],{stroke:C.purple,'stroke-width':3});
+  const calc=H('div',{class:'calc',style:'white-space:normal'},host);
+  const pred=(a,b)=>a<=4?(b>5?1:0):(a<=7?1:0);const ok=pts.filter((p,i)=>pred(p[0],p[1])===lab[i]).length;
+  const T=['Nivel 1: un corte para todo el plano (a ≤ 4).','Nivel 2: un corte nuevo dentro de cada mitad. A la izquierda, b ≤ 5…','…y a la derecha, a ≤ 7: cada mitad usa su propia columna y ocupa solo su mitad.'];
+  const sp=stepper(host,3,s=>{msg.textContent=T[s];c2.style.opacity=s>=1?1:0;c3.style.opacity=s>=2?1:0;
+    calc.innerHTML=s<2?'&nbsp;':`las 3 reglas (if a ≤ 4: b &gt; 5; else a ≤ 7) aciertan <span class="hg">${ok} de 160</span> = ${pc(ok/160)} (el resto es el 5 % de etiquetas cambiadas a propósito)`},{interval:2000});sp.draw();
+  H('p',{class:'hint'},host,'Datos inventados: regla escondida (a ≤ 4 → b &gt; 5; si no → a ≤ 7) más un 5 % de ruido. Con otro azar que numpy.');
+})();
+
+/* ================= 7c: tres columnas con escalas distintas (inventado) ================= */
+(function(){
+  const host=document.getElementById('w7c');const w=H('div',{class:'cols'},host);
+  const r=rngSeed(21),n=120,cl=Array.from({length:n},()=>Math.floor(r()*3));
+  const cols=[['acidez (0-1)',cl.map(c=>clamp(.3+.12*c+.12*gauss(r),0,1))],['color (0-100)',cl.map(c=>20+25*c+6*gauss(r))],['peso (0-2000 g)',cl.map(()=>2000*r())]];
+  const res=cols.map(([nm,v])=>({nm,v,gs:gains(v,cl,3)}));res.forEach(e=>e.b=best(e.gs));const win=res.reduce((a,b)=>b.b.g>a.b.g?b:a);
+  res.forEach(e=>{const box=H('div',{},w);const P=new Plot(box,{x:[Math.min(...e.v),Math.max(...e.v)],y:[0,.5],h:200,w:340,free:true,pad:30,ticks:false,label:e.nm,gx:1e9,gy:.1});
+    for(let k=0;k<=4;k++)E('text',{x:P.X(P.x0)+(k==0?0:0),y:P.H-8,'text-anchor':k?(k==4?'end':'middle'):'start',class:'tick'},P.svg).textContent=f(P.x0+(P.x1-P.x0)*k/4,e.v[0]<2?2:0);
+    const g=P.g();E('polyline',{points:e.gs.map(q=>P.P([q.t,q.g]).join(',')).join(' '),fill:'none',stroke:C.blue,'stroke-width':1.8},g);P.dot(g,[e.b.t,e.b.g],5,e===win?C.green:C.red,{stroke:ink});
+    H('div',{class:'calc',style:'white-space:normal'},box,`<b>${e.nm}</b><br>mejor ganancia <span class="${e===win?'hg':'hb'}">${f(e.b.g,3)}</span> en ${f(e.b.t,2)}`)});
+  H('div',{class:'calc',style:'white-space:normal'},host,`gana «${win.nm}»: el máximo de los máximos. Las escalas distintas no importan, solo se comparan ganancias.`);
+  H('p',{class:'hint'},host,'Datos inventados (120 muestras, 3 clases); no son los de Wine.');
+})();
+
+/* ================= 7d: argmax (inventado) ================= */
+(function(){
+  const host=document.getElementById('w7d');const ds=[1,2,3,4,5,6,7,8,9,10],pr=[.62,.78,.85,.88,.91,.90,.89,.88,.88,.87];const pos=pr.indexOf(Math.max(...pr));
+  const P=new Plot(host,{x:[0,11],y:[.55,.97],gx:1,gy:.1,h:260,free:true,pad:38,xl:'max_depth →',yl:'exactitud (inventada)',label:'Curva inventada y su máximo'});
+  const g=P.g();E('polyline',{points:ds.map((d,i)=>P.P([d,pr[i]]).join(',')).join(' '),fill:'none',stroke:C.orange,'stroke-width':2.2},g);ds.forEach((d,i)=>P.dot(g,[d,pr[i]],4.5,C.orange));
+  P.dot(g,[ds[pos],pr[pos]],11,'none',{stroke:C.red,'stroke-width':2.4});
+  H('div',{class:'calc',style:'white-space:normal'},host,`np.argmax → posición <span class="hr">${pos}</span> → <code>profunditats[${pos}]</code> = max_depth <span class="hg">${ds[pos]}</span>`);
+})();
+
+</script>
+</body>
+</html>
