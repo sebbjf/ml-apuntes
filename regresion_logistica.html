@@ -258,6 +258,14 @@ ul{padding-left:22px}
 a{text-underline-offset:3px}
 ::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
 .thumb{background:var(--soft)}
+/* ===== Bloques opcionales ===== */
+details.opt{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:0 16px;margin:14px 0}
+details.opt>summary{cursor:pointer;padding:10px 0;font-size:14.5px;font-weight:600;color:var(--muted);list-style:none}
+details.opt>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-weight:700}
+details.opt[open]>summary::before{content:"−"}
+details.opt[open]>summary{color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:12px}
+details.opt>summary::-webkit-details-marker{display:none}
+details.opt .f{margin-top:0}
 </style>
 </head>
 <body>
@@ -269,13 +277,15 @@ a{text-underline-offset:3px}
 
 <div class="big">La frase que tienes que entender al final: <b>traza una recta, mira de qué lado cae cada punto y convierte «cuánto de dentro» en una probabilidad con la sigmoide.</b> Los pesos se aprenden bajando por el paisaje de la pérdida.</div>
 
+<div class="idea"><b>Antes de empezar:</b> <b>peso</b> = la importancia que el modelo da a cada medida de la flor (más peso, más cuenta). <b>Sesgo</b> = un número fijo que se suma para empujar el resultado hacia un lado. <b>Probabilidad</b> = un número entre 0 y 1: 0 es «seguro que no», 1 es «seguro que sí», 0.5 es «ni idea». <b>Entrenamiento</b> = las flores con las que el modelo aprende; <b>examen</b> = flores que no ha visto y con las que se comprueba si acierta. <b>numpy</b> = una herramienta de Python para hacer cuentas con listas de números. Los <b>bloques grises</b> con código son el mismo cálculo escrito en Python: puedes ignorarlos, el dibujo y la cuenta de arriba bastan.</div>
+
 <nav class="toc">
 <a href="#s1">1 · Otra manera de decidir</a><a href="#s2">2 · De la recta a la probabilidad</a><a href="#s3">3 · Aprender los pesos</a><a href="#s4">4 · Contra sklearn</a><a href="#s5">5 · De 2 clases a 3</a><a href="#s6">6 · Práctica</a><a href="#res">Resumen</a>
 </nav>
 
 <!-- ============ 1 ============ -->
 <h2 id="s1">1 · Una manera diferente de decidir</h2>
-<div class="idea"><b>Idea:</b> k-NN preguntaba «¿a quién te pareces?» y los árboles preguntaban «¿qué valor tiene esta columna?». Hoy: <b>traza una raya y mira de qué lado caes</b>. Es la base de buena parte del ML moderno: redes neuronales, SVM… todas empiezan aquí.</div>
+<div class="idea"><b>Idea:</b> k-NN preguntaba «¿a quién te pareces?» y los árboles preguntaban «¿qué valor tiene esta columna?». Hoy: <b>traza una raya y mira de qué lado caes</b>. Es la base de buena parte del ML moderno: las redes neuronales y las SVM (las verás más adelante) empiezan por aquí.</div>
 <p>Los datos son las flores de Iris. Nos quedamos con dos especies difíciles de separar, <code>versicolor</code> y <code>virginica</code> (100 flores), y dos columnas: largo y ancho del pétalo. La etiqueta es <code>y = 1</code> si es virginica y <code>y = 0</code> si es versicolor.</p>
 
 <!-- ============ 2 ============ -->
@@ -291,17 +301,17 @@ a{text-underline-offset:3px}
 </dl>
 <p>Con unos pesos elegidos a ojo, <i>w</i><sub>1</sub> = 1, <i>w</i><sub>2</sub> = 1, <i>b</i> = −6.5 (la recta <i>x</i><sub>1</sub> + <i>x</i><sub>2</sub> = 6.5), acierta <b>95 de 100</b> (95.0 %). <b>Mueve los pesos</b> y mira cómo gira y se desplaza la recta; los aros rojos son las flores mal clasificadas.</p>
 <div class="w" id="w2a"></div>
-<pre>z = w1 * bi["petal_llarg"] + w2 * bi["petal_ample"] + b
+<pre>z = w1 * bi["petal_llarg"] + w2 * bi["petal_ample"] + b   # puntuación de cada flor
 pred = z &gt; 0                      # True → virginica
-(pred == y).mean()               # → 0.95  (95 de 100)</pre>
+(pred == y).mean()               # → 0.95  (95 de 100)  # fracción de aciertos</pre>
 
 <h3>2.2 · El problema del signo, y la sigmoide</h3>
-<div class="idea"><b>Idea:</b> el signo solo da un <b>sí</b> o un <b>no</b>. Una flor que toca la raya cuenta igual que una que cae muy adentro, y eso no tiene sentido: no estás igual de seguro. Queremos un número que diga <b>cuán seguros estamos</b>. Eso hace la <b>sigmoide</b>.</div>
+<div class="idea"><b>Idea:</b> el signo solo da un <b>sí</b> o un <b>no</b>. Una flor que toca la raya cuenta igual que una que cae muy adentro, y eso no tiene sentido: no estás igual de seguro. Queremos un número que diga <b>cuán seguros estamos</b>. Eso hace la <b>sigmoide</b>: es un <b>tobogán</b> que convierte cualquier número, por grande o negativo que sea, en algo entre 0 y 1. No tienes que hacer la cuenta: la calculadora (<code>np.exp</code>) la hace por ti.</div>
 <div class="f">σ(z) = 1 / ( 1 + e<sup>−z</sup> )</div>
 <dl class="leg">
 <dt>σ(z)</dt><dd>la sigmoide de <i>z</i>: un número entre 0 y 1, la <b>probabilidad</b> de ser virginica</dd>
 <dt>z</dt><dd>la puntuación de la recta, la misma de antes</dd>
-<dt>e</dt><dd>el número 2.718…; e<sup>−z</sup> es muy grande si <i>z</i> es muy negativo y casi 0 si <i>z</i> es muy positivo</dd>
+<dt>e</dt><dd>un número fijo (2.718…) que usa la calculadora; basta saber que e<sup>−z</sup> es enorme si <i>z</i> es muy negativo y casi 0 si <i>z</i> es muy positivo</dd>
 </dl>
 <p>No hace falta derivarla: <b>mira el gráfico</b>. Tres cosas saltan a la vista: siempre vale <b>entre 0 y 1</b>; con <i>z</i> = 0 (justo sobre la recta) vale <b>0.5</b>, tira una moneda; y lejos de la recta <b>se aplana</b> cerca de 0 o de 1. Mueve <i>z</i>.</p>
 <div class="w" id="w2b"></div>
@@ -313,11 +323,19 @@ pred = z &gt; 0                      # True → virginica
 <h3>2.3 · Hagámoslo concreto con tres flores</h3>
 <p>Los pesos de antes (1, 1, −6.5) y tres flores reales del conjunto: una <b>claramente versicolor</b> (pétalo 3.0 × 1.1), una <b>claramente virginica</b> (6.9 × 2.3) y una <b>dudosa</b> (4.8 × 1.8: esa medida exacta aparece en el conjunto tanto en flores versicolor como virginica). Cada flor cae en su <i>z</i> y la curva la convierte en probabilidad de virginica. Puedes cambiar los pesos.</p>
 <div class="w" id="w2d"></div>
-<p>En el cuaderno, con (1, 1, −6.5): versicolor <i>z</i> = −2.4 → <i>p</i> = 0.083; dudosa <i>z</i> = 0.1 → <i>p</i> = 0.525; virginica <i>z</i> = 2.7 → <i>p</i> = 0.937. Con dos columnas <i>z</i> es un <b>plano</b> sobre el plano de las flores y la sigmoide lo dobla en un escalón suave entre 0 y 1; el mapa de colores del apartado 4 es exactamente eso visto desde arriba.</p>
+<p>En el cuaderno, con (1, 1, −6.5): versicolor <i>z</i> = −2.4 → <i>p</i> = 0.083; dudosa <i>z</i> = 0.1 → <i>p</i> = 0.525; virginica <i>z</i> = 2.7 → <i>p</i> = 0.937.</p>
 
 <!-- ============ 3 ============ -->
 <h2 id="s3">3 · Cómo se aprenden los pesos, sin derivadas</h2>
-<div class="idea"><b>Idea:</b> los pesos (1, 1, −6.5) los elegimos a ojo. Con dos columnas se puede; con cincuenta, no. La máquina necesita un <b>termómetro</b>: un número que diga cuán mal lo está haciendo, para buscar los pesos que lo hagan más pequeño. Se llama <b>función de pérdida</b>. Para clasificar se usa la <b>log-loss</b> (entropía cruzada).</div>
+<div class="idea"><b>Idea:</b> los pesos (1, 1, −6.5) los elegimos a ojo. Con dos columnas se puede; con cincuenta, no. La máquina necesita un <b>termómetro</b>: un número que diga cuán mal lo está haciendo, para buscar los pesos que lo hagan más pequeño. Se llama <b>función de pérdida</b>. Es una <b>nota de penalización</b>: cuanto más alta, peor lo hace el modelo, como los puntos que pierdes en un examen. Para clasificar se usa la <b>log-loss</b>, que usa el <b>logaritmo (log)</b> como <b>medidor de sorpresa</b>: si decías 99 % y acertaste, la sorpresa es casi nula; si decías 1 % y resultó ser cierto, la sorpresa es enorme.</div>
+<p>Penalización de una flor según la probabilidad que el modelo dio a su <b>clase correcta</b> (es −ln <i>p</i>):</p>
+<table class="sum">
+<tr><th>El modelo dijo (clase correcta)</th><th>Penalización</th><th>Lectura</th></tr>
+<tr><td><i>p</i> = 0.99</td><td>0.01</td><td>muy seguro y acertó: casi no pierde puntos</td></tr>
+<tr><td><i>p</i> = 0.5</td><td>0.69</td><td>dudaba: pierde algo</td></tr>
+<tr><td><i>p</i> = 0.01</td><td>4.61</td><td>muy seguro de lo contrario y falló: pierde muchísimo</td></tr>
+</table>
+<details class="opt"><summary>Opcional: la fórmula completa</summary>
 <div class="f">pérdida = − <span class="frac">1⁄n</span> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> [ y<sub>i</sub> log( σ(z<sub>i</sub>) ) + (1 − y<sub>i</sub>) log( 1 − σ(z<sub>i</sub>) ) ]</div>
 <dl class="leg">
 <dt>n</dt><dd>cuántas flores hay</dd>
@@ -328,6 +346,7 @@ pred = z &gt; 0                      # True → virginica
 <dt>Σ y 1/n</dt><dd>suma sobre todas las flores y media (se divide entre <i>n</i>)</dd>
 <dt>y<sub>i</sub> · log(…) + (1−y<sub>i</sub>) · log(…)</dt><dd>solo cuenta uno de los dos términos: el de la clase real de esa flor</dd>
 </dl>
+</details>
 <p>La idea de fondo: <b>castiga mucho estar muy seguro y equivocarse</b>. Un 0.51 equivocado es un error pequeño; un 0.99 equivocado es un error carísimo. Mueve la probabilidad que el modelo da a la <b>clase correcta</b> y compara con el error cuadrático (el MSE de la sesión anterior):</p>
 <div class="w" id="w3a"></div>
 <p>Las dos pérdidas valen 0 con total seguridad correcta (<i>p</i> = 1). La diferencia está a la izquierda: el error cuadrático cuesta como mucho 1, la log-loss <b>no tiene techo</b>. La flor con un 0.99 en la clase equivocada cuesta <b>4.61</b>, más de seis veces lo que cuesta la dudosa (0.71). Por eso se usa la log-loss para clasificar (hay una segunda razón, la del gradiente, que verás más adelante).</p>
@@ -336,32 +355,37 @@ pred = z &gt; 0                      # True → virginica
     p = np.clip(sigmoide(z), 1e-12, 1 - 1e-12)      # evita log(0)
     return -np.mean(y * np.log(p) + (1 - y) * np.log(1 - p))
 
+# línea 1: calcula la puntuación z de todas las flores a la vez
+# línea 2: la sigmoide la pasa a probabilidad (el clip evita el caso imposible log(0))
+# línea 3: penalización media de todas las flores = la nota del modelo
+
 # con b = -15.8323 fijo, sobre las 70 flores de entrenamiento:
-# w = (0, 0) → 7.9162 · (1, 1) → 4.0906 · (2, 2) → 0.5975 · (2.5, 2.2) → 0.1738</pre>
+# w = (0, 0) → 7.9162 · (1, 1) → 4.0906 · (2, 2) → 0.5975 · (2.5, 2.2) → 0.1738
+# (cuanto más bajo, mejor: unos pesos mejores dan menos penalización)</pre>
 
 <h3>El paisaje de la pérdida</h3>
 <p>En vez de probar a mano, recorremos <b>todas las combinaciones</b> de <i>w</i><sub>1</sub> y <i>w</i><sub>2</sub> en una cuadrícula (dejando <i>b</i> fijo para poder dibujarlo en un plano) y calculamos la pérdida de cada una. Sale un <b>paisaje</b> con valles y subidas; queremos el punto más bajo. <b>Haz clic</b> en cualquier punto (o usa los botones con los cuatro ejemplos del cuaderno). La estrella es el punto de scikit-learn: pérdida <b>0.1735</b>, y el <b>97 %</b> de la cuadrícula es peor. Y «Bajar» hace lo que hace el entrenamiento: <b>pasos pequeños cuesta abajo</b>.</p>
 <div class="w" id="w3b"></div>
-<p>El punto de scikit-learn cae bien dentro de la zona amarilla (pérdida baja). No es el más bajo de toda la cuadrícula (nuestra pérdida simplificada aún puede bajar un poco hacia pesos muy grandes; scikit-learn añade un pequeño ajuste, la <b>regularización</b>, para evitarlo), pero la idea central ya está: entrenar es <b>bajar por este paisaje hasta el fondo, a pasos pequeños</b>. Eso es el <b>descenso de gradiente</b>. Un ordenador con cientos de pesos no puede probar todo: baja la pendiente paso a paso.</p>
+<p>El punto de scikit-learn cae bien dentro de la zona amarilla (pérdida baja). No es el más bajo de toda la cuadrícula (nuestra pérdida simplificada aún puede bajar un poco hacia pesos muy grandes; scikit-learn añade un pequeño ajuste, la <b>regularización</b>: un <b>freno</b> que impide que los pesos crezcan demasiado), pero la idea central ya está: entrenar es <b>bajar por este paisaje hasta el fondo, a pasos pequeños</b>. Es como una <b>montaña con niebla</b>: no ves el valle, pero en cada paso das uno en la dirección que baja. Eso es el <b>descenso de gradiente</b>. Un ordenador con cientos de pesos no puede probar todo: baja la pendiente paso a paso.</p>
 
 <!-- ============ 4 ============ -->
 <h2 id="s4">4 · Comparamos con scikit-learn</h2>
-<div class="idea"><b>Idea:</b> la recta de <code>LogisticRegression</code> no es un misterio: es el mínimo del paisaje (la estrella). scikit-learn llega en una fracción de segundo con <b>L-BFGS</b>, un método de la familia del descenso de gradiente, pero más listo: estima también cómo se curva el paisaje y ajusta el paso en cada dirección.</div>
-<pre>model = LogisticRegression(random_state=42).fit(Xtr, ytr)
-model.coef_, model.intercept_     # → [[2.4668 2.2156]] [-15.8323]
-model.score(Xte, yte)             # → 0.9333  (28 de 30)</pre>
-<p>Los pesos de scikit-learn son <b>w</b><sub>1</sub> = 2.4668, <b>w</b><sub>2</sub> = 2.2156, <b>b</b> = −15.8323, con <b>93.3 %</b> en el examen (28 de 30 flores; reparto 70/30 con <code>random_state=42</code> y <code>stratify</code>). Aquí los obtienes entrenando <b>en esta página</b> con el método de Newton (con L2 como scikit-learn). Mira el color: la probabilidad de virginica en <b>cada punto del plano</b>. Naranja = seguro que es versicolor, verde = seguro que es virginica, blanco = duda. La línea gruesa es la frontera (<i>p</i> = 0.5); las finas, <i>p</i> = 0.1 y 0.9. También sale el parámetro <code>C</code> del ejercicio 3: <b>C pequeño frena los pesos</b>.</p>
+<div class="idea"><b>Idea:</b> la recta de <code>LogisticRegression</code> no es un misterio: es el mínimo del paisaje (la estrella). scikit-learn llega en una fracción de segundo con un método de la familia del descenso de gradiente, pero más listo (se llama L-BFGS; no hace falta saberlo).</div>
+<pre>model = LogisticRegression(random_state=42).fit(Xtr, ytr)   # entrena con las flores de entrenamiento
+model.coef_, model.intercept_     # → [[2.4668 2.2156]] [-15.8323]   # los pesos y el sesgo que aprendió
+model.score(Xte, yte)             # → 0.9333  (28 de 30)   # nota en el examen (flores nuevas)</pre>
+<p>Los pesos de scikit-learn son <b>w</b><sub>1</sub> = 2.4668, <b>w</b><sub>2</sub> = 2.2156, <b>b</b> = −15.8323, con <b>93.3 %</b> en el examen (28 de 30 flores; reparto 70/30; <code>random_state=42</code> significa «barajar siempre igual» y <code>stratify</code> que haya flores de las dos especies en ambos grupos). Aquí los obtienes entrenando <b>en esta página</b> (con el método de Newton y L2, como scikit-learn: nombres técnicos, no hace falta saberlos). Mira el color: la probabilidad de virginica en <b>cada punto del plano</b>. Naranja = seguro que es versicolor, verde = seguro que es virginica, blanco = duda. La línea gruesa es la frontera (<i>p</i> = 0.5); las finas, <i>p</i> = 0.1 y 0.9. También sale el parámetro <code>C</code> del ejercicio 3: <b>C pequeño frena los pesos</b>.</p>
 <div class="w" id="w4"></div>
 <p>La franja clara de en medio es donde el modelo duda, justo donde las dos especies se mezclan. Lejos de la recta el color se satura: es la sigmoide aplanándose. Las líneas 0.1 y 0.9 son <b>paralelas</b> a la frontera, porque la probabilidad solo depende de <i>z</i> y <i>z</i> es constante a lo largo de cada recta paralela.</p>
 
 <!-- ============ 5 ============ -->
 <h2 id="s5">5 · De 2 clases a 3</h2>
-<div class="idea"><b>Idea:</b> Iris tiene tres especies y la sigmoide solo da sí/no entre dos. Para tres o más, scikit-learn usa la regresión logística <b>multinomial</b>: calcula <b>una <i>z</i> por especie</b>, cada una con sus pesos, y las convierte todas a la vez en probabilidades con la <b>softmax</b>. Las tres suman 1 por construcción y la flor va a la especie con más probabilidad.</div>
+<div class="idea"><b>Idea:</b> Iris tiene tres especies y la sigmoide solo da sí/no entre dos. Para tres o más, scikit-learn usa la regresión logística <b>multinomial</b>: calcula <b>una <i>z</i> por especie</b>, cada una con sus pesos, y las convierte todas a la vez en probabilidades con la <b>softmax</b>. Es como el <b>reparto de un pastel</b>: cada especie tiene una puntuación, las altas se llevan más trozo y todos los trozos suman 1. La flor va a la especie con el trozo más grande. <b>Ejemplo</b> con puntuaciones 2, 1 y 0: e<sup>2</sup> = 7.389, e<sup>1</sup> = 2.718, e<sup>0</sup> = 1; suman 11.107; los trozos son <span class="hg">66.5 %</span>, <span class="hb">24.5 %</span> y <span class="hy">9.0 %</span>.</div>
 <div class="f">p<sub>k</sub> = e<sup>z<sub>k</sub></sup> / <span class="sum"><small>&nbsp;</small><b>Σ</b><small>j</small></span> e<sup>z<sub>j</sub></sup></div>
 <dl class="leg">
 <dt>p<sub>k</sub></dt><dd>la probabilidad de la especie <i>k</i></dd>
 <dt>z<sub>k</sub></dt><dd>la puntuación de la especie <i>k</i>: su propia recta, z<sub>k</sub> = w<sub>k1</sub> x<sub>1</sub> + w<sub>k2</sub> x<sub>2</sub> + b<sub>k</sub></dd>
-<dt>e<sup>z<sub>k</sub></sup></dt><dd>«exponencial» de esa puntuación: siempre positiva y más grande cuanto mayor es <i>z</i><sub>k</sub></dd>
+<dt>e<sup>z<sub>k</sub></sup></dt><dd>la puntuación pasada por la calculadora (<code>np.exp</code>) para que sea siempre positiva y mayor cuanto mayor es <i>z</i><sub>k</sub></dd>
 <dt>Σ<sub>j</sub></dt><dd>suma de las exponenciales de <b>todas</b> las especies: así las tres probabilidades suman exactamente 1</dd>
 </dl>
 <p>La alternativa clásica es <b>uno contra el resto</b> (<i>one-vs-rest</i>): tres modelos binarios independientes («¿es setosa o no?», «¿versicolor o no?», «¿virginica o no?») y quedarse con el que dé más. Se pide con <code>OneVsRestClassifier</code>, pero por defecto se usa la multinomial. Con las mismas dos columnas del pétalo y las tres especies, el cuaderno obtiene <b>93.3 %</b> (42 de 45). <b>Arrastra la flor</b> por el plano: mira las tres <i>z</i>, las tres probabilidades (siempre suman 1) y qué especie gana. (Los pesos son los reales de scikit-learn, exportados a esta página.)</p>
@@ -381,7 +405,7 @@ model.score(Xte, yte)             # → 0.9333  (28 de 30)</pre>
 <div class="w" id="w6b"></div>
 
 <h3>Ejercicio 3 · El parámetro <code>C</code></h3>
-<p><code>C</code> controla la regularización: cuanto más pequeño, más se frena el modelo. Entrena con <code>C=0.01</code>, <code>C=1</code> y <code>C=100</code> y dibuja las tres fronteras. ¿Qué le pasa a la recta cuando <code>C</code> es muy pequeño? Aquí están las tres, entrenadas en esta página con los datos y el reparto del cuaderno:</p>
+<p><code>C</code> controla la regularización (el freno de los pesos): cuanto más pequeño, más se frena el modelo. Entrena con <code>C=0.01</code>, <code>C=1</code> y <code>C=100</code> y dibuja las tres fronteras. ¿Qué le pasa a la recta cuando <code>C</code> es muy pequeño? Aquí están las tres, entrenadas en esta página con los datos y el reparto del cuaderno:</p>
 <div class="w" id="w6c"></div>
 
 <h3>Ejercicio 4 · Otras columnas</h3>
@@ -410,80 +434,9 @@ model.score(Xte, yte)             # → 0.9333  (28 de 30)</pre>
 <li><b>3</b>: <code>C=0.01</code> → w = (0.1951, 0.1203), b = −1.1656, examen <b>93.3 %</b>; <code>C=1</code> → (2.4668, 2.2156), −15.8323, <b>93.3 %</b>; <code>C=100</code> → (5.0419, 10.7858), −42.6879, <b>90.0 %</b> (scikit-learn para antes de converger del todo con C=100: el óptimo exacto que calcula esta página es ≈ (5.19, 10.85), −43.50, con la misma exactitud). Con C muy pequeño los pesos se encogen casi a cero y la recta queda como un «promedio» tímido; con C grande los pesos crecen y la recta se ajusta al detalle.</li>
 <li><b>4</b>: con las columnas del sépalo el examen cae a <b>73.3 %</b> (22 de 30): versicolor y virginica se mezclan mucho más en el sépalo que en el pétalo, así que ninguna recta las separa bien.</li>
 </ul>
-<p>Siguiente cuaderno: la <b>SVM</b>. Si los datos se separan bien hay muchas rectas razonables: ¿cuál es la mejor? La SVM busca la que deja el <b>máximo margen</b> a los dos lados.</p>
+<p>Siguiente cuaderno: la <b>SVM</b> (la verás más adelante). Si los datos se separan bien hay muchas rectas razonables: ¿cuál es la mejor? La SVM busca la que deja el <b>máximo margen</b> a los dos lados.</p>
 <footer>Apuntes generados a partir del cuaderno ML_04 (regresión logística). Funciona sin conexión: todo está en este archivo. Los datos de Iris y el reparto entrenamiento/examen son los reales; los pesos y exactitudes coinciden con scikit-learn (se recalculan aquí con el método de Newton o se han exportado de scikit-learn, según el apartado).</footer>
 
-</main>
-
-<script>
-<div class="f">d(a, c) ≤ d(a, b) + d(b, c)</div>
-<dl class="leg">
-<dt>a, b, c</dt><dd>tres puntos (tres flores): ir de <i>a</i> a <i>c</i> pasando por <i>b</i> nunca es un atajo</dd>
-</dl>
-<p>Los buscadores rápidos de vecinos de k-NN (<code>KDTree</code>, <code>BallTree</code>) se apoyan en ella para descartar flores sin medirlas.</p>
-<div class="idea"><b>Trampa típica:</b> <code>np.abs(p)</code> <b>no</b> es ‖p‖. <code>np.abs</code> quita el signo a cada componente y devuelve 4 números; la norma es <b>un solo número</b>: <code>np.linalg.norm(p)</code>. Con <code>seed(0)</code>: ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖ + ‖q‖ = 3.041634 + 2.316986 = <b>5.358619</b> (el ángulo entre <i>p</i> y <i>q</i> es de unos 60°). Con <code>q = 3 * p</code>, los dos lados dan <b>12.166536</b>.</div>
-
-<h2 id="s12">12 · El bucle que hay dentro de A @ w</h2>
-<div class="idea"><b>Idea:</b> <code>A @ w</code> no es magia: es un doble bucle. El de fuera recorre las filas; el de dentro multiplica cada número de la fila por su peso y lo va sumando. Cada fila acaba siendo <b>un</b> número.</div>
-<div class="f">(A w)<sub>i</sub> = <span class="sum"><small>d</small><b>Σ</b><small>j=1</small></span> A<sub>ij</sub> w<sub>j</sub> &nbsp;&nbsp;&nbsp;&nbsp; para i = 1, …, m</div>
-<dl class="leg">
-<dt>A</dt><dd>la matriz de datos, con <i>m</i> filas y <i>d</i> columnas (200 × 5)</dd>
-<dt>A<sub>ij</sub></dt><dd>el número de la fila <i>i</i>, columna <i>j</i> (<code>A[i, j]</code>)</dd>
-<dt>w, w<sub>j</sub></dt><dd>el vector de pesos (5 números) y su componente <i>j</i></dd>
-<dt>(A w)<sub>i</sub></dt><dd>la casilla <i>i</i> del resultado: la puntuación de la fila <i>i</i></dd>
-<dt>i, j</dt><dd><i>i</i> = bucle de fuera (filas, 1…<i>m</i>); <i>j</i> = bucle de dentro (columnas, 1…<i>d</i>)</dd>
-</dl>
-<p>Sigue el doble bucle multiplicación a multiplicación con una matriz pequeña:</p>
-<div class="w" id="wE4"></div>
-<p><b>La regla de las formas</b>, escrita en mates:</p>
-<div class="f">A ∈ ℝ<sup>m×d</sup>, &nbsp; w ∈ ℝ<sup>d</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; A w ∈ ℝ<sup>m</sup> &nbsp;&nbsp;&nbsp;&nbsp; (200, <u>5</u>) @ (<u>5</u>,) → (200,)</div>
-<dl class="leg">
-<dt>∈</dt><dd>"pertenece a" / "es un…"</dd>
-<dt>ℝ<sup>m×d</sup></dt><dd>tabla de números reales con <i>m</i> filas y <i>d</i> columnas</dd>
-<dt>ℝ<sup>d</sup></dt><dd>vector de <i>d</i> números reales</dd>
-</dl>
-<p><b>¿Por qué <code>np.allclose</code> y no <code>==</code>?</b> El ordenador guarda los decimales con unos 16 dígitos, así que cada suma redondea un poquito. El bucle y <code>@</code> suman en distinto orden (numpy agrupa las operaciones para ir más rápido), y el redondeo sale ligeramente distinto. Pasa hasta con <code>0.1 + 0.2 == 0.3</code>, que da <code>False</code>. Por eso se compara con margen:</p>
-<div class="f">|a<sub>i</sub> − b<sub>i</sub>| ≤ atol + rtol · |b<sub>i</sub>| &nbsp;&nbsp; para todo i</div>
-<dl class="leg">
-<dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>los dos resultados que comparas (el del bucle y el de <code>@</code>)</dd>
-<dt>atol</dt><dd>tolerancia absoluta: un margen fijo (por defecto 10<sup>−8</sup>)</dd>
-<dt>rtol</dt><dd>tolerancia relativa: un margen proporcional al tamaño del número (por defecto 10<sup>−5</sup>)</dd>
-<dt>ε ≈ 2.2·10<sup>−16</sup></dt><dd>la precisión de un <code>float64</code>: por eso la diferencia máxima sale del orden de 10<sup>−16</sup> o 10<sup>−15</sup></dd>
-</dl>
-<pre>np.random.seed(1); A = np.random.randn(200, 5); w = np.random.randn(5)
-bucle = np.zeros(200)
-for i in range(200):          # filas
-    for j in range(5):        # columnas
-        bucle[i] += A[i, j] * w[j]
-np.allclose(bucle, A @ w)     # True
-np.max(np.abs(bucle - A @ w)) # ~1e-16 / 1e-15, nunca un número grande</pre>
-
-<!-- ============ RESUMEN ============ -->
-<h2 id="res">Resumen en una tabla</h2>
-<div class="scroll">
-<table class="sum">
-<tr><th>Concepto</th><th>Qué es</th><th>Numpy</th><th>Número para comprobar</th></tr>
-<tr><td><b>Vector</b></td><td>Lista de números = punto = flecha</td><td><code>X[0]</code></td><td>[5.1, 3.5, 1.4, 0.2]</td></tr>
-<tr><td><b>Norma</b></td><td>Longitud de la flecha (Pitágoras)</td><td><code>np.linalg.norm(v)</code></td><td>6.345077 (flor 0)</td></tr>
-<tr><td><b>Distancia</b></td><td>Norma de la resta</td><td><code>np.linalg.norm(a - b)</code></td><td>4.003748 (flores 0 y 50)</td></tr>
-<tr><td><b>Producto escalar</b></td><td>Multiplica y suma → 1 número. Signo = hacia dónde apuntan</td><td><code>a @ b</code></td><td>53.76 · ángulo 21.8°</td></tr>
-<tr><td><b>Proyección</b></td><td>Sombra de <i>a</i> sobre <i>b</i></td><td><code>(a @ b) / np.linalg.norm(b)</code></td><td>5.890645 (4D)</td></tr>
-<tr><td><b>Matriz · vector</b></td><td>Cada fila · el vector → un número por fila</td><td><code>X @ w</code></td><td>(150,4) @ (4,) → (150,)</td></tr>
-<tr><td><b>Modelo</b></td><td>z = w·x + b; el signo decide</td><td><code>X @ coef_[0] + intercept_[0]</code></td><td>150 de 150 = <code>predict</code></td></tr>
-<tr><td><b>Transpuesta</b></td><td>Filas ↔ columnas</td><td><code>X.T</code>, <code>X.T @ X</code></td><td>(4, 4), simétrica</td></tr>
-</table>
-</div>
-<div class="big">Cuando haces <code>fit</code>, se buscan unos números. Cuando haces <code>predict</code>, se multiplica. No hay nada más dentro.</div>
-
-<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
-<ul>
-<li><b>Manhattan vs euclídea</b> (flores 0 y 50): Manhattan <code>np.sum(np.abs(a - b))</code> = <b>6.7</b>; euclídea = <b>4.003748</b>. Manhattan es más grande porque va "por las calles" en vez de en línea recta.</li>
-<li><b>Las dos flores más lejanas</b>: distancia <b>7.085196</b>, flores <b>13</b> y <b>118</b>. La matriz de distancias tiene que ser simétrica y con la diagonal a cero.</li>
-<li><b>Desigualdad triangular</b> (<code>seed(0)</code>): ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖+‖q‖ = <b>5.358619</b>. Con <code>q = 3 * p</code> salen iguales.</li>
-<li><b>Bucle vs @</b> (<code>seed(1)</code>, 200 × 5): <code>np.allclose</code> → <b>True</b>, diferencia del orden de 10⁻¹⁵.</li>
-</ul>
-<p>Siguiente cuaderno: <b>de dónde salen los pesos</b> (descenso del gradiente).</p>
-<footer>Apuntes generados a partir del cuaderno MA_01. Funciona sin conexión: todo está en este archivo.</footer>
 </main>
 
 <script>
@@ -512,6 +465,77 @@ class Plot{
     this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
     this.grid=E('g',{},this.svg);
     const gx=o.gx||1,gy=o.gy||gx;
+    const yAx=(y0<=0&&y1>=0)?this.Y(0):this.Y(y0), xAx=(x0<=0&&x1>=0)?this.X(0):this.X(x0);
+    for(let x=Math.ceil(x0/gx-1e-9)*gx;x<=x1+1e-9;x+=gx){const X=this.X(x);E('line',{x1:X,y1:this.Y(y1),x2:X,y2:this.Y(y0),class:Math.abs(x)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(x)>1e-9&&o.ticks!==false)E('text',{x:X,y:Math.min(yAx+14,Hh-4),'text-anchor':'middle',class:'tick'},this.grid).textContent=f(x,2)}
+    for(let y=Math.ceil(y0/gy-1e-9)*gy;y<=y1+1e-9;y+=gy){const Yp=this.Y(y);E('line',{x1:this.X(x0),y1:Yp,x2:this.X(x1),y2:Yp,class:Math.abs(y)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(y)>1e-9&&o.ticks!==false)E('text',{x:Math.max(xAx-5,22),y:Yp+4,'text-anchor':'end',class:'tick'},this.grid).textContent=f(y,2)}
+    if(o.xl)E('text',{x:this.X(x1),y:Hh-6,'text-anchor':'end',class:'tick'},this.grid).textContent=o.xl;
+    if(o.yl)E('text',{x:this.X(x0)+4,y:pad-12,class:'tick'},this.grid).textContent=o.yl;
+  }
+  X(x){return this.pad+(x-this.x0)*this.sx}
+  Y(y){return this.pad+(this.y1-y)*this.sy}
+  P(p){return [this.X(p[0]),this.Y(p[1])]}
+  g(){return E('g',{},this.svg)}
+  toWorld(ev){const pt=this.svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(this.svg.getScreenCTM().inverse());return [(q.x-this.pad)/this.sx+this.x0,this.y1-(q.y-this.pad)/this.sy]}
+  arrow(g,color,w=2.6,dash){const grp=E('g',{},g);const l=E('line',{stroke:color,'stroke-width':w,'stroke-linecap':'round'},grp);if(dash)l.setAttribute('stroke-dasharray',dash);const h=E('polygon',{fill:color},grp);const self=this;
+    return {el:grp,set(a,b){const [X1,Y1]=self.P(a),[X2,Y2]=self.P(b);const dx=X2-X1,dy=Y2-Y1,L=Math.hypot(dx,dy);if(L<2){grp.style.display='none';return}grp.style.display='';const hl=Math.min(10+w*1.6,L*.6),hw=hl*.45,ux=dx/L,uy=dy/L,bx=X2-ux*hl,by=Y2-uy*hl;
+      l.setAttribute('x1',X1);l.setAttribute('y1',Y1);l.setAttribute('x2',bx);l.setAttribute('y2',by);h.setAttribute('points',`${X2},${Y2} ${bx-uy*hw},${by+ux*hw} ${bx+uy*hw},${by-ux*hw}`)},
+      show(v){grp.style.opacity=v?1:0}}}
+  label(g,color,cls='lbl'){const t=E('text',{class:cls},g);if(color)t.style.fill=color;const self=this;return {el:t,set(p,s,dx=6,dy=-6,anchor='start'){const [X,Yp]=self.P(p);t.setAttribute('x',X+dx);t.setAttribute('y',Yp+dy);t.setAttribute('text-anchor',anchor);t.textContent=s},show(v){t.style.opacity=v?1:0}}}
+  line(g,a,b,attrs){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);return E('line',Object.assign({x1,y1,x2,y2},attrs),g)}
+  setLine(el,a,b){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2)}
+  poly(g,pts,attrs){return E('polygon',Object.assign({points:pts.map(p=>this.P(p).join(',')).join(' ')},attrs),g)}
+  setPoly(el,pts){el.setAttribute('points',pts.map(p=>this.P(p).join(',')).join(' '))}
+  dot(g,p,r,color,attrs){const [cx,cy]=this.P(p);return E('circle',Object.assign({cx,cy,r,fill:color},attrs||{}),g)}
+  setDot(el,p){const [cx,cy]=this.P(p);el.setAttribute('cx',cx);el.setAttribute('cy',cy)}
+}
+
+function stepper(host,n,render,o={}){
+  const bar=H('div',{class:'bar'},host);
+  const prev=H('button',{},bar,'← Anterior');
+  const play=H('button',{},bar,'▶ Reproducir');
+  const next=H('button',{},bar,'Siguiente →');
+  const rst=H('button',{title:'Volver al principio'},bar,'↺');
+  const dots=H('span',{class:'dots'},bar);
+  let step=0,timer=null;
+  const draw=()=>{render(step);dots.textContent=`Paso ${step+1} de ${n}`};
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  prev.onclick=()=>{stop();step=Math.max(0,step-1);draw()};
+  next.onclick=()=>{stop();step=Math.min(n-1,step+1);draw()};
+  rst.onclick=()=>{stop();step=0;draw()};
+  play.onclick=()=>{if(timer){stop();return}if(step>=n-1)step=0;draw();play.textContent='❚❚ Pausa';timer=setInterval(()=>{step++;draw();if(step>=n-1)stop()},o.interval||1800)};
+  return {bar,draw,reset(){stop();step=0;draw()},get step(){return step}};
+}
+
+/* Tabla de componentes animada: norma, distancia, producto escalar */
+function compTable(host,o){
+  const n=o.cols.length;
+  const msg=H('div',{class:'msg'},host);
+  const wrap=H('div',{class:'scroll'},host);
+  const t=H('table',{class:'comp'},wrap);
+  const th=H('thead',{},t),hr=H('tr',{},th);H('th',{},hr,'');o.cols.forEach(c=>H('th',{},hr,c));
+  const tb=H('tbody',{},t);const cells=[];
+  o.rows.forEach(r=>{const tr=H('tr',{},tb);H('th',{},tr,r.name);cells.push(r.vals.map(v=>H('td',{},tr,f(v))))});
+  const trO=H('tr',{},tb);H('th',{},trO,o.opName);const opC=o.cols.map(()=>H('td',{},trO,''));
+  const trS=H('tr',{},tb);H('th',{},trS,'suma acumulada');const sC=o.cols.map(()=>H('td',{},trS,''));
+  const out=H('div',{class:'calc'},host);
+  const vals=o.cols.map((_,i)=>o.op(i));const total=vals.reduce((a,b)=>a+b,0);
+  const N=n+2+(o.finals?o.finals.length:0);
+  const sp=stepper(host,N,s=>{
+    let run=0;
+    for(let i=0;i<n;i++){run+=vals[i];[...cells.map(r=>r[i]),opC[i],sC[i]].forEach(c=>c.classList.remove('hi','res'));
+      opC[i].textContent=s>i?f(vals[i]):'';sC[i].textContent=s>i?f(run):'';
+      if(s===i+1){cells.forEach(r=>r[i].classList.add('hi'));opC[i].classList.add('hi')}}
+    if(s>=n+1)sC[n-1].classList.add('res');
+    if(s===0){msg.innerHTML=o.intro;out.innerHTML='&nbsp;'}
+    else if(s<=n){msg.innerHTML=`Columna <b>${s}</b> (${o.cols[s-1]}): ${o.stepText||'se calcula'}`;out.innerHTML=o.opText(s-1)+' = <span class="hg">'+f(vals[s-1])+'</span>'}
+    else if(s===n+1){msg.innerHTML='Se suma todo:';out.innerHTML=vals.map(v=>f(v)).join(' + ')+' = <span class="hg">'+f(total)+'</span>'}
+    else{const k=s-n-2;msg.innerHTML=o.finals[k].msg;out.innerHTML=o.finals[k].html(total)}
+  },{interval:1500});
+  sp.draw();
+  return sp;
+}
 /* ===== utilidades comunes ===== */
 function rngSeed(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}

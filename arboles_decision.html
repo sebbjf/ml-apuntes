@@ -258,6 +258,14 @@ ul{padding-left:22px}
 a{text-underline-offset:3px}
 ::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
 .thumb{background:var(--soft)}
+/* ===== Bloques opcionales ===== */
+details.opt{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:0 16px;margin:14px 0}
+details.opt>summary{cursor:pointer;padding:10px 0;font-size:14.5px;font-weight:600;color:var(--muted);list-style:none}
+details.opt>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-weight:700}
+details.opt[open]>summary::before{content:"−"}
+details.opt[open]>summary{color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:12px}
+details.opt>summary::-webkit-details-marker{display:none}
+details.opt .f{margin-top:0}
 </style>
 </head>
 <body>
@@ -276,17 +284,19 @@ a{text-underline-offset:3px}
 <!-- ============ 1 ============ -->
 <h2 id="s1">1 · La pregunta</h2>
 <div class="idea"><b>Idea:</b> en la demo viste un árbol cuyo nodo de arriba preguntaba <code>petal_llarg &lt;= 2.45</code>. La máquina encontró ese número sola mirando 105 flores. ¿Por qué 2,45, y por qué el pétalo y no otra columna? Al final lo calcularás a mano y con código.</div>
+<div class="idea"><b>Antes de empezar:</b> cuatro palabras que se repiten mucho. Un <b>corte</b> es una pregunta de sí/no sobre una columna: «¿el pétalo mide 2,45 cm o menos?». El <b>umbral</b> es ese número, el 2,45. Cada pregunta divide las flores en <b>dos grupos</b> (los «hijos»: los que dicen sí y los que dicen no). La <b>raíz</b> es la primera pregunta, la de arriba del todo; una <b>hoja</b> es un grupo final, donde ya no se pregunta nada más y se da la respuesta. Las flores de <b>entrenamiento</b> son con las que el árbol aprende; las de <b>examen</b> son otras que no ha visto, para comprobar si de verdad aprendió. La <b>exactitud</b> es el porcentaje de aciertos. Y todo el código de la página es <b>opcional</b>: puedes entenderlo todo sin leerlo.</div>
 <p>Los datos son las <b>150 flores de Iris</b> (3 especies, 4 medidas). Las columnas se llaman <code>sepal_llarg</code>, <code>sepal_ample</code>, <code>petal_llarg</code>, <code>petal_ample</code>, como en el cuaderno.</p>
 
 <!-- ============ 2 ============ -->
 <h2 id="s2">2 · Medir el desorden: la impureza de Gini</h2>
 <div class="idea"><b>Idea:</b> para elegir un corte, la máquina necesita medir <b>si un grupo de flores está mezclado o no</b>. Un grupo es <span class="hg">puro</span> si todas son de la misma especie e <span class="hr">impuro</span> si hay mezcla; cuanto más equilibrada la mezcla, más impuro.</div>
+<div class="idea"><b>Ejemplo:</b> una cesta con 10 manzanas y 10 peras. Sacas una al azar y adivinas cuál es: fallas <span class="hr">la mitad de las veces</span>. La impureza de Gini es justo esa <b>probabilidad de fallar</b>: aquí, 0,5. Si la cesta es solo de manzanas, nunca fallas: Gini = <span class="hg">0</span>.</div>
 <div class="f">G = 1 − <span class="sum"><small>&nbsp;</small><b>Σ</b><small>i</small></span> p<sub>i</sub><sup>2</sup></div>
 <dl class="leg">
 <dt>G</dt><dd>la impureza de Gini del grupo (0 = puro)</dd>
 <dt>p<sub>i</sub></dt><dd>la proporción de flores de la clase <i>i</i> dentro del grupo (cuántas hay de esa clase entre el total del grupo)</dd>
 <dt>p<sub>i</sub><sup>2</sup></dt><dd>esa proporción al cuadrado</dd>
-<dt>Σ</dt><dd>«suma todos» los valores de <i>i</i>, es decir, todas las clases</dd>
+<dt>Σ</dt><dd>«suma todos»: se calcula un trozo (p<sub>i</sub>²) por cada clase y se suman todos los trozos</dd>
 </dl>
 <p>Con 50 setosa y nada más, <i>p</i><sub>setosa</sub> = 1 y G = 1 − 1² = 0. <b>Mueve los deslizadores</b> (cuántas flores de cada especie hay en el grupo) y mira cómo suben G y la entropía. Los tres botones son los tres casos del cuaderno: <b>0</b>, <b>0.5</b> y <b>0.667</b>.</p>
 <div class="w" id="w2a"></div>
@@ -297,21 +307,24 @@ a{text-underline-offset:3px}
 gini(["setosa"] * 50)                                   # → 0.0
 gini(["setosa"] * 25 + ["versicolor"] * 25)             # → 0.5
 gini(["setosa"] * 10 + ["versicolor"] * 10 + ["virginica"] * 10)   # → 0.667</pre>
+<p class="hint">En llano: <code>value_counts(normalize=True)</code> cuenta cuántas flores hay de cada especie y las convierte en proporciones; luego se elevan al cuadrado, se suman y se resta de 1. El código es opcional.</p>
 
-<h3>La alternativa: la entropía</h3>
+<h3>La alternativa: la entropía (opcional)</h3>
+<details class="opt"><summary>Opcional: la fórmula de la entropía</summary>
 <div class="idea"><b>Idea:</b> Gini no es la única medida. La otra habitual es la <b>entropía</b>, de la teoría de la información. Se calcula distinto (hay un logaritmo), pero mide lo mismo: 0 si el grupo es puro y más alta cuanto más mezclado. En la práctica los dos dan árboles casi idénticos; scikit-learn usa Gini por defecto porque es un poco más rápido (no hay logaritmo).</div>
 <div class="f">H = − <span class="sum"><small>&nbsp;</small><b>Σ</b><small>i</small></span> p<sub>i</sub> · log<sub>2</sub>( p<sub>i</sub> )</div>
 <dl class="leg">
 <dt>H</dt><dd>la entropía del grupo, en bits</dd>
 <dt>p<sub>i</sub></dt><dd>la proporción de la clase <i>i</i> en el grupo</dd>
-<dt>log<sub>2</sub></dt><dd>logaritmo en base 2: «a cuántas veces hay que partir por la mitad». Es negativo para proporciones menores que 1, por eso va el signo «−» delante</dd>
+<dt>log<sub>2</sub></dt><dd>logaritmo en base 2: piensa en él como una calculadora de <b>cuántas preguntas de sí/no necesitas para adivinar</b>; 1 bit = una pregunta. Es negativo para proporciones menores que 1, por eso va el signo «−» delante</dd>
 </dl>
+</details>
 <p>Con <b>dos</b> clases todo el grupo se resume en un número: la proporción <i>p</i> de la primera clase. Aquí están las dos curvas para todas las mezclas posibles. Las dos valen 0 en los extremos y tienen el máximo en el empate; solo cambia la escala (Gini 0.5, entropía 1 bit), pero la <b>forma</b> es la misma. Por eso casi siempre ordenan igual los cortes candidatos.</p>
 <div class="w" id="w2b"></div>
 
 <!-- ============ 3 ============ -->
 <h2 id="s3">3 · Cómo elige la máquina el corte</h2>
-<div class="idea"><b>Idea:</b> es una <b>búsqueda bruta</b>. Para cada columna y cada umbral posible, se parten las flores en dos grupos (las que cumplen la condición y las que no) y se mide la impureza <b>ponderada</b> de los dos hijos. Gana el corte que más baja la impureza respecto al grupo padre.</div>
+<div class="idea"><b>Idea:</b> es una <b>búsqueda bruta</b>: probarlo todo, uno por uno, y quedarse con el mejor (como probar todas las llaves del llavero). Para cada columna y cada umbral posible, se parten las flores en dos grupos (las que cumplen la condición y las que no) y se mide la impureza <b>ponderada</b> de los dos hijos. «Ponderada» es la media de las dos impurezas, pero cada lado cuenta según lo grande que es, como la nota media de un curso: el examen de 80 alumnos pesa más que el de 2. Gana el corte que más baja la impureza respecto al grupo padre.</div>
 <div class="f">G<sub>hijos</sub> = <span class="frac">n<sub>izq</sub>⁄n</span> · G<sub>izq</sub> + <span class="frac">n<sub>der</sub>⁄n</span> · G<sub>der</sub> &nbsp;&nbsp;&nbsp;&nbsp; ganancia = G<sub>padre</sub> − G<sub>hijos</sub></div>
 <dl class="leg">
 <dt>n<sub>izq</sub>, n<sub>der</sub></dt><dd>cuántas flores caen a cada lado del corte</dd>
@@ -329,27 +342,30 @@ gini(["setosa"] * 10 + ["versicolor"] * 10 + ["virginica"] * 10)   # → 0.667</
 # Millor columna: petal_llarg
 # Millor llindar: 2.45
 # Guany de Gini:  0.333</pre>
+<p class="hint">En llano: <code>millor_tall</code> prueba cada columna y cada umbral, calcula cuánto baja el desorden con cada uno y te devuelve el mejor. El código es opcional.</p>
 <p><b>Ahí está la respuesta del principio:</b> sin que nadie le dijera nada de iris, la función probó todas las columnas y todos los cortes y encontró <code>petal_llarg</code> con umbral <b>2.45</b>. Es el nodo de arriba del árbol de la demo: es el mismo cálculo que hace <code>DecisionTreeClassifier</code> por dentro.</p>
 
 <!-- ============ 4 ============ -->
 <h2 id="s4">4 · La ganancia de cada umbral</h2>
 <div class="idea"><b>Idea:</b> para ver por qué sale justo 2,45 y no otro número, mira la ganancia que daría <b>cada</b> umbral posible. La curva sube de golpe hacia 1.5–2 cm, se queda arriba en una <b>meseta</b> y vuelve a bajar. La meseta es el hueco entre la última setosa y la primera flor de otra especie: sin ninguna flor dentro. 2,45 cae justo en el medio de ese hueco.</div>
-<p>Elige columna y <b>haz clic en la curva</b> para ver la ganancia de ese umbral. Cualquier umbral de la meseta separa las setosa igual de bien; el algoritmo se queda con el del medio del hueco: (1.9 + 3.0) / 2 = 2.45.</p>
+<p>Elige columna y <b>haz clic en la curva</b> para ver la ganancia de ese umbral. Cualquier umbral de la meseta separa las setosa igual de bien; el algoritmo se queda con el del medio del hueco: (1.9 + 3.0) / 2 = 2.45. Dicho en llano: cualquier número entre la última setosa (1.9) y la primera otra flor (3.0) separa igual; el árbol elige el del medio porque queda a la misma distancia de ambos lados.</p>
 <div class="w" id="w4"></div>
 <pre>valors = np.sort(X["petal_llarg"].unique())
 llindars = (valors[:-1] + valors[1:]) / 2       # puntos medios entre valores consecutivos</pre>
+<p class="hint">En llano: ordena los valores distintos de la columna y calcula el punto medio entre cada par de vecinos; esos son los umbrales candidatos. El código es opcional.</p>
 
 <!-- ============ 5 ============ -->
 <h2 id="s5">5 · Comparamos con scikit-learn</h2>
 <div class="idea"><b>Idea:</b> si eso es lo que hace un árbol por dentro, uno de <code>max_depth=1</code> (un único corte) tiene que elegir el mismo umbral.</div>
 <pre>arbre = DecisionTreeClassifier(max_depth=1, random_state=42).fit(X, y)
 X.columns[arbre.tree_.feature[0]], arbre.tree_.threshold[0]   # → petal_llarg, 2.45</pre>
+<p class="hint">En llano: se crea un árbol de un solo corte, se entrena con las flores y se le pregunta qué columna y qué umbral eligió en la raíz. El código es opcional.</p>
 <p>Coinciden. <code>tree_.feature</code> y <code>tree_.threshold</code> guardan, para cada nodo, la columna y el umbral elegidos; el nodo 0 es la raíz. <code>millor_tall</code> no es una aproximación docente: es <b>el mismo algoritmo</b> escrito a mano. Aquí tienes el árbol que sale de aplicarlo de forma repetida sobre las 150 flores (calculado en esta página; a profundidad 1 coincide con scikit-learn, y a partir de la 3 pueden aparecer cortes distintos pero equivalentes cuando hay empates). <b>Cambia la profundidad.</b></p>
 <div class="w" id="w5"></div>
 
 <!-- ============ 6 ============ -->
 <h2 id="s6">6 · Hasta dónde dejar crecer el árbol</h2>
-<div class="idea"><b>Idea:</b> un solo corte solo separa las setosa. La solución obvia es repetir el proceso dentro de cada hijo, una y otra vez: así crece un árbol. ¿Hasta dónde? Si no se para nunca, hace un corte para cada flor, <b>memoriza</b> el entrenamiento y deja de generalizar: <span class="hr">sobreajuste</span>. <b>Trampa típica:</b> mirar solo la exactitud de entrenamiento, que siempre sube.</div>
+<div class="idea"><b>Idea:</b> un solo corte solo separa las setosa. La solución obvia es repetir el proceso dentro de cada hijo, una y otra vez: así crece un árbol. ¿Hasta dónde? Si no se para nunca, hace un corte para cada flor, <b>memoriza</b> el entrenamiento y deja de generalizar: <span class="hr">sobreajuste</span>. Es como aprenderte las respuestas de memoria: sacas 10 en lo que ya viste y fallas con lo nuevo. <b>Trampa típica:</b> mirar solo la exactitud de entrenamiento, que siempre sube.</div>
 <p>Con los datos reales (105 de entrenamiento, 45 de examen, el reparto del cuaderno): la exactitud según <code>max_depth</code> de 1 a 10. Con <code>max_depth=1</code> es 66.7 % en los dos lados (solo separa la setosa). El entrenamiento sube hasta el <b>100 %</b>; el examen se queda atrás, en torno al 93 %. <b>Haz clic</b> en un punto.</p>
 <div class="w" id="w6a"></div>
 <p>Para evitarlo, el árbol se <b>poda</b> limitando su crecimiento:</p>
@@ -384,6 +400,7 @@ X.columns[arbre.tree_.feature[0]], arbre.tree_.threshold[0]   # → petal_llarg,
 <div class="w" id="w7d"></div>
 <pre>pos = int(np.argmax(exactitud_examen))
 print(profunditats[pos], exactitud_examen[pos])      # la posición NO es el max_depth</pre>
+<p class="hint">En llano: <code>np.argmax</code> dice en qué lugar de la lista está el valor más alto; con ese lugar se mira qué profundidad le corresponde y cuál fue su exactitud. El código es opcional.</p>
 
 <!-- ============ RESUMEN ============ -->
 <h2 id="res">Resumen en una tabla</h2>
@@ -413,77 +430,6 @@ print(profunditats[pos], exactitud_examen[pos])      # la posición NO es el max
 </main>
 
 <script>
-<div class="f">d(a, c) ≤ d(a, b) + d(b, c)</div>
-<dl class="leg">
-<dt>a, b, c</dt><dd>tres puntos (tres flores): ir de <i>a</i> a <i>c</i> pasando por <i>b</i> nunca es un atajo</dd>
-</dl>
-<p>Los buscadores rápidos de vecinos de k-NN (<code>KDTree</code>, <code>BallTree</code>) se apoyan en ella para descartar flores sin medirlas.</p>
-<div class="idea"><b>Trampa típica:</b> <code>np.abs(p)</code> <b>no</b> es ‖p‖. <code>np.abs</code> quita el signo a cada componente y devuelve 4 números; la norma es <b>un solo número</b>: <code>np.linalg.norm(p)</code>. Con <code>seed(0)</code>: ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖ + ‖q‖ = 3.041634 + 2.316986 = <b>5.358619</b> (el ángulo entre <i>p</i> y <i>q</i> es de unos 60°). Con <code>q = 3 * p</code>, los dos lados dan <b>12.166536</b>.</div>
-
-<h2 id="s12">12 · El bucle que hay dentro de A @ w</h2>
-<div class="idea"><b>Idea:</b> <code>A @ w</code> no es magia: es un doble bucle. El de fuera recorre las filas; el de dentro multiplica cada número de la fila por su peso y lo va sumando. Cada fila acaba siendo <b>un</b> número.</div>
-<div class="f">(A w)<sub>i</sub> = <span class="sum"><small>d</small><b>Σ</b><small>j=1</small></span> A<sub>ij</sub> w<sub>j</sub> &nbsp;&nbsp;&nbsp;&nbsp; para i = 1, …, m</div>
-<dl class="leg">
-<dt>A</dt><dd>la matriz de datos, con <i>m</i> filas y <i>d</i> columnas (200 × 5)</dd>
-<dt>A<sub>ij</sub></dt><dd>el número de la fila <i>i</i>, columna <i>j</i> (<code>A[i, j]</code>)</dd>
-<dt>w, w<sub>j</sub></dt><dd>el vector de pesos (5 números) y su componente <i>j</i></dd>
-<dt>(A w)<sub>i</sub></dt><dd>la casilla <i>i</i> del resultado: la puntuación de la fila <i>i</i></dd>
-<dt>i, j</dt><dd><i>i</i> = bucle de fuera (filas, 1…<i>m</i>); <i>j</i> = bucle de dentro (columnas, 1…<i>d</i>)</dd>
-</dl>
-<p>Sigue el doble bucle multiplicación a multiplicación con una matriz pequeña:</p>
-<div class="w" id="wE4"></div>
-<p><b>La regla de las formas</b>, escrita en mates:</p>
-<div class="f">A ∈ ℝ<sup>m×d</sup>, &nbsp; w ∈ ℝ<sup>d</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; A w ∈ ℝ<sup>m</sup> &nbsp;&nbsp;&nbsp;&nbsp; (200, <u>5</u>) @ (<u>5</u>,) → (200,)</div>
-<dl class="leg">
-<dt>∈</dt><dd>"pertenece a" / "es un…"</dd>
-<dt>ℝ<sup>m×d</sup></dt><dd>tabla de números reales con <i>m</i> filas y <i>d</i> columnas</dd>
-<dt>ℝ<sup>d</sup></dt><dd>vector de <i>d</i> números reales</dd>
-</dl>
-<p><b>¿Por qué <code>np.allclose</code> y no <code>==</code>?</b> El ordenador guarda los decimales con unos 16 dígitos, así que cada suma redondea un poquito. El bucle y <code>@</code> suman en distinto orden (numpy agrupa las operaciones para ir más rápido), y el redondeo sale ligeramente distinto. Pasa hasta con <code>0.1 + 0.2 == 0.3</code>, que da <code>False</code>. Por eso se compara con margen:</p>
-<div class="f">|a<sub>i</sub> − b<sub>i</sub>| ≤ atol + rtol · |b<sub>i</sub>| &nbsp;&nbsp; para todo i</div>
-<dl class="leg">
-<dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>los dos resultados que comparas (el del bucle y el de <code>@</code>)</dd>
-<dt>atol</dt><dd>tolerancia absoluta: un margen fijo (por defecto 10<sup>−8</sup>)</dd>
-<dt>rtol</dt><dd>tolerancia relativa: un margen proporcional al tamaño del número (por defecto 10<sup>−5</sup>)</dd>
-<dt>ε ≈ 2.2·10<sup>−16</sup></dt><dd>la precisión de un <code>float64</code>: por eso la diferencia máxima sale del orden de 10<sup>−16</sup> o 10<sup>−15</sup></dd>
-</dl>
-<pre>np.random.seed(1); A = np.random.randn(200, 5); w = np.random.randn(5)
-bucle = np.zeros(200)
-for i in range(200):          # filas
-    for j in range(5):        # columnas
-        bucle[i] += A[i, j] * w[j]
-np.allclose(bucle, A @ w)     # True
-np.max(np.abs(bucle - A @ w)) # ~1e-16 / 1e-15, nunca un número grande</pre>
-
-<!-- ============ RESUMEN ============ -->
-<h2 id="res">Resumen en una tabla</h2>
-<div class="scroll">
-<table class="sum">
-<tr><th>Concepto</th><th>Qué es</th><th>Numpy</th><th>Número para comprobar</th></tr>
-<tr><td><b>Vector</b></td><td>Lista de números = punto = flecha</td><td><code>X[0]</code></td><td>[5.1, 3.5, 1.4, 0.2]</td></tr>
-<tr><td><b>Norma</b></td><td>Longitud de la flecha (Pitágoras)</td><td><code>np.linalg.norm(v)</code></td><td>6.345077 (flor 0)</td></tr>
-<tr><td><b>Distancia</b></td><td>Norma de la resta</td><td><code>np.linalg.norm(a - b)</code></td><td>4.003748 (flores 0 y 50)</td></tr>
-<tr><td><b>Producto escalar</b></td><td>Multiplica y suma → 1 número. Signo = hacia dónde apuntan</td><td><code>a @ b</code></td><td>53.76 · ángulo 21.8°</td></tr>
-<tr><td><b>Proyección</b></td><td>Sombra de <i>a</i> sobre <i>b</i></td><td><code>(a @ b) / np.linalg.norm(b)</code></td><td>5.890645 (4D)</td></tr>
-<tr><td><b>Matriz · vector</b></td><td>Cada fila · el vector → un número por fila</td><td><code>X @ w</code></td><td>(150,4) @ (4,) → (150,)</td></tr>
-<tr><td><b>Modelo</b></td><td>z = w·x + b; el signo decide</td><td><code>X @ coef_[0] + intercept_[0]</code></td><td>150 de 150 = <code>predict</code></td></tr>
-<tr><td><b>Transpuesta</b></td><td>Filas ↔ columnas</td><td><code>X.T</code>, <code>X.T @ X</code></td><td>(4, 4), simétrica</td></tr>
-</table>
-</div>
-<div class="big">Cuando haces <code>fit</code>, se buscan unos números. Cuando haces <code>predict</code>, se multiplica. No hay nada más dentro.</div>
-
-<h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
-<ul>
-<li><b>Manhattan vs euclídea</b> (flores 0 y 50): Manhattan <code>np.sum(np.abs(a - b))</code> = <b>6.7</b>; euclídea = <b>4.003748</b>. Manhattan es más grande porque va "por las calles" en vez de en línea recta.</li>
-<li><b>Las dos flores más lejanas</b>: distancia <b>7.085196</b>, flores <b>13</b> y <b>118</b>. La matriz de distancias tiene que ser simétrica y con la diagonal a cero.</li>
-<li><b>Desigualdad triangular</b> (<code>seed(0)</code>): ‖p+q‖ = <b>4.648461</b> ≤ ‖p‖+‖q‖ = <b>5.358619</b>. Con <code>q = 3 * p</code> salen iguales.</li>
-<li><b>Bucle vs @</b> (<code>seed(1)</code>, 200 × 5): <code>np.allclose</code> → <b>True</b>, diferencia del orden de 10⁻¹⁵.</li>
-</ul>
-<p>Siguiente cuaderno: <b>de dónde salen los pesos</b> (descenso del gradiente).</p>
-<footer>Apuntes generados a partir del cuaderno MA_01. Funciona sin conexión: todo está en este archivo.</footer>
-</main>
-
-<script>
 const IRIS={"X":[[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4],[4.6,3.4,1.4,0.3],[5.0,3.4,1.5,0.2],[4.4,2.9,1.4,0.2],[4.9,3.1,1.5,0.1],[5.4,3.7,1.5,0.2],[4.8,3.4,1.6,0.2],[4.8,3.0,1.4,0.1],[4.3,3.0,1.1,0.1],[5.8,4.0,1.2,0.2],[5.7,4.4,1.5,0.4],[5.4,3.9,1.3,0.4],[5.1,3.5,1.4,0.3],[5.7,3.8,1.7,0.3],[5.1,3.8,1.5,0.3],[5.4,3.4,1.7,0.2],[5.1,3.7,1.5,0.4],[4.6,3.6,1.0,0.2],[5.1,3.3,1.7,0.5],[4.8,3.4,1.9,0.2],[5.0,3.0,1.6,0.2],[5.0,3.4,1.6,0.4],[5.2,3.5,1.5,0.2],[5.2,3.4,1.4,0.2],[4.7,3.2,1.6,0.2],[4.8,3.1,1.6,0.2],[5.4,3.4,1.5,0.4],[5.2,4.1,1.5,0.1],[5.5,4.2,1.4,0.2],[4.9,3.1,1.5,0.2],[5.0,3.2,1.2,0.2],[5.5,3.5,1.3,0.2],[4.9,3.6,1.4,0.1],[4.4,3.0,1.3,0.2],[5.1,3.4,1.5,0.2],[5.0,3.5,1.3,0.3],[4.5,2.3,1.3,0.3],[4.4,3.2,1.3,0.2],[5.0,3.5,1.6,0.6],[5.1,3.8,1.9,0.4],[4.8,3.0,1.4,0.3],[5.1,3.8,1.6,0.2],[4.6,3.2,1.4,0.2],[5.3,3.7,1.5,0.2],[5.0,3.3,1.4,0.2],[7.0,3.2,4.7,1.4],[6.4,3.2,4.5,1.5],[6.9,3.1,4.9,1.5],[5.5,2.3,4.0,1.3],[6.5,2.8,4.6,1.5],[5.7,2.8,4.5,1.3],[6.3,3.3,4.7,1.6],[4.9,2.4,3.3,1.0],[6.6,2.9,4.6,1.3],[5.2,2.7,3.9,1.4],[5.0,2.0,3.5,1.0],[5.9,3.0,4.2,1.5],[6.0,2.2,4.0,1.0],[6.1,2.9,4.7,1.4],[5.6,2.9,3.6,1.3],[6.7,3.1,4.4,1.4],[5.6,3.0,4.5,1.5],[5.8,2.7,4.1,1.0],[6.2,2.2,4.5,1.5],[5.6,2.5,3.9,1.1],[5.9,3.2,4.8,1.8],[6.1,2.8,4.0,1.3],[6.3,2.5,4.9,1.5],[6.1,2.8,4.7,1.2],[6.4,2.9,4.3,1.3],[6.6,3.0,4.4,1.4],[6.8,2.8,4.8,1.4],[6.7,3.0,5.0,1.7],[6.0,2.9,4.5,1.5],[5.7,2.6,3.5,1.0],[5.5,2.4,3.8,1.1],[5.5,2.4,3.7,1.0],[5.8,2.7,3.9,1.2],[6.0,2.7,5.1,1.6],[5.4,3.0,4.5,1.5],[6.0,3.4,4.5,1.6],[6.7,3.1,4.7,1.5],[6.3,2.3,4.4,1.3],[5.6,3.0,4.1,1.3],[5.5,2.5,4.0,1.3],[5.5,2.6,4.4,1.2],[6.1,3.0,4.6,1.4],[5.8,2.6,4.0,1.2],[5.0,2.3,3.3,1.0],[5.6,2.7,4.2,1.3],[5.7,3.0,4.2,1.2],[5.7,2.9,4.2,1.3],[6.2,2.9,4.3,1.3],[5.1,2.5,3.0,1.1],[5.7,2.8,4.1,1.3],[6.3,3.3,6.0,2.5],[5.8,2.7,5.1,1.9],[7.1,3.0,5.9,2.1],[6.3,2.9,5.6,1.8],[6.5,3.0,5.8,2.2],[7.6,3.0,6.6,2.1],[4.9,2.5,4.5,1.7],[7.3,2.9,6.3,1.8],[6.7,2.5,5.8,1.8],[7.2,3.6,6.1,2.5],[6.5,3.2,5.1,2.0],[6.4,2.7,5.3,1.9],[6.8,3.0,5.5,2.1],[5.7,2.5,5.0,2.0],[5.8,2.8,5.1,2.4],[6.4,3.2,5.3,2.3],[6.5,3.0,5.5,1.8],[7.7,3.8,6.7,2.2],[7.7,2.6,6.9,2.3],[6.0,2.2,5.0,1.5],[6.9,3.2,5.7,2.3],[5.6,2.8,4.9,2.0],[7.7,2.8,6.7,2.0],[6.3,2.7,4.9,1.8],[6.7,3.3,5.7,2.1],[7.2,3.2,6.0,1.8],[6.2,2.8,4.8,1.8],[6.1,3.0,4.9,1.8],[6.4,2.8,5.6,2.1],[7.2,3.0,5.8,1.6],[7.4,2.8,6.1,1.9],[7.9,3.8,6.4,2.0],[6.4,2.8,5.6,2.2],[6.3,2.8,5.1,1.5],[6.1,2.6,5.6,1.4],[7.7,3.0,6.1,2.3],[6.3,3.4,5.6,2.4],[6.4,3.1,5.5,1.8],[6.0,3.0,4.8,1.8],[6.9,3.1,5.4,2.1],[6.7,3.1,5.6,2.4],[6.9,3.1,5.1,2.3],[5.8,2.7,5.1,1.9],[6.8,3.2,5.9,2.3],[6.7,3.3,5.7,2.5],[6.7,3.0,5.2,2.3],[6.3,2.5,5.0,1.9],[6.5,3.0,5.2,2.0],[6.2,3.4,5.4,2.3],[5.9,3.0,5.1,1.8]],"y":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]};
 const X=IRIS.X, Y=IRIS.y;
 const SPECIES=['setosa','versicolor','virginica'];
@@ -509,6 +455,77 @@ class Plot{
     this.svg=E('svg',{viewBox:`0 0 ${W} ${Hh}`,class:'plot',role:'img','aria-label':o.label||'gráfico'},host);if(o.maxw){this.svg.style.maxWidth=o.maxw+'px';this.svg.style.margin='0 auto'}
     this.grid=E('g',{},this.svg);
     const gx=o.gx||1,gy=o.gy||gx;
+    const yAx=(y0<=0&&y1>=0)?this.Y(0):this.Y(y0), xAx=(x0<=0&&x1>=0)?this.X(0):this.X(x0);
+    for(let x=Math.ceil(x0/gx-1e-9)*gx;x<=x1+1e-9;x+=gx){const X=this.X(x);E('line',{x1:X,y1:this.Y(y1),x2:X,y2:this.Y(y0),class:Math.abs(x)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(x)>1e-9&&o.ticks!==false)E('text',{x:X,y:Math.min(yAx+14,Hh-4),'text-anchor':'middle',class:'tick'},this.grid).textContent=f(x,2)}
+    for(let y=Math.ceil(y0/gy-1e-9)*gy;y<=y1+1e-9;y+=gy){const Yp=this.Y(y);E('line',{x1:this.X(x0),y1:Yp,x2:this.X(x1),y2:Yp,class:Math.abs(y)<1e-9?'ax':'gr'},this.grid);
+      if(Math.abs(y)>1e-9&&o.ticks!==false)E('text',{x:Math.max(xAx-5,22),y:Yp+4,'text-anchor':'end',class:'tick'},this.grid).textContent=f(y,2)}
+    if(o.xl)E('text',{x:this.X(x1),y:Hh-6,'text-anchor':'end',class:'tick'},this.grid).textContent=o.xl;
+    if(o.yl)E('text',{x:this.X(x0)+4,y:pad-12,class:'tick'},this.grid).textContent=o.yl;
+  }
+  X(x){return this.pad+(x-this.x0)*this.sx}
+  Y(y){return this.pad+(this.y1-y)*this.sy}
+  P(p){return [this.X(p[0]),this.Y(p[1])]}
+  g(){return E('g',{},this.svg)}
+  toWorld(ev){const pt=this.svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const q=pt.matrixTransform(this.svg.getScreenCTM().inverse());return [(q.x-this.pad)/this.sx+this.x0,this.y1-(q.y-this.pad)/this.sy]}
+  arrow(g,color,w=2.6,dash){const grp=E('g',{},g);const l=E('line',{stroke:color,'stroke-width':w,'stroke-linecap':'round'},grp);if(dash)l.setAttribute('stroke-dasharray',dash);const h=E('polygon',{fill:color},grp);const self=this;
+    return {el:grp,set(a,b){const [X1,Y1]=self.P(a),[X2,Y2]=self.P(b);const dx=X2-X1,dy=Y2-Y1,L=Math.hypot(dx,dy);if(L<2){grp.style.display='none';return}grp.style.display='';const hl=Math.min(10+w*1.6,L*.6),hw=hl*.45,ux=dx/L,uy=dy/L,bx=X2-ux*hl,by=Y2-uy*hl;
+      l.setAttribute('x1',X1);l.setAttribute('y1',Y1);l.setAttribute('x2',bx);l.setAttribute('y2',by);h.setAttribute('points',`${X2},${Y2} ${bx-uy*hw},${by+ux*hw} ${bx+uy*hw},${by-ux*hw}`)},
+      show(v){grp.style.opacity=v?1:0}}}
+  label(g,color,cls='lbl'){const t=E('text',{class:cls},g);if(color)t.style.fill=color;const self=this;return {el:t,set(p,s,dx=6,dy=-6,anchor='start'){const [X,Yp]=self.P(p);t.setAttribute('x',X+dx);t.setAttribute('y',Yp+dy);t.setAttribute('text-anchor',anchor);t.textContent=s},show(v){t.style.opacity=v?1:0}}}
+  line(g,a,b,attrs){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);return E('line',Object.assign({x1,y1,x2,y2},attrs),g)}
+  setLine(el,a,b){const [x1,y1]=this.P(a),[x2,y2]=this.P(b);el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2)}
+  poly(g,pts,attrs){return E('polygon',Object.assign({points:pts.map(p=>this.P(p).join(',')).join(' ')},attrs),g)}
+  setPoly(el,pts){el.setAttribute('points',pts.map(p=>this.P(p).join(',')).join(' '))}
+  dot(g,p,r,color,attrs){const [cx,cy]=this.P(p);return E('circle',Object.assign({cx,cy,r,fill:color},attrs||{}),g)}
+  setDot(el,p){const [cx,cy]=this.P(p);el.setAttribute('cx',cx);el.setAttribute('cy',cy)}
+}
+
+function stepper(host,n,render,o={}){
+  const bar=H('div',{class:'bar'},host);
+  const prev=H('button',{},bar,'← Anterior');
+  const play=H('button',{},bar,'▶ Reproducir');
+  const next=H('button',{},bar,'Siguiente →');
+  const rst=H('button',{title:'Volver al principio'},bar,'↺');
+  const dots=H('span',{class:'dots'},bar);
+  let step=0,timer=null;
+  const draw=()=>{render(step);dots.textContent=`Paso ${step+1} de ${n}`};
+  const stop=()=>{clearInterval(timer);timer=null;play.textContent='▶ Reproducir'};
+  prev.onclick=()=>{stop();step=Math.max(0,step-1);draw()};
+  next.onclick=()=>{stop();step=Math.min(n-1,step+1);draw()};
+  rst.onclick=()=>{stop();step=0;draw()};
+  play.onclick=()=>{if(timer){stop();return}if(step>=n-1)step=0;draw();play.textContent='❚❚ Pausa';timer=setInterval(()=>{step++;draw();if(step>=n-1)stop()},o.interval||1800)};
+  return {bar,draw,reset(){stop();step=0;draw()},get step(){return step}};
+}
+
+/* Tabla de componentes animada: norma, distancia, producto escalar */
+function compTable(host,o){
+  const n=o.cols.length;
+  const msg=H('div',{class:'msg'},host);
+  const wrap=H('div',{class:'scroll'},host);
+  const t=H('table',{class:'comp'},wrap);
+  const th=H('thead',{},t),hr=H('tr',{},th);H('th',{},hr,'');o.cols.forEach(c=>H('th',{},hr,c));
+  const tb=H('tbody',{},t);const cells=[];
+  o.rows.forEach(r=>{const tr=H('tr',{},tb);H('th',{},tr,r.name);cells.push(r.vals.map(v=>H('td',{},tr,f(v))))});
+  const trO=H('tr',{},tb);H('th',{},trO,o.opName);const opC=o.cols.map(()=>H('td',{},trO,''));
+  const trS=H('tr',{},tb);H('th',{},trS,'suma acumulada');const sC=o.cols.map(()=>H('td',{},trS,''));
+  const out=H('div',{class:'calc'},host);
+  const vals=o.cols.map((_,i)=>o.op(i));const total=vals.reduce((a,b)=>a+b,0);
+  const N=n+2+(o.finals?o.finals.length:0);
+  const sp=stepper(host,N,s=>{
+    let run=0;
+    for(let i=0;i<n;i++){run+=vals[i];[...cells.map(r=>r[i]),opC[i],sC[i]].forEach(c=>c.classList.remove('hi','res'));
+      opC[i].textContent=s>i?f(vals[i]):'';sC[i].textContent=s>i?f(run):'';
+      if(s===i+1){cells.forEach(r=>r[i].classList.add('hi'));opC[i].classList.add('hi')}}
+    if(s>=n+1)sC[n-1].classList.add('res');
+    if(s===0){msg.innerHTML=o.intro;out.innerHTML='&nbsp;'}
+    else if(s<=n){msg.innerHTML=`Columna <b>${s}</b> (${o.cols[s-1]}): ${o.stepText||'se calcula'}`;out.innerHTML=o.opText(s-1)+' = <span class="hg">'+f(vals[s-1])+'</span>'}
+    else if(s===n+1){msg.innerHTML='Se suma todo:';out.innerHTML=vals.map(v=>f(v)).join(' + ')+' = <span class="hg">'+f(total)+'</span>'}
+    else{const k=s-n-2;msg.innerHTML=o.finals[k].msg;out.innerHTML=o.finals[k].html(total)}
+  },{interval:1500});
+  sp.draw();
+  return sp;
+}
 /* ===== utilidades comunes ===== */
 function rngSeed(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}

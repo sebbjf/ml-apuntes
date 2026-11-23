@@ -244,6 +244,14 @@ ul{padding-left:22px}
 a{text-underline-offset:3px}
 ::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
 .thumb{background:var(--soft)}
+/* ===== Bloques opcionales ===== */
+details.opt{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:0 16px;margin:14px 0}
+details.opt>summary{cursor:pointer;padding:10px 0;font-size:14.5px;font-weight:600;color:var(--muted);list-style:none}
+details.opt>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-weight:700}
+details.opt[open]>summary::before{content:"−"}
+details.opt[open]>summary{color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:12px}
+details.opt>summary::-webkit-details-marker{display:none}
+details.opt .f{margin-top:0}
 </style>
 </head>
 <body>
@@ -255,6 +263,8 @@ a{text-underline-offset:3px}
 
 <div class="big">La frase que tienes que entender al final: <b>un modelo entrenado es una lista de números (un vector), y predecir es multiplicar.</b></div>
 
+<div class="idea"><b>Antes de empezar:</b> no hace falta saber nada previo. <b>numpy</b> es una herramienta de Python para hacer cuentas con listas de números. <code>X</code> es solo el nombre de la tabla de datos. «Dimensión» quiere decir <b>cuántos números tiene cada flor</b> (aquí, 4). Los bloques de código son <b>opcionales</b>: sirven para ver la misma cuenta escrita en Python, pero puedes entender todo sin leerlos.</div>
+
 <nav class="toc">
 <a href="#s1">1 · Vector</a><a href="#s2">2 · Norma</a><a href="#s3">3 · Distancia</a><a href="#s4">4 · Producto escalar</a><a href="#s5">5 · Proyección</a><a href="#s6">6 · Matriz</a><a href="#s7">7 · El modelo</a><a href="#s8">8 · Transpuesta</a><a href="#s9">9 · Manhattan</a><a href="#s10">10 · Matriz de distancias</a><a href="#s11">11 · Desigualdad triangular</a><a href="#s12">12 · Bucle vs @</a><a href="#res">Resumen</a>
 </nav>
@@ -263,7 +273,7 @@ a{text-underline-offset:3px}
 
 <!-- ============ 1 ============ -->
 <h2 id="s1">1 · Un vector es un punto… y una flecha</h2>
-<div class="idea"><b>Idea:</b> un vector es una lista de números. Lo puedes ver como un <b>punto</b> (dónde está) o como una <b>flecha</b> desde el origen hasta ese punto.</div>
+<div class="idea"><b>Idea:</b> una flor es una ficha con 4 medidas. Esa ficha es un <b>vector</b>: una lista de números. Dibujarla como un <b>punto</b> (dónde está) o como una <b>flecha</b> desde el origen hasta ese punto es solo una forma de verla, como una dirección en un mapa: puedes decir «calle X, número 5» o dibujar la ruta para llegar. Es lo mismo.</div>
 <p>La flor 0 es <code>X[0] = [5.1, 3.5, 1.4, 0.2]</code>: un punto en un espacio de 4 dimensiones. No se puede dibujar, pero sí se puede calcular con él. Para verlo, dibujamos solo 2 medidas (las del pétalo). <b>Haz clic en cualquier flor</b> para ver su vector.</p>
 <div class="w" id="w1a"></div>
 <p>Ojo con los índices: en mates se cuenta desde 1 (<i>v</i>₁) y en numpy desde 0 (<code>v[0]</code>).</p>
@@ -276,8 +286,14 @@ a{text-underline-offset:3px}
 
 <!-- ============ 2 ============ -->
 <h2 id="s2">2 · La norma: cuánto mide un vector</h2>
-<div class="idea"><b>Idea:</b> la norma ‖v‖ es la <b>longitud de la flecha</b>. Es el teorema de Pitágoras, con tantos sumandos como componentes.</div>
+<div class="idea"><b>Idea:</b> la norma ‖v‖ es la <b>longitud de la flecha</b>: lo que mediría una cinta métrica tendida desde el origen hasta la flor. Es el teorema de Pitágoras, con tantos sumandos como componentes.</div>
 <div class="f">‖v‖ = √( v₁² + v₂² + … + vₙ² )</div>
+<dl class="leg">
+<dt>‖v‖</dt><dd>la norma de <i>v</i>: un solo número, la longitud</dd>
+<dt>v₁, v₂, …, vₙ</dt><dd>los números del vector (las medidas de la flor), uno por componente</dd>
+<dt>v₁²</dt><dd>ese número multiplicado por sí mismo</dd>
+<dt>√</dt><dd>la raíz cuadrada: el número que, multiplicado por sí mismo, da lo de dentro</dd>
+</dl>
 <p>Receta: eleva cada número al cuadrado, súmalo todo y haz la raíz.</p>
 <div class="w" id="w2a"></div>
 <p>Con la flor 0, que tiene 4 componentes, es exactamente lo mismo con dos sumandos más:</p>
@@ -289,6 +305,12 @@ np.linalg.norm(v)         # numpy  → 6.345077 en los dos casos</pre>
 <h2 id="s3">3 · Distancia = norma de una resta</h2>
 <div class="idea"><b>Idea:</b> la distancia entre dos puntos es la longitud de la flecha que va de uno al otro. Esa flecha es <b>a − b</b>. Así que distancia = <b>‖a − b‖</b>.</div>
 <div class="f">d(a, b) = ‖a − b‖ = √( (a₁−b₁)² + … + (aₙ−bₙ)² )</div>
+<dl class="leg">
+<dt>d(a, b)</dt><dd>la distancia entre las flores <i>a</i> y <i>b</i></dd>
+<dt>a − b</dt><dd>la resta, componente a componente: la flecha que va de una a otra</dd>
+<dt>a₁, b₁</dt><dd>la primera medida de cada flor (y así hasta la medida <i>n</i>)</dd>
+<dt>‖ · ‖</dt><dd>la norma del apartado 2: la longitud de esa flecha</dd>
+</dl>
 <p>Es la misma fórmula que usaste en <b>k-NN</b> para ver cuánto se parecen dos flores. Aquí: flor 0 (setosa) y flor 50 (versicolor).</p>
 <div class="w" id="w3a"></div>
 <p>Con las 4 medidas sale el <b>4.00</b> del cuaderno de k-NN:</p>
@@ -297,9 +319,23 @@ np.linalg.norm(v)         # numpy  → 6.345077 en los dos casos</pre>
 
 <!-- ============ 4 ============ -->
 <h2 id="s4">4 · El producto escalar</h2>
-<div class="idea"><b>Idea:</b> el producto escalar <code>a @ b</code> da <b>un solo número</b>: multiplicas componente a componente y lo sumas todo. Su <b>signo</b> te dice hacia dónde apuntan las flechas.</div>
-<div class="f">a · b = a₁b₁ + a₂b₂ + … + aₙbₙ &nbsp;&nbsp;=&nbsp;&nbsp; ‖a‖ ‖b‖ cos θ</div>
-<p>Dos formas de verlo: la de la izquierda es la que se programa; la de la derecha explica qué significa (θ es el ángulo entre las flechas).</p>
+<div class="idea"><b>Idea:</b> el producto escalar <code>a @ b</code> da <b>un solo número</b>: multiplicas componente a componente y lo sumas todo. Su <b>signo</b> te dice hacia dónde apuntan las flechas. Piensa en dos personas caminando: si van <span class="hg">juntas</span>, el número es positivo; si van en <span class="hy">ángulo recto</span>, es cero; si van en <span class="hr">sentidos opuestos</span>, es negativo.</div>
+<div class="f">a · b = a₁b₁ + a₂b₂ + … + aₙbₙ</div>
+<dl class="leg">
+<dt>a · b</dt><dd>el producto escalar de <i>a</i> y <i>b</i> (en numpy, <code>a @ b</code>)</dd>
+<dt>a₁b₁</dt><dd>la primera medida de <i>a</i> por la primera de <i>b</i></dd>
+<dt>+ … +</dt><dd>se hace lo mismo con cada pareja y se suma todo</dd>
+</dl>
+<p>θ (la letra griega «theta») es el <b>ángulo entre las dos flechas</b>, y el <b>coseno</b> de ese ángulo es un número entre −1 y 1: vale 1 si van juntas, 0 si forman ángulo recto y −1 si van en sentidos opuestos. Por eso el signo del producto escalar cuenta hacia dónde apuntan.</p>
+<details class="opt"><summary>Para ir más allá: la otra forma de escribirlo</summary>
+<div class="f">a · b = ‖a‖ ‖b‖ cos θ</div>
+<dl class="leg">
+<dt>‖a‖, ‖b‖</dt><dd>las longitudes de las flechas (apartado 2)</dd>
+<dt>θ</dt><dd>el ángulo entre ellas</dd>
+<dt>cos θ</dt><dd>el coseno de ese ángulo</dd>
+</dl>
+<p>La primera fórmula es la que se programa; esta explica qué significa.</p>
+</details>
 <div class="w" id="w4a"></div>
 <p>Las normas siempre son positivas, así que <b>el signo del producto escalar es el signo del coseno</b>:</p>
 <ul>
@@ -309,43 +345,76 @@ np.linalg.norm(v)         # numpy  → 6.345077 en los dos casos</pre>
 </ul>
 <p><b>Arrastra la flecha naranja</b> (o usa los controles) y mira cómo cambia el signo. La zona verde es donde <i>a · b</i> &gt; 0.</p>
 <div class="w" id="w4b"></div>
-<p>Si despejas el coseno sale la <b>similitud del coseno</b> (se usa muchísimo para comparar textos): <code>cos θ = (a @ b) / (‖a‖ ‖b‖)</code>. Para las flores 0 y 50 da un ángulo de <b>21.8°</b>.</p>
+<p>Si despejas el coseno sale la <b>similitud del coseno</b>: un número que dice cuánto «miran hacia el mismo lado» dos vectores. Para las flores 0 y 50 el ángulo es de <b>21.8°</b>.</p>
+<details class="opt"><summary>Para ir más allá: la fórmula de la similitud del coseno</summary>
+<p><code>cos θ = (a @ b) / (‖a‖ ‖b‖)</code>. Se usa muchísimo para comparar textos.</p>
+</details>
 
 <!-- ============ 5 ============ -->
 <h2 id="s5">5 · La proyección: la sombra de una flecha sobre otra</h2>
 <div class="idea"><b>Idea:</b> proyectar <i>a</i> sobre <i>b</i> responde a <b>¿cuánto de <i>a</i> va en la dirección de <i>b</i>?</b> Es la sombra de <i>a</i> sobre la recta de <i>b</i>, con la luz cayendo en perpendicular.</div>
 <div class="f">sombra (número) = (a · b) / ‖b‖ &nbsp;&nbsp;&nbsp; sombra (flecha) = (a · b) / (b · b) · b</div>
+<dl class="leg">
+<dt>a, b</dt><dd><i>a</i> es la flecha que proyectas; <i>b</i> es la recta sobre la que cae la sombra</dd>
+<dt>a · b</dt><dd>producto escalar (apartado 4)</dd>
+<dt>‖b‖</dt><dd>la longitud de <i>b</i> (apartado 2)</dd>
+<dt>sombra (número)</dt><dd>cuánto mide la sombra; negativo si cae hacia atrás</dd>
+<dt>sombra (flecha)</dt><dd>la misma sombra, pero dibujada como una flecha sobre <i>b</i></dd>
+</dl>
 <p>Arrastra la flecha azul. Cuando el ángulo pasa de 90°, la sombra cae al otro lado y el número sale <b>negativo</b>.</p>
 <div class="w" id="w5"></div>
-<p><b>¿Por qué importa?</b> Porque todo lo que viene es proyectar: la frontera de la regresión logística, el margen del SVM y el PCA son proyecciones sobre una dirección.</p>
+<p><b>¿Por qué importa?</b> Porque en ML se proyecta todo el rato: muchos modelos que verás más adelante miden «cuánto cae» cada flor sobre una dirección elegida. No tienes que saber nada más de eso ahora.</p>
 
 <!-- ============ 6 ============ -->
 <h2 id="s6">6 · Una matriz es una tabla… y una máquina</h2>
-<div class="idea"><b>Idea:</b> una matriz es una tabla de números. Pero también es una <b>máquina</b>: le metes un vector y te devuelve otro. Cada número del resultado es <b>una fila de la matriz · el vector</b> (un producto escalar).</div>
+<div class="idea"><b>Idea:</b> una matriz es una tabla de números, como una <b>hoja de cálculo</b>. Pero también es una <b>máquina</b>: le metes un vector y te devuelve otro. Cada número del resultado es <b>una fila de la matriz · el vector</b> (un producto escalar).</div>
 <div class="f">(X w)ᵢ = fila i de X · w</div>
+<dl class="leg">
+<dt>X</dt><dd>la tabla (una fila por flor)</dd>
+<dt>w</dt><dd>un vector de números, uno por columna de <i>X</i> (los «pesos»)</dd>
+<dt>X w</dt><dd>el resultado: una lista con un número por fila</dd>
+<dt>(X w)ᵢ</dt><dd>el número que sale para la fila <i>i</i></dd>
+<dt>fila i de X · w</dt><dd>multiplicar esa fila por <i>w</i>, número a número, y sumar (apartado 4)</dd>
+</dl>
 <h3>6.1 · Matriz por vector, fila a fila</h3>
 <p>Cogemos 6 flores (una tabla de 6 × 4) y un vector de pesos <i>w</i> de 4 números. El resultado es <b>una puntuación por flor</b>.</p>
 <div class="w" id="w6a"></div>
-<p><b>Regla de las formas</b> (apréndetela): <code>(150, 4) @ (4,) → (150,)</code>. El número del medio tiene que coincidir y desaparece. Si numpy da error, casi siempre falta una transpuesta.</p>
+<p><b>Regla de las formas</b> (apréndetela): <code>(150, 4) @ (4,) → (150,)</code>. Los números pegados tienen que coincidir, como piezas de puzle: ese 4 con 4 encaja y desaparece. Si numpy da error, casi siempre falta una transpuesta.</p>
 <p><code>X @ w</code> hace exactamente las mismas multiplicaciones que un doble bucle <code>for</code>; solo que mucho más rápido.</p>
 
 <h3>6.2 · La matriz como máquina que mueve puntos</h3>
 <p>Con una matriz de 2 × 2 se ve en un dibujo. Un punto <code>(x, y)</code> entra y sale otro:</p>
 <div class="f">nueva x = fila 1 · (x, y) &nbsp;&nbsp;&nbsp; nueva y = fila 2 · (x, y)</div>
+<dl class="leg">
+<dt>(x, y)</dt><dd>el punto que entra en la máquina</dd>
+<dt>fila 1, fila 2</dt><dd>las dos filas de la matriz de 2 × 2</dd>
+<dt>nueva x, nueva y</dt><dd>las coordenadas del punto que sale</dd>
+</dl>
 <p>El cuadrado gris <b>no es nada especial</b>: son 4 puntos (sus esquinas). La matriz mueve cada esquina con ese cálculo y, al unir las esquinas nuevas, sale la figura azul. Lo mismo con la flecha <i>v</i> = (1, 0.5).</p>
 <div class="w" id="w6b"></div>
 <pre>quadrat = np.array([[0,0],[1,0],[1,1],[0,1],[0,0]])  # 5 puntos (el último repite el primero para cerrar)
 transformat = quadrat @ A.T   # aplica A a cada fila (cada esquina) de golpe
 imatge_v = A @ v_exemple      # aplica A a la flecha v</pre>
+<details class="opt"><summary>Para ir más allá: curiosidad sobre <code>A.T</code></summary>
 <p>¿Por qué <code>A.T</code>? Porque los puntos están en <b>filas</b>. Para un punto suelto se hace <code>A @ p</code>; con todos apilados en filas, lo mismo se escribe <code>quadrat @ A.T</code>.</p>
+</details>
 
 <h3>6.3 · Juega con la matriz</h3>
-<p>Los 4 controles son las 4 casillas de <i>A</i>. Fíjate en un truco: <b>las columnas de la matriz son a dónde van (1, 0) y (0, 1)</b> (flechas roja y verde). Si el <b>determinante</b> <i>ad − bc</i> vale 0, el plano se aplasta en una recta.</p>
+<p>Los 4 controles son las 4 casillas de <i>A</i>. Fíjate en un truco: <b>las columnas de la matriz son a dónde van (1, 0) y (0, 1)</b> (flechas roja y verde).</p>
+<details class="opt"><summary>Para ir más allá: curiosidad sobre el determinante</summary>
+<p>Si el <b>determinante</b> <i>ad − bc</i> vale 0, el plano se aplasta en una recta.</p>
+</details>
 <div class="w" id="w6c"></div>
 
 <!-- ============ 7 ============ -->
 <h2 id="s7">7 · Un modelo entrenado es un vector y una multiplicación</h2>
 <div class="idea"><b>Idea:</b> la regresión logística calcula una puntuación <b>z = w · x + b</b> (un producto escalar más un número). Si <b>z &gt; 0</b> dice "sí"; si <b>z &lt; 0</b>, dice "no". Ya está.</div>
+<dl class="leg">
+<dt>z</dt><dd>la puntuación de una flor: un solo número</dd>
+<dt>w</dt><dd>los pesos: cuánto cuenta cada medida</dd>
+<dt>x</dt><dd>la flor: sus 4 medidas</dd>
+<dt>b</dt><dd>una constante que se suma al final</dd>
+</dl>
 <p>Pregunta de sí o no: <b>¿es virginica?</b> Tras <code>model.fit</code>, el modelo entero son <b>5 números</b>:</p>
 <pre>coef_      = [-0.3927, -0.5144, 2.9306, 2.4161]   # w: un peso por medida
 intercept_ = -14.4360                             # b: una constante</pre>
@@ -363,9 +432,16 @@ intercept_ = -14.4360                             # b: una constante</pre>
 <div class="w" id="w8a"></div>
 <p>Aparece por todas partes porque <b>arregla las formas</b> para poder multiplicar. El caso más típico:</p>
 <div class="f">Xᵀ X : (4 × 150) @ (150 × 4) → 4 × 4</div>
+<dl class="leg">
+<dt>Xᵀ</dt><dd>la transpuesta de <i>X</i> (<code>X.T</code>): filas y columnas intercambiadas</dd>
+<dt>(4 × 150)</dt><dd>tabla de 4 filas y 150 columnas</dd>
+<dt>→ 4 × 4</dt><dd>el 150 del medio encaja y desaparece (regla de las formas)</dd>
+</dl>
 <p>Sale una tabla de 4 × 4, una casilla por cada pareja de medidas. Cada casilla es <b>columna i · columna j</b>. Es <b>simétrica</b> (el espejo de la diagonal es igual) y la diagonal son sumas de cuadrados. Pasa el ratón por las casillas:</p>
 <div class="w" id="w8b"></div>
-<p>Centrando los datos y dividiendo entre el número de flores, esta tabla se convierte en la <b>matriz de covarianza</b>, el punto de partida del PCA.</p>
+<details class="opt"><summary>Para ir más allá: curiosidad sobre la covarianza</summary>
+<p>Centrando los datos y dividiendo entre el número de flores, esta tabla se convierte en la <b>matriz de covarianza</b>, el punto de partida del PCA. Lo verás más adelante.</p>
+</details>
 
 <!-- ============ 9 ============ -->
 <h2 id="s9">9 · Otra distancia: Manhattan</h2>
@@ -381,21 +457,26 @@ intercept_ = -14.4360                             # b: una constante</pre>
 </dl>
 <p>La diferencia: la euclídea <b>eleva al cuadrado y hace raíz</b>; Manhattan solo <b>quita el signo y suma</b>. Arrastra el punto <b>B</b> y compara los dos caminos:</p>
 <div class="w" id="wE1a"></div>
-<p><b>¿Por qué Manhattan siempre es mayor o igual?</b> En 2D es el triángulo rectángulo: Manhattan recorre los dos catetos y la euclídea la hipotenusa, que siempre es más corta. En general, si elevas Manhattan al cuadrado aparecen los mismos cuadrados que en la euclídea <b>más</b> unos productos cruzados que nunca son negativos:</p>
+<p><b>¿Por qué Manhattan siempre es mayor o igual?</b> Porque ir directo nunca es más largo que dar un rodeo. En 2D es el triángulo rectángulo: Manhattan recorre los dos catetos y la euclídea la hipotenusa, que siempre es más corta.</p>
+<details class="opt"><summary>Para ir más allá: la demostración y el tope d₂ ≤ d₁ ≤ √n · d₂</summary>
+<p>En general, si elevas Manhattan al cuadrado aparecen los mismos cuadrados que en la euclídea <b>más</b> unos productos cruzados que nunca son negativos:</p>
 <div class="f">(|x<sub>1</sub>| + |x<sub>2</sub>|)<sup>2</sup> = x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> + 2|x<sub>1</sub>||x<sub>2</sub>| &nbsp;≥&nbsp; x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; d<sub>2</sub> ≤ d<sub>1</sub> ≤ √n · d<sub>2</sub></div>
 <dl class="leg">
 <dt>x<sub>i</sub></dt><dd>la diferencia en la componente <i>i</i>: x<sub>i</sub> = a<sub>i</sub> − b<sub>i</sub></dd>
 <dt>⟹</dt><dd>"por lo tanto"</dd>
 <dt>√n · d<sub>2</sub></dt><dd>el tope: Manhattan nunca pasa de √n veces la euclídea (con n = 4, el doble)</dd>
 </dl>
+</details>
 <p>Solo son iguales cuando los puntos se diferencian en <b>una única</b> componente (B en la misma fila o columna que A). Con las flores 0 y 50, en 4 dimensiones:</p>
 <div class="w" id="wE1b"></div>
-<p><b>Las dos son casos de una sola fórmula</b>, la de Minkowski. Es la que usa <code>KNeighborsClassifier</code> por defecto (<code>metric='minkowski'</code>, <code>p=2</code>); con <code>p=1</code> pasa a ser Manhattan:</p>
+<p>Las dos son casos de una sola fórmula general, la de Minkowski. Es la que usa <code>KNeighborsClassifier</code> por defecto (<code>p=2</code>); con <code>p=1</code> pasa a ser Manhattan.</p>
+<details class="opt"><summary>Para ir más allá: la fórmula de Minkowski</summary>
 <div class="f">d<sub>p</sub>(a, b) = ( <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> |a<sub>i</sub> − b<sub>i</sub>|<sup>p</sup> )<sup>1/p</sup></div>
 <dl class="leg">
 <dt>p</dt><dd>un número ≥ 1 que eliges tú: <i>p</i> = 1 es Manhattan, <i>p</i> = 2 es la euclídea</dd>
 <dt>( … )<sup>1/p</sup></dt><dd>la raíz <i>p</i>-ésima (con <i>p</i> = 2, la raíz cuadrada de siempre)</dd>
 </dl>
+</details>
 <pre>np.sum(np.abs(X[0] - X[50]))      # Manhattan → 6.7
 np.linalg.norm(X[0] - X[50])      # euclídea  → 4.003748
 np.linalg.norm(X[0] - X[50], ord=1)  # Manhattan también: la "norma 1"</pre>
@@ -410,7 +491,7 @@ np.linalg.norm(X[0] - X[50], ord=1)  # Manhattan también: la "norma 1"</pre>
 <dt>x<sub>ik</sub></dt><dd>la medida <i>k</i> de la flor <i>i</i> (<code>X[i, k]</code>)</dd>
 <dt>n, d</dt><dd><i>n</i> = 150 flores, <i>d</i> = 4 medidas</dd>
 <dt>‖ · ‖</dt><dd>la norma (la longitud de la flecha, apartado 2)</dd>
-<dt>argmax</dt><dd>"el argumento del máximo": no devuelve el valor más grande, sino <b>dónde está</b> (los índices <i>i*</i>, <i>j*</i>)</dd>
+<dt>argmax</dt><dd>«¿en qué casilla está el récord?»: no devuelve el valor más grande, sino <b>dónde está</b> (los índices <i>i*</i>, <i>j*</i>)</dd>
 </dl>
 <p>Dos propiedades que te sirven para comprobar que la matriz está bien:</p>
 <div class="f">D<sub>ii</sub> = 0 &nbsp;&nbsp;(diagonal a cero) &nbsp;&nbsp;&nbsp;&nbsp; D<sub>ij</sub> = D<sub>ji</sub> &nbsp;&nbsp;(simétrica: D = D<sup>T</sup>)</div>
@@ -422,7 +503,7 @@ np.linalg.norm(X[0] - X[50], ord=1)  # Manhattan también: la "norma 1"</pre>
 <div class="w" id="wE2"></div>
 <p><b>Cuántas cuentas son.</b> La tabla tiene <i>n</i>² = 22 500 casillas, pero las parejas distintas son la mitad sin la diagonal:</p>
 <div class="f">n(n − 1) / 2 = 150 · 149 / 2 = 11 175 parejas</div>
-<p><b>La versión sin bucles (broadcasting).</b> <code>X[:, None, :]</code> tiene forma (150, 1, 4) y <code>X[None, :, :]</code> tiene forma (1, 150, 4). Al restarlas, numpy estira los 1 y sale (150, 150, 4): <b>todas las restas x<sub>i</sub> − x<sub>j</sub> de golpe</b>. La norma sobre el último eje (<code>axis=2</code>, las 4 medidas) deja la tabla (150, 150).</p>
+<p><b>La versión sin bucles (broadcasting)</b> (opcional: es un truco de numpy). <code>X[:, None, :]</code> tiene forma (150, 1, 4) y <code>X[None, :, :]</code> tiene forma (1, 150, 4). Al restarlas, numpy estira los 1 y sale (150, 150, 4): <b>todas las restas x<sub>i</sub> − x<sub>j</sub> de golpe</b>. La norma sobre el último eje (<code>axis=2</code>, las 4 medidas) deja la tabla (150, 150).</p>
 <p><b>De índice plano a fila y columna.</b> <code>np.argmax</code> recorre la tabla como si fuera una sola fila larga y da una posición <i>p</i>. Para volver a (fila, columna):</p>
 <div class="f">i = ⌊ p / n ⌋ &nbsp;&nbsp;&nbsp;&nbsp; j = p mod n</div>
 <dl class="leg">
@@ -446,7 +527,8 @@ i, j = np.unravel_index(np.argmax(D), D.shape)               # → 13, 118 · di
 </dl>
 <p>Arrastra las puntas de <b style="color:#2563eb">p</b> y <b style="color:#ea580c">q</b>. El triángulo solo se aplana (y los dos lados de la desigualdad se igualan) cuando <i>q</i> apunta en la misma dirección que <i>p</i>:</p>
 <div class="w" id="wE3"></div>
-<p><b>Por qué es cierta</b> (sale del producto escalar del apartado 4). Desarrolla el cuadrado de la norma:</p>
+<details class="opt"><summary>Para ir más allá: por qué es cierta (la demostración)</summary>
+<p>Sale del producto escalar del apartado 4. Desarrolla el cuadrado de la norma:</p>
 <div class="f">‖p + q‖<sup>2</sup> = (p + q) · (p + q) = ‖p‖<sup>2</sup> + 2 p·q + ‖q‖<sup>2</sup></div>
 <div class="f">p·q = ‖p‖ ‖q‖ cos θ &nbsp;≤&nbsp; ‖p‖ ‖q‖ &nbsp;&nbsp;⟹&nbsp;&nbsp; ‖p + q‖<sup>2</sup> ≤ ‖p‖<sup>2</sup> + 2‖p‖ ‖q‖ + ‖q‖<sup>2</sup> = (‖p‖ + ‖q‖)<sup>2</sup></div>
 <dl class="leg">
@@ -456,6 +538,7 @@ i, j = np.unravel_index(np.argmax(D), D.shape)               # → 13, 118 · di
 <dt>cos θ</dt><dd>el coseno, siempre entre −1 y 1; vale 1 solo si θ = 0° (misma dirección)</dd>
 </dl>
 <p>La única desigualdad usada es cos θ ≤ 1. Por eso <b>la igualdad se da solo cuando θ = 0°</b>, por ejemplo con <code>q = 3 * p</code>: ‖p + 3p‖ = ‖4p‖ = 4‖p‖ = ‖p‖ + 3‖p‖.</p>
+</details>
 <p><b>¿Para qué sirve?</b> Escrita con distancias, es la regla que tiene que cumplir cualquier distancia "de verdad":</p>
 <div class="f">d(a, c) ≤ d(a, b) + d(b, c)</div>
 <dl class="leg">
@@ -476,14 +559,14 @@ i, j = np.unravel_index(np.argmax(D), D.shape)               # → 13, 118 · di
 </dl>
 <p>Sigue el doble bucle multiplicación a multiplicación con una matriz pequeña:</p>
 <div class="w" id="wE4"></div>
-<p><b>La regla de las formas</b>, escrita en mates:</p>
+<p><b>La regla de las formas</b>, escrita en mates: una tabla de <i>m</i> filas y <i>d</i> columnas por un vector de <i>d</i> números da un vector de <i>m</i> números (los <i>d</i> pegados coinciden, como piezas de puzle).</p>
 <div class="f">A ∈ ℝ<sup>m×d</sup>, &nbsp; w ∈ ℝ<sup>d</sup> &nbsp;&nbsp;⟹&nbsp;&nbsp; A w ∈ ℝ<sup>m</sup> &nbsp;&nbsp;&nbsp;&nbsp; (200, <u>5</u>) @ (<u>5</u>,) → (200,)</div>
 <dl class="leg">
 <dt>∈</dt><dd>"pertenece a" / "es un…"</dd>
-<dt>ℝ<sup>m×d</sup></dt><dd>tabla de números reales con <i>m</i> filas y <i>d</i> columnas</dd>
+<dt>ℝ<sup>m×d</sup></dt><dd>una tabla de <i>m</i> filas y <i>d</i> columnas (de números reales, es decir, cualquier número normal)</dd>
 <dt>ℝ<sup>d</sup></dt><dd>vector de <i>d</i> números reales</dd>
 </dl>
-<p><b>¿Por qué <code>np.allclose</code> y no <code>==</code>?</b> El ordenador guarda los decimales con unos 16 dígitos, así que cada suma redondea un poquito. El bucle y <code>@</code> suman en distinto orden (numpy agrupa las operaciones para ir más rápido), y el redondeo sale ligeramente distinto. Pasa hasta con <code>0.1 + 0.2 == 0.3</code>, que da <code>False</code>. Por eso se compara con margen:</p>
+<p><b>¿Por qué <code>np.allclose</code> y no <code>==</code>?</b> <code>np.allclose</code> compara con margen de error, como pesar con una báscula: 70.001 kg y 70.002 kg cuentan como el mismo peso. El ordenador guarda los decimales con unos 16 dígitos, así que cada suma redondea un poquito. El bucle y <code>@</code> suman en distinto orden (numpy agrupa las operaciones para ir más rápido), y el redondeo sale ligeramente distinto. Pasa hasta con <code>0.1 + 0.2 == 0.3</code>, que da <code>False</code>. Por eso se compara con margen:</p>
 <div class="f">|a<sub>i</sub> − b<sub>i</sub>| ≤ atol + rtol · |b<sub>i</sub>| &nbsp;&nbsp; para todo i</div>
 <dl class="leg">
 <dt>a<sub>i</sub>, b<sub>i</sub></dt><dd>los dos resultados que comparas (el del bucle y el de <code>@</code>)</dd>

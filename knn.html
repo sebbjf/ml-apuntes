@@ -255,6 +255,14 @@ ul{padding-left:22px}
 a{text-underline-offset:3px}
 ::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
 .thumb{background:var(--soft)}
+/* ===== Bloques opcionales ===== */
+details.opt{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:0 16px;margin:14px 0}
+details.opt>summary{cursor:pointer;padding:10px 0;font-size:14.5px;font-weight:600;color:var(--muted);list-style:none}
+details.opt>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-weight:700}
+details.opt[open]>summary::before{content:"−"}
+details.opt[open]>summary{color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:12px}
+details.opt>summary::-webkit-details-marker{display:none}
+details.opt .f{margin-top:0}
 </style>
 </head>
 <body>
@@ -265,6 +273,13 @@ a{text-underline-offset:3px}
 <p class="sub">Apuntes directos y animados del cuaderno <i>ML_01 · El model dels k veïns més propers (k-NN)</i>. Todos los gráficos se mueven: arrastra, desliza o dale a <b>Reproducir</b>.</p>
 
 <div class="big">La frase que tienes que entender al final: <b>parecerse es estar cerca, y estar cerca se mide con una distancia. k-NN solo mide distancias y hace votar a los k más cercanos.</b></div>
+
+<div class="idea"><b>Antes de empezar:</b> cuatro palabras que vas a ver mucho.<br>
+<b>numpy</b>: herramienta de Python para hacer cuentas con listas de números.<br>
+<b>Entrenamiento / examen</b>: los datos se dividen en dos. Con unos el modelo aprende; los otros se guardan para ponerle a prueba.<br>
+<b>Exactitud</b>: de cada 100 flores del examen, cuántas acierta.<br>
+<b>Sobreajuste</b>: estudiar de memoria. Va genial con lo que ya vio y mal con lo nuevo.<br>
+El código es opcional: la idea está en el texto y en el dibujo. Si no entiendes una línea, sigue leyendo.</div>
 
 <nav class="toc">
 <a href="#s1">1 · El problema</a><a href="#s2">2 · Distancia</a><a href="#s3">3 · A mano</a><a href="#s4">4 · Contra sklearn</a><a href="#s5">5 · Por qué importa k</a><a href="#s6">6 · Las escalas</a><a href="#s7">7 · Práctica</a><a href="#res">Resumen</a>
@@ -284,6 +299,7 @@ a{text-underline-offset:3px}
 
 <h3>2.1 · Dos medidas: Pitágoras</h3>
 <p>Cada flor es un punto <i>(x, y)</i>. La distancia es la hipotenusa del triángulo cuyos catetos son las diferencias en cada eje.</p>
+<p>Ejemplo cotidiano: caminas <b>3 pasos al este</b> y <b>4 al norte</b>. ¿A cuánto estás de donde saliste, en línea recta? A <b>5 pasos</b>, porque √(3² + 4²) = √25 = 5. Eso es Pitágoras, y es toda la fórmula. Se eleva al cuadrado para que las restas negativas no se anulen con las positivas: lo que importa es <i>cuánto</i> difieren, no en qué sentido.</p>
 <div class="f">d = √( (x<sub>1</sub> − x<sub>2</sub>)<sup>2</sup> + (y<sub>1</sub> − y<sub>2</sub>)<sup>2</sup> )</div>
 <dl class="leg">
 <dt>d</dt><dd>la distancia entre las dos flores, en cm</dd>
@@ -298,6 +314,7 @@ a{text-underline-offset:3px}
 
 <h3>2.2 · Cuatro medidas: la misma fórmula con más sumandos</h3>
 <div class="idea"><b>Idea:</b> no hace falta poder dibujar 4 dimensiones para calcular en ellas. El ordenador no dibuja nada: resta, eleva al cuadrado y suma. Le da igual que sean 4 columnas o 400.</div>
+<p>Antes de la fórmula, mira la receta con números sueltos. Cada flor es una <b>lista de 4 números</b>. Para dos flores: <b>1)</b> resta posición a posición; <b>2)</b> eleva cada resta al cuadrado; <b>3)</b> suma todo; <b>4)</b> saca la raíz. Es lo mismo que Pitágoras, con más lados. El símbolo Σ de abajo solo significa «suma todos esos cuadrados».</p>
 <div class="f">d = √( <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (a<sub>i</sub> − b<sub>i</sub>)<sup>2</sup> )</div>
 <dl class="leg">
 <dt>a, b</dt><dd>las dos flores, cada una con sus <i>n</i> medidas (aquí <i>n</i> = 4)</dd>
@@ -334,15 +351,16 @@ manhattan  = abs(x1 - x2) + abs(y1 - y2)                # → 4.50</pre>
 <dt>y<sub>j</sub></dt><dd>la especie conocida de la flor de entrenamiento número <i>j</i></dd>
 <dt>j</dt><dd>el índice de una flor conocida; se usan solo las <i>k</i> con menor distancia a <i>q</i></dd>
 </dl>
+<p>El código usa <b>numpy</b> (la herramienta de Python para hacer cuentas con listas de números). Léelo en el orden de los comentarios; con ellos basta.</p>
 <pre>def distancia(a, b):
     a = np.array(a, dtype=float); b = np.array(b, dtype=float)
     return np.sqrt(np.sum((a - b) ** 2))
 
 def classifica_knn(flor_nova, X, y, k):
-    dists = [distancia(flor_nova, x) for x in X]   # 1) distancia a todas
-    idx_veins = np.argsort(dists)[:k]              # 2) las k más cercanas...
-    valors, comptes = np.unique(y[idx_veins], return_counts=True)
-    return valors[np.argmax(comptes)]              #    ...y la más votada</pre>
+    dists = [distancia(flor_nova, x) for x in X]   # 1) distancia de la flor nueva a cada flor conocida
+    idx_veins = np.argsort(dists)[:k]              # 2) argsort: ordena de más cerca a más lejos y dame las posiciones; [:k] = las k primeras
+    valors, comptes = np.unique(y[idx_veins], return_counts=True)   # unique+counts: cuenta los votos de cada especie
+    return valors[np.argmax(comptes)]              # argmax: ¿cuál tiene más votos? Esa es la respuesta</pre>
 
 <h3>3.1 · Una flor inventada y varios k</h3>
 <p>La estrella es una flor <b>nueva e inventada</b> (4.85, 1.70) en la zona donde se mezclan <code>versicolor</code> y <code>virginica</code>. El círculo pasa por el <i>k</i>-ésimo vecino: las flores de dentro votan. <b>Mueve k</b> (o arrastra la estrella) y mira cómo el voto puede cambiar.</p>
@@ -355,11 +373,12 @@ def classifica_knn(flor_nova, X, y, k):
 
 <!-- ============ 4 ============ -->
 <h2 id="s4">4 · Comprueba que tu función coincide con scikit-learn</h2>
-<div class="idea"><b>Idea:</b> acertar una flor no demuestra nada. Hay que examinar con flores que el modelo <b>no ha visto nunca</b>. Por eso se reparten los datos en dos grupos <b>antes</b> de entrenar: <b>entrenamiento</b> (lo que el modelo puede mirar) y <b>examen</b> (lo que se guarda apartado). Si examinas con flores que ya conoce, no sabes si ha aprendido o si se las ha memorizado.</div>
+<div class="idea"><b>Idea:</b> acertar una flor no demuestra nada. Hay que examinar con flores que el modelo <b>no ha visto nunca</b>. Por eso se reparten los datos en dos grupos <b>antes</b> de entrenar: <b>entrenamiento</b> (lo que el modelo puede mirar) y <b>examen</b> (lo que se guarda apartado). Si examinas con flores que ya conoce, no sabes si ha aprendido o si se las ha memorizado.<br>
+<b>Analogía:</b> un profesor guarda <b>45 preguntas</b> del examen sin enseñarlas en clase. Si el alumno acierta esas, es que ha entendido; si solo hubiera visto las preguntas de clase, podría haberlas memorizado.</div>
 <pre>X_entrena, X_examen, y_entrena, y_examen = train_test_split(
     X, y, test_size=0.3, random_state=42, stratify=y)
 # → 105 flores para enseñar, 45 para examinar</pre>
-<p><code>stratify=y</code> mantiene la proporción de especies en los dos grupos. Abajo, <b>puntos rellenos = entrenamiento</b> (105) y <b>aros = examen</b> (45); verde si acierta, rojo si falla. El reparto es el real del cuaderno (<code>random_state=42</code>). Cambia <i>k</i>.</p>
+<p><code>random_state=42</code> es «baraja siempre igual»: el número 42 fija el azar y todos obtienen el mismo reparto. <code>stratify=y</code> mantiene la proporción de especies: hay flores de las 3 en el grupo de entrenamiento y en el de examen. La <b>exactitud</b> es la fracción de aciertos del examen: 44 de 45 = 97.8 %. Abajo, <b>puntos rellenos = entrenamiento</b> (105) y <b>aros = examen</b> (45); verde si acierta, rojo si falla. El reparto es el real del cuaderno (<code>random_state=42</code>). Cambia <i>k</i>.</p>
 <div class="w" id="w4"></div>
 <pre>model = KNeighborsClassifier(n_neighbors=5)
 model.fit(X_entrena, y_entrena)
@@ -369,7 +388,8 @@ np.mean(prediccions_ma == prediccions_sklearn)   # → 1.0  (100 % de coincidenc
 
 <!-- ============ 5 ============ -->
 <h2 id="s5">5 · Por qué importa k</h2>
-<div class="idea"><b>Idea:</b> <i>k</i> es cuántas flores votan, y cambiarlo cambia el resultado. <b><i>k</i> pequeño</b> memoriza: se fía de un solo vecino, aunque sea un punto raro (ruido) → <span class="hr">sobreajuste</span>. <b><i>k</i> enorme</b> lo suaviza todo: mete vecinos de otras especies y pierde las fronteras → <span class="hb">infraajuste</span>. Hay que buscar un equilibrio, probando.</div>
+<div class="idea"><b>Idea:</b> <i>k</i> es cuántas flores votan, y cambiarlo cambia el resultado. <b><i>k</i> pequeño</b> memoriza: se fía de un solo vecino, aunque sea un punto raro (ruido) → <span class="hr">sobreajuste</span>. <b><i>k</i> enorme</b> lo suaviza todo: mete vecinos de otras especies y pierde las fronteras → <span class="hb">infraajuste</span>. Hay que buscar un equilibrio, probando.<br>
+<b>Con palabras llanas:</b> <span class="hr">sobreajuste</span> = estudiar el examen de memoria (sacas 10 en lo que ya viste y suspendes lo nuevo). <span class="hb">Infraajuste</span> = estudiar tan por encima que no sabes nada. <b>Ruido</b> = una flor rara que no representa a su especie; con <i>k</i> = 1 el modelo se cree esa flor al pie de la letra.</div>
 <h3>5.1 · La exactitud en el examen según k (Iris)</h3>
 <p>Para cada <i>k</i> de 1 a 25, la exactitud en las 45 flores de examen. <b>Haz clic</b> en la curva. Con solo 45 flores, <b>una</b> flor mal clasificada mueve la exactitud ~2.2 puntos, así que la curva sube y baja sin ser una «U» limpia. Los dos extremos, <i>k</i> = 1 y <i>k</i> = 25, quedan en <b>93.3 %</b>, por debajo de <i>k</i> = 5 (97.8 %).</p>
 <div class="w" id="w5a"></div>
@@ -391,10 +411,10 @@ np.mean(prediccions_ma == prediccions_sklearn)   # → 1.0  (100 % de coincidenc
 <dl class="leg">
 <dt>x</dt><dd>el valor original de una columna</dd>
 <dt>μ</dt><dd>la media de esa columna en el entrenamiento</dd>
-<dt>σ</dt><dd>la desviación típica de esa columna (cuánto se separa de la media, por término medio)</dd>
+<dt>σ</dt><dd>la desviación típica de esa columna: cuánto suelen alejarse los valores de la media</dd>
 <dt>z</dt><dd>el valor estandarizado: columna con media 0 y desviación 1, comparable con las demás</dd>
 </dl>
-<p>Eso hace <code>StandardScaler</code>. Multiplica <code>sepal_ample</code> por un factor (×100 es como medirla en una unidad 100 veces más fina) y mira la exactitud con <i>k</i> = 5. Marca la casilla para estandarizar. En el cuaderno: <b>97.8 % → 66.7 %</b> sin escalar, <b>91.1 %</b> con <code>StandardScaler</code>.</p>
+<p><b>Estandarizar</b> es pasar todo a una regla común, como convertir euros, dólares y yenes a una sola moneda antes de comparar precios. Eso hace <code>StandardScaler</code>. Multiplica <code>sepal_ample</code> por un factor (×100 es como medirla en una unidad 100 veces más fina) y mira la exactitud con <i>k</i> = 5. Marca la casilla para estandarizar. En el cuaderno: <b>97.8 % → 66.7 %</b> sin escalar, <b>91.1 %</b> con <code>StandardScaler</code>.</p>
 <div class="w" id="w6a"></div>
 <pre>X_entrena_mal[:, 1] *= 100; X_examen_mal[:, 1] *= 100
 KNeighborsClassifier(5).fit(X_entrena_mal, y_entrena).score(X_examen_mal, y_examen)   # → 0.6667
@@ -411,7 +431,7 @@ KNeighborsClassifier(5).fit(X_ent_esc, y_entrena).score(X_exa_esc, y_examen)    
 <!-- ============ 7 ============ -->
 <h2 id="s7">7 · Práctica</h2>
 <p>Los tres ejercicios del cuaderno, con lo que te tiene que salir al final de la página. Antes, la idea de los dos primeros.</p>
-<div class="idea"><b>Ejercicio 1 y 3 — Manhattan:</b> <code>distancia_manhattan(a, b)</code> y una copia de <code>classifica_knn</code> que la use. Dos distancias distintas eligen <b>vecinos distintos</b>: «a distancia &lt; 1» es un <b>círculo</b> con la euclidiana y un <b>rombo</b> con Manhattan. En scikit-learn es el parámetro <code>metric</code> (por defecto <code>"minkowski"</code> con <code>p=2</code>, que es la euclidiana). El parámetro cambia <b>quién</b> es vecino, no cómo votan.</div>
+<div class="idea"><b>Ejercicio 1 y 3 — Manhattan:</b> <code>distancia_manhattan(a, b)</code> y una copia de <code>classifica_knn</code> que la use. Dos distancias distintas eligen <b>vecinos distintos</b>: «a distancia &lt; 1» es un <b>círculo</b> con la euclidiana y un <b>rombo</b> con Manhattan. scikit-learn deja elegir la distancia con <code>metric</code>; por defecto usa la euclidiana. El parámetro cambia <b>quién</b> es vecino, no cómo votan.</div>
 <p>Puntos <b>inventados</b> (no son los del cuaderno) y una estrella. Cambia de distancia: los vecinos con aro rojo lo son solo con una de las dos.</p>
 <div class="w" id="w7"></div>
 <div class="idea"><b>Ejercicio 2 — la mejor k con un bucle:</b> prueba <i>k</i> de 1 a 30 y que el bucle decida cuál da la mejor exactitud, sin ningún valor fijo. <b>Trampa típica:</b> <code>np.argmax</code> devuelve la <b>posición</b> en la lista, que empieza en 0, mientras que <i>k</i> empieza en 1: el mejor <i>k</i> es <code>posición + 1</code>.</div>

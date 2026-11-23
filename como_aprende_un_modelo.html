@@ -248,6 +248,14 @@ ul{padding-left:22px}
 a{text-underline-offset:3px}
 ::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
 .thumb{background:var(--soft)}
+/* ===== Bloques opcionales ===== */
+details.opt{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:0 16px;margin:14px 0}
+details.opt>summary{cursor:pointer;padding:10px 0;font-size:14.5px;font-weight:600;color:var(--muted);list-style:none}
+details.opt>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-weight:700}
+details.opt[open]>summary::before{content:"−"}
+details.opt[open]>summary{color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:12px}
+details.opt>summary::-webkit-details-marker{display:none}
+details.opt .f{margin-top:0}
 </style>
 </head>
 <body>
@@ -263,7 +271,8 @@ a{text-underline-offset:3px}
 <a href="#s1">1 · Los datos</a><a href="#s2">2 · Mueve la recta</a><a href="#s3">3 · MSE</a><a href="#s4">4 · El mapa del error</a><a href="#s5">5 · Derivada</a><a href="#s6">6 · Gradiente</a><a href="#s7">7 · El bucle</a><a href="#s8">8 · En movimiento</a><a href="#s9">9 · Tasa η</a><a href="#s10">10 · scikit-learn</a><a href="#s11">11 · Escalas</a><a href="#ej">Ejercicios</a><a href="#res">Resumen</a>
 </nav>
 
-<p>En el cuaderno anterior vimos que <b>un modelo entrenado es un vector de números, y predecir es multiplicar</b>. Quedó una pregunta abierta: <b>¿de dónde salen esos números?</b> Aquí la respondemos con el modelo más sencillo que existe, una recta:</p>
+<p><b>Un modelo es una fórmula con unos números ajustables. Aquí los números son <i>w</i> y <i>b</i>, y lo que hay que averiguar es cuáles.</b> Predecir es solo hacer una multiplicación con esos números; la pregunta es <b>¿de dónde salen?</b> La respondemos con el modelo más sencillo que existe, una recta:</p>
+<div class="idea"><b>Antes de empezar:</b> <b>media</b> = sumar todo y dividir entre cuántos hay. <b>Residuo</b> = lo que falla una predicción (predicción menos verdad). <b>numpy</b> = la librería de Python que hace cuentas con listas de números. Los bloques de código son <span class="hy">opcionales</span>: hacen lo mismo que la fórmula, y puedes leer la página entera sin tocarlos.</div>
 <div class="f">ŷ = w x + b</div>
 <dl class="leg">
 <dt>x</dt><dd>lo que conocemos: el largo del pétalo (cm)</dd>
@@ -289,6 +298,7 @@ a{text-underline-offset:3px}
 <!-- ============ 3 ============ -->
 <h2 id="s3">3 · Cómo se mide "cerca": el error cuadrático medio</h2>
 <div class="idea"><b>Idea:</b> coge el residuo de cada flor, elévalo al cuadrado y haz la media. Al cuadrado, los negativos no compensan a los positivos, y un error grande pesa mucho más que uno pequeño.</div>
+<p><b>Un ejemplo a mano</b> (3 flores <b>inventadas</b>, no son de Iris). La recta falla en 0.2, 0.1 y 0.3. Al cuadrado: 0.04, 0.01 y 0.09. La media: (0.04 + 0.01 + 0.09) / 3 = 0.14 / 3 = <b>0.0467</b>. Ese es el MSE. La letra <b>Σ</b> de la fórmula significa solo "suma todo esto".</p>
 <div class="f">MSE(w, b) = <sup>1</sup>⁄<sub>n</sub> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> ( w x<sub>i</sub> + b − y<sub>i</sub> )<sup>2</sup></div>
 <dl class="leg">
 <dt>MSE</dt><dd><i>mean squared error</i>, error cuadrático medio: un solo número que mide lo mal que va la recta</dd>
@@ -300,6 +310,7 @@ a{text-underline-offset:3px}
 </dl>
 <p>Elevar al cuadrado tiene un dibujo: cada residuo se convierte en un <b>cuadrado</b> de ese lado. El MSE es el área media de los cuadrados rojos. Cambia de recta:</p>
 <div class="w" id="w3"></div>
+<p>Este código es opcional: hace lo mismo que la fórmula. <code>np.mean</code> = media, <code>**2</code> = al cuadrado.</p>
 <pre>def mse(w, b):
     return np.mean((w * x + b - y) ** 2)
 
@@ -313,6 +324,7 @@ mse(0.4, 0)   # → 0.1352   ya cerca</pre>
 <div class="idea"><b>Idea:</b> el MSE depende de dos números, <i>w</i> y <i>b</i>. Si lo calculamos para muchos (<i>w</i>, <i>b</i>) y lo pintamos, sale un mapa topográfico. Cada <b>punto del mapa es una recta</b>. Lo que buscamos es <b>el fondo del valle</b> (la estrella).</div>
 <p>Colores oscuros = poco error; claros = mucho. Cada franja de color es una curva de nivel, como en un mapa de montaña. <b>Arrastra por el mapa</b> y mira qué recta es cada punto:</p>
 <div class="w" id="w4"></div>
+<p>Opcional: así se calcula el mapa en numpy (<code>meshgrid</code> crea la cuadrícula de todas las parejas <i>w</i>, <i>b</i>). Puedes saltártelo.</p>
 <pre>W, B = np.meshgrid(np.linspace(-0.3, 1.0, 200), np.linspace(-1.6, 1.4, 200))
 E = np.mean((W * x[:, None, None] + B - y[:, None, None]) ** 2, axis=0)   # MSE en cada punto
 np.unravel_index(np.argmin(E), E.shape)    # el fondo del valle de la cuadrícula</pre>
@@ -325,11 +337,11 @@ np.unravel_index(np.argmin(E), E.shape)    # el fondo del valle de la cuadrícul
 
 <!-- ============ 5 ============ -->
 <h2 id="s5">5 · Hacia dónde baja: la derivada</h2>
-<div class="idea"><b>Idea:</b> estás en la montaña con niebla y no ves nada. Para bajar, tanteas el suelo con el pie y miras hacia dónde hace pendiente. Eso es una <b>derivada</b>: la pendiente de la función en el punto donde estás.</div>
+<div class="idea"><b>Idea:</b> estás en la montaña con niebla y no ves nada. Para bajar, tanteas el suelo con el pie y miras hacia dónde hace pendiente. Eso es una <b>derivada</b>: la pendiente de la función en el punto donde estás. Dicho en corto: <b>derivada = cuánto cambia el error si mueves <i>w</i> un pelín</b>. Si el error <span class="hr">sube</span>, vas mal; si <span class="hg">baja</span>, vas bien.</div>
 <p>Se puede calcular sin saber ninguna fórmula: mueves <i>w</i> un poquito (<i>h</i>) hacia cada lado y miras cuánto cambia el error.</p>
 <div class="f">∂MSE / ∂w ≈ [ MSE(w + h, b) − MSE(w − h, b) ] / 2h</div>
 <dl class="leg">
-<dt>∂</dt><dd>"derivada parcial": la derivada respecto de <i>w</i> dejando <i>b</i> quieto</dd>
+<dt>∂</dt><dd>solo una "d" curva: "cambio de". ∂MSE/∂w = cuánto cambia el MSE al mover <i>w</i>, dejando <i>b</i> quieto (derivada parcial)</dd>
 <dt>h</dt><dd>un número muy pequeño (en el cuaderno, 10<sup>−6</sup>)</dd>
 <dt>≈</dt><dd>"aproximadamente": cuanto más pequeño es <i>h</i>, más exacto</dd>
 </dl>
@@ -343,9 +355,11 @@ np.unravel_index(np.argmin(E), E.shape)    # el fondo del valle de la cuadrícul
 
 <!-- ============ 6 ============ -->
 <h2 id="s6">6 · El gradiente</h2>
-<div class="idea"><b>Idea:</b> el <b>gradiente</b> son las dos pendientes puestas en un vector. Apunta hacia donde el error <b>sube</b> más rápido; así que <b>−gradiente</b> apunta hacia donde baja más rápido.</div>
+<div class="idea"><b>Idea:</b> <b>gradiente = la lista de pendientes, una por cada número que ajustas</b> (aquí dos: la de <i>w</i> y la de <i>b</i>). Apunta hacia donde el error <b>sube</b> más rápido; así que <b>−gradiente</b> apunta hacia donde baja más rápido.</div>
 <div class="f">∇MSE = ( ∂MSE/∂w , ∂MSE/∂b )</div>
-<p>Para el MSE se pueden sacar con lápiz (regla de la cadena: la derivada de <i>u</i><sup>2</sup> es 2<i>u</i>, y la de <i>w x<sub>i</sub></i> + <i>b</i> respecto de <i>w</i> es <i>x<sub>i</sub></i>):</p>
+<details class="opt"><summary>Para curiosos: de dónde sale la fórmula (regla de la cadena)</summary>
+<p>Para el MSE se pueden sacar con lápiz: la derivada de <i>u</i><sup>2</sup> es 2<i>u</i>, y la de <i>w x<sub>i</sub></i> + <i>b</i> respecto de <i>w</i> es <i>x<sub>i</sub></i>. Multiplicando las dos sale lo de abajo.</p>
+</details>
 <div class="f">∂MSE/∂w = <sup>2</sup>⁄<sub>n</sub> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (ŷ<sub>i</sub> − y<sub>i</sub>) x<sub>i</sub> &nbsp;&nbsp;&nbsp;&nbsp; ∂MSE/∂b = <sup>2</sup>⁄<sub>n</sub> <span class="sum"><small>n</small><b>Σ</b><small>i=1</small></span> (ŷ<sub>i</sub> − y<sub>i</sub>)</div>
 <dl class="leg">
 <dt>∇</dt><dd>"nabla": el gradiente, el vector de todas las derivadas parciales</dd>
@@ -354,33 +368,35 @@ np.unravel_index(np.argmin(E), E.shape)    # el fondo del valle de la cuadrícul
 </dl>
 <p>Antes de fiarnos de la fórmula, la comparamos con el cálculo numérico del apartado 5. Las flechas pequeñas son <b>−gradiente</b> en cada punto del mapa. <b>Haz clic</b> en el mapa o usa los botones (son los puntos del cuaderno):</p>
 <div class="w" id="w6"></div>
-<p>Fíjate en que las flechas <b>no apuntan a la estrella</b>: apuntan hacia el fondo del valle, casi en horizontal. El gradiente mira la pendiente más fuerte <i>aquí</i>, no dónde está el mínimo. Coinciden hasta el sexto decimal; esta comprobación se llama <b>gradient checking</b> y se hace siempre que se escribe un gradiente a mano.</p>
+<p>Fíjate en que las flechas <b>no apuntan a la estrella</b>: apuntan hacia el fondo del valle, casi en horizontal. El gradiente mira la pendiente más fuerte <i>aquí</i>, no dónde está el mínimo. Coinciden hasta el sexto decimal; esto es <b>comprobar la fórmula contra el tanteo del apartado 5</b>, y conviene hacerlo siempre que se escribe un gradiente a mano.</p>
 <pre>def gradient(w, b):
     residu = w * x + b - y
     return 2 * np.mean(residu * x), 2 * np.mean(residu)
 
 gradient(0.7, 0.3)   # → (+14.771960, +3.462533), igual que el numérico</pre>
-<p><b>La transpuesta del cuaderno anterior, otra vez.</b> Con muchas columnas, <i>x</i> pasa a ser la matriz <i>X</i> y <i>w</i> un vector. La fórmula es la misma escrita con matrices:</p>
+<details class="opt"><summary>Para curiosos: la versión con matrices (Xᵀ)</summary>
+<p>Con muchas columnas, <i>x</i> pasa a ser la matriz <i>X</i> y <i>w</i> un vector. La fórmula es la misma escrita con matrices:</p>
 <div class="f">∇<sub>w</sub> MSE = <sup>2</sup>⁄<sub>n</sub> X<sup>T</sup> ( X w + b − y )</div>
 <dl class="leg">
 <dt>X</dt><dd>los datos, una fila por flor y una columna por medida (<i>n</i> × <i>d</i>)</dd>
 <dt>X w + b − y</dt><dd>el vector de los <i>n</i> residuos</dd>
-<dt>X<sup>T</sup>( … )</dt><dd>para cada columna: "residuo de cada flor por su <i>x</i>, sumado". Sale un número por peso</dd>
+<dt>X<sup>T</sup>( … )</dt><dd>para cada columna: "residuo de cada flor por su <i>x</i>, sumado". Sale un número por peso (X<sup>T</sup> es X con filas y columnas intercambiadas)</dd>
 </dl>
 <pre>Xm = x.reshape(-1, 1)                 # (150,) → (150, 1): matriz de una columna
 residu = Xm @ np.array([0.7]) + 0.3 - y
 2 / len(y) * (Xm.T @ residu)          # → [14.77196], lo mismo que antes</pre>
+</details>
 
 <!-- ============ 7 ============ -->
 <h2 id="s7">7 · El bucle de entrenamiento</h2>
 <div class="idea"><b>Idea:</b> ya están todas las piezas. Entrenar es repetir: <b>calcula el gradiente, da un pasito en sentido contrario</b>. Una y otra vez.</div>
 <div class="f">w ← w − η · ∂MSE/∂w &nbsp;&nbsp;&nbsp;&nbsp; b ← b − η · ∂MSE/∂b</div>
 <dl class="leg">
-<dt>←</dt><dd>"sustituye": el nuevo <i>w</i> es el viejo menos un trocito</dd>
+<dt>←</dt><dd>"sustituye", como el <code>=</code> de programación: el nuevo <i>w</i> es el viejo menos un trocito</dd>
 <dt>−</dt><dd>el "contrario de la pendiente"</dd>
-<dt>η</dt><dd>"eta", la <b>tasa de aprendizaje</b>: lo largo de cada paso. Es el único número que elegimos nosotros (aquí η = 0.02)</dd>
+<dt>η</dt><dd>"eta", la <b>tasa de aprendizaje</b>: lo largo de cada paso al bajar la montaña. Es el único número que elegimos nosotros (aquí η = 0.02)</dd>
 </dl>
-<p>Las primeras iteraciones, una a una, empezando con la recta plana (<i>w</i> = 0, <i>b</i> = 0):</p>
+<p>Una <b>iteración</b> es una vuelta del bucle: calcular el gradiente y dar un paso. Las primeras, una a una, empezando con la recta plana (<i>w</i> = 0, <i>b</i> = 0):</p>
 <div class="w" id="w7a"></div>
 <pre>def entrena(eta, iteracions, w=0.0, b=0.0):
     historial = [(w, b, mse(w, b))]
@@ -420,10 +436,11 @@ hist = entrena(eta=0.02, iteracions=2000)</pre>
 <p>Dale a <b>Reproducir</b> o mueve el control. El control avanza más despacio al principio, donde pasa casi todo:</p>
 <div class="w" id="w8"></div>
 <p>Mira el panel del medio. El punto no va recto hacia la estrella: primero <b>cae de golpe al fondo del valle</b> (la recta gira) y luego <b>avanza a ras del fondo</b>, despacito, hacia la estrella (la recta baja). Es lo que hace la forma alargada del valle: el gradiente apunta hacia donde la pendiente es más fuerte, que no es hacia donde está el mínimo.</p>
+<div class="idea"><b>Analogía:</b> estás en un barranco largo y estrecho. La bajada más empinada va hacia la pared del barranco, no hacia la salida, que está lejos y casi plana. Si sigues siempre la bajada más empinada, vas rebotando de pared a pared (<b>zigzag</b>) mientras avanzas despacio hacia la salida.</div>
 
 <!-- ============ 9 ============ -->
 <h2 id="s9">9 · La tasa de aprendizaje: poco, bien, demasiado</h2>
-<div class="idea"><b>Idea:</b> η es lo largo de cada paso. Muy corto: llegas, pero tardas. Muy largo: <b>te pasas</b> al otro lado del valle, cada vez más arriba, y el error <b>explota</b>.</div>
+<div class="idea"><b>Idea:</b> η es el tamaño del paso al bajar la montaña. Con <b>pasos de hormiga</b> llegas, pero tardas. Con <b>pasos de gigante</b> saltas el valle entero y caes al otro lado, cada vez más arriba. Entonces el error <b>explota</b>: crece sin parar hasta números absurdos (mira el 2.37e+133 de abajo).</div>
 <p>Mueve η y mira los primeros 60 pasos:</p>
 <div class="w" id="w9"></div>
 <pre>entrena(eta=0.005, iteracions=1000)   # MSE tras 10: 0.11098   tras 1000: 0.043159
@@ -452,9 +469,9 @@ entrena(eta=0.06,  iteracions=1000)   # MSE tras 10: 41.617    tras 1000: 2.37e+
 
 <!-- ============ 11 ============ -->
 <h2 id="s11">11 · La trampa de las escalas</h2>
-<div class="idea"><b>Idea:</b> si una columna tiene números grandes, sus pasos son grandes: el gradiente respecto de <i>w</i> va multiplicado por <i>x</i>. Por eso, antes de entrenar, <b>se ponen todas las columnas a la misma escala</b>.</div>
+<div class="idea"><b>Idea:</b> si una columna tiene números grandes, sus pasos son grandes: el gradiente respecto de <i>w</i> va multiplicado por <i>x</i>. Por eso, antes de entrenar, <b>se ponen todas las columnas a la misma escala</b>: como pasar todo a la misma moneda antes de comparar precios.</div>
 <p>Un experimento que parece inocente: medimos el largo en <b>milímetros</b> (multiplicamos <i>x</i> por 10). Las flores son las mismas y la recta buena también (solo que la pendiente es 10 veces más pequeña). Volvemos a entrenar con la misma η = 0.02… y <b>explota</b>. Haría falta una η 100 veces más pequeña, y entonces <i>b</i> no se movería nunca.</p>
-<p>La solución habitual es <b>estandarizar</b>: restar la media y dividir entre la desviación típica. Es lo que hace <code>StandardScaler</code>.</p>
+<p>La solución habitual es <b>estandarizar</b>: poner todas las columnas en la misma unidad. Se resta la media y se divide entre la <b>desviación típica</b> (σ: cuánto se aleja un dato típico de la media). Es lo que hace <code>StandardScaler</code>.</p>
 <div class="f">x′<sub>i</sub> = ( x<sub>i</sub> − x̄ ) / σ</div>
 <dl class="leg">
 <dt>x′<sub>i</sub></dt><dd>el valor estandarizado: queda centrado en 0 y con "tamaño" 1</dd>
@@ -475,7 +492,7 @@ entrena(eta=0.1, iteracions=100)   # MSE en la 20: 0.042330 · en la 50: 0.04206
 <h3>Ejercicio 1 · Tu propio descenso, con otra pareja de columnas</h3>
 <p>Largo del sépalo (<code>iris.data[:, 0]</code>) para predecir el largo del pétalo (<code>iris.data[:, 2]</code>). Escribe tú <code>mse1</code>, <code>gradient1</code> y el bucle.</p>
 <ul>
-<li><b>Gradient checking</b> en (<i>w</i> = 0.5, <i>b</i> = 0.5): fórmula y numérico tienen que dar <b>(−5.781133, −0.672667)</b>.</li>
+<li><b>Comprobar la fórmula contra el tanteo</b> en (<i>w</i> = 0.5, <i>b</i> = 0.5): fórmula y numérico tienen que dar <b>(−5.781133, −0.672667)</b>.</li>
 <li><code>LinearRegression</code>: <b><i>w</i> = 1.858433, <i>b</i> = −7.101443, MSE = 0.743061</b>.</li>
 <li>La η más grande que no explota es <b>≈ 0.0279</b>: con 0.025 converge, con 0.03 explota. Ojo: con η pequeña <b>tarda muchísimo</b> (con η = 0.02, unas 3 200 iteraciones para quedarse a menos de un 1 % del mínimo). Las <i>x</i> del sépalo rondan 5.8 cm, lejos del 0: el valle es aún más estrecho que el del apartado 4.</li>
 </ul>

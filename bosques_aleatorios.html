@@ -255,6 +255,14 @@ ul{padding-left:22px}
 a{text-underline-offset:3px}
 ::selection{background:color-mix(in srgb,var(--accent) 25%,transparent)}
 .thumb{background:var(--soft)}
+/* ===== Bloques opcionales ===== */
+details.opt{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:0 16px;margin:14px 0}
+details.opt>summary{cursor:pointer;padding:10px 0;font-size:14.5px;font-weight:600;color:var(--muted);list-style:none}
+details.opt>summary::before{content:"+";display:inline-block;width:1.2em;color:var(--accent);font-weight:700}
+details.opt[open]>summary::before{content:"−"}
+details.opt[open]>summary{color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:12px}
+details.opt>summary::-webkit-details-marker{display:none}
+details.opt .f{margin-top:0}
 </style>
 </head>
 <body>
@@ -265,6 +273,8 @@ a{text-underline-offset:3px}
 <p class="sub">Apuntes directos y animados del cuaderno <i>ML_03 · Boscos aleatoris</i>. Todos los gráficos se mueven: desliza, arrastra o dale a <b>Reproducir</b>.</p>
 
 <div class="big">La frase que tienes que entender al final: <b>un árbol suelto memoriza; cientos de árboles distintos votando se equivocan de maneras distintas, y los errores se cancelan.</b> Pero solo si de verdad son distintos.</div>
+
+<div class="idea"><b>Antes de empezar:</b> un <span class="hb">clasificador</span> es un programa que pone una etiqueta (por ejemplo, la especie de una flor). <span class="hb">Entrenar</span> es enseñarle con ejemplos que ya tienen la etiqueta. El <span class="hb">examen</span> son flores que no ha visto nunca. <span class="hb">Memorizar</span> es acertar los ejemplos de clase pero fallar los nuevos. <span class="hb">Bootstrap</span> es un sorteo con devolución (lo verás en el apartado 3). El código de las cajas grises es opcional: sirve para ver que no hay magia, no hace falta entenderlo.</div>
 
 <nav class="toc">
 <a href="#s1">1 · El problema</a><a href="#s2">2 · Por qué votar funciona</a><a href="#s3">3 · Hacerlos diferentes</a><a href="#s4">4 · Un bosque a mano</a><a href="#s5">5 · El caso incómodo</a><a href="#s6">6 · Importancias</a><a href="#s7">7 · Práctica</a><a href="#res">Resumen</a>
@@ -280,6 +290,8 @@ a{text-underline-offset:3px}
 <!-- ============ 2 ============ -->
 <h2 id="s2">2 · Por qué votar funciona</h2>
 <div class="idea"><b>Idea:</b> antes de tocar ningún árbol, hacemos el experimento con clasificadores imaginarios. 100 votantes, cada uno acierta solo el <b>60 %</b>, y <b>se equivocan de forma independiente</b> (el error de uno no tiene nada que ver con el de otro). ¿Qué dice la mayoría?</div>
+<div class="idea"><b>Como una apuesta:</b> imagina que lanzas 100 monedas trucadas que caen cara el 60 % de las veces. ¿En cuántas tandas salen más de 50 caras? Es la misma cuenta: «cara» = «ese votante acierta». Y «independientes» significa que son como 100 amigos que opinan sin hablar entre ellos, no 100 que copian al primero.</div>
+<details class="opt"><summary>Opcional: la fórmula exacta (si no te dice nada, salta al widget)</summary>
 <div class="f">P(mayoría acierta) = <span class="sum"><small>n</small><b>Σ</b><small>j &gt; n/2</small></span> C(n, j) · p<sup>j</sup> · (1 − p)<sup>n−j</sup></div>
 <dl class="leg">
 <dt>n</dt><dd>cuántos clasificadores votan</dd>
@@ -289,8 +301,10 @@ a{text-underline-offset:3px}
 <dt>p<sup>j</sup> (1 − p)<sup>n−j</sup></dt><dd>la probabilidad de que justo esos <i>j</i> acierten y los otros fallen</dd>
 <dt>Σ</dt><dd>suma todos los casos con <i>j</i> &gt; <i>n</i>/2</dd>
 </dl>
+</details>
 <p>El cuaderno lo simula con numpy (10 000 repeticiones): la mayoría de 100 acierta el <b>97.2 %</b>. Aquí tienes el cálculo exacto y un botón para simular tú. <b>Mueve n y p</b>; el punto rojo es tu combinación. Nadie ha aprendido nada nuevo: solo hemos contado votos.</p>
 <div class="w" id="w2a"></div>
+<p>Código: crea una tabla de 10 000 filas × 100 votantes (True = acierta) y cuenta en cuántas filas aciertan más de 50. El código es para ver que no hay magia; no hace falta entenderlo línea a línea.</p>
 <pre>np.random.seed(42)
 vots = np.random.rand(10_000, 100) &lt; 0.60        # True = ha acertado
 majoria_encerta = vots.sum(axis=1) &gt; 100 / 2
@@ -301,6 +315,7 @@ majoria_encerta.mean()                            # → 0.972  (97.2 %)</pre>
 <div class="idea"><b>Trampa típica:</b> todo lo anterior depende de que los errores sean <b>independientes</b>. Si los 100 clasificadores fallan en los mismos casos (porque en el fondo son el mismo repetido), la mayoría falla igual que uno solo. El truco del bosque no es «hacer muchos árboles», es <b>hacer muchos árboles que se equivoquen de maneras diferentes</b>.</div>
 <p>Cada fila es un clasificador y cada columna un caso (12 × 40, <b>datos inventados</b>): verde = acierta, rojo = falla. Con <b>c</b> = 0 votan cada uno por su cuenta. Sube <b>c</b>: cada clasificador copia el voto del primero con probabilidad c. Fíjate en las <b>columnas</b>: los errores se apilan en los mismos casos. Con c = 0.8 es justo el ejercicio 7.4 del cuaderno.</p>
 <div class="w" id="w2b"></div>
+<p>Código: con probabilidad 0.8 cada votante copia el voto del primero; si no, vota por su cuenta.</p>
 <pre># ejercicio 7.4: copiar el voto del primero el 80 % de las veces
 copia = np.random.rand(10_000, 99) &lt; 0.8
 propio = np.random.rand(10_000, 99) &lt; 0.6
@@ -313,27 +328,32 @@ resto = np.where(copia, primero[:, None], propio)
 
 <h3>3.1 · Bootstrap: cada árbol ve una muestra diferente</h3>
 <div class="idea"><b>Idea:</b> cada árbol no se entrena con todas las filas, sino con una muestra <b>del mismo tamaño, sacada al azar y con reemplazo</b>: una fila puede salir 0, 1, 2 o más veces. Como hay reemplazo, unas cuantas no salen nunca. ¿Cuántas, de media?</div>
+<div class="idea"><b>En cristiano:</b> sorteas con una urna y devuelves la bola cada vez: al acabar, más o menos 1 de cada 3 bolas nunca salió. No hace falta saber de dónde sale 0.368: quédate con «un tercio queda fuera».</div>
+<details class="opt"><summary>Opcional: la fórmula del 1/e</summary>
 <div class="f">P(una fila no sale) = ( 1 − 1/n )<sup>n</sup> &nbsp;&nbsp;→&nbsp;&nbsp; 1/e ≈ 0.368 &nbsp;&nbsp; cuando n crece</div>
 <dl class="leg">
 <dt>n</dt><dd>cuántas filas tiene el entrenamiento (y cuántos sorteos se hacen)</dd>
 <dt>1/n</dt><dd>la probabilidad de que un sorteo concreto elija <b>esa</b> fila</dd>
 <dt>1 − 1/n</dt><dd>la probabilidad de que un sorteo <b>no</b> la elija</dd>
 <dt>( … )<sup>n</sup></dt><dd>que no la elija en <b>ninguno</b> de los <i>n</i> sorteos (son independientes, se multiplican)</dd>
-<dt>e</dt><dd>el número 2.718…; el límite de esa expresión es 1/e</dd>
+<dt>e</dt><dd>un número fijo, 2.718…, como π; el límite de esa expresión es 1/e</dd>
 </dl>
+</details>
 <p>Cada árbol ve, de media, un <b>63 %</b> de las filas (algunas repetidas) y deja fuera un <b>37 %</b>, distinto en cada árbol. Con eso ya son diferentes. Pulsa para sacar muestras de <b>20 filas</b>: las barras dicen cuántas veces sale cada fila y la cruz roja marca las que ese árbol <b>no verá nunca</b>. Mira que <b>no son las mismas</b> en cada muestra.</p>
 <div class="w" id="w3a"></div>
 <p>La fórmula en números: con <i>n</i> = 20 sale 35.8 % y con <i>n</i> = 200, 36.7 %. En el cuaderno, 2 000 simulaciones con 200 filas dieron <b>36.7 %</b> contra el 36.8 % teórico.</p>
 <div class="w" id="w3b"></div>
+<p>Código: sortea <i>n</i> filas con devolución, cuenta cuántas filas distintas salieron y compara con 1/e. No hace falta entenderlo línea a línea.</p>
 <pre>mostra = np.random.randint(0, n_files, size=n_files)   # con reemplazo
 len(set(mostra))                                         # filas distintas que han salido
 1 / np.e                                                 # → 0.3679 (36.8 %)</pre>
 
 <h3>3.2 · Azar en las columnas: cada corte ve pocas opciones</h3>
 <div class="idea"><b>Idea:</b> variar las filas no basta. Si una columna es mucho mejor que las demás, <b>todos los árboles</b> la elegirán para el primer corte y volverán a parecerse. Por eso, en cada corte, el árbol <b>no puede mirar todas las columnas</b>: solo un subconjunto al azar.</div>
+<div class="idea"><b>En cristiano:</b> en cada decisión el árbol solo puede mirar 2 de las 4 medidas, elegidas a ciegas, como un jurado al que a cada miembro le dan solo parte del expediente.</div>
 <div class="f">max_features = √( nº de columnas )</div>
 <dl class="leg">
-<dt>max_features</dt><dd>cuántas columnas puede mirar un árbol en cada corte (parámetro de scikit-learn; es el valor por defecto en clasificación)</dd>
+<dt>max_features</dt><dd>cuántas columnas puede mirar un árbol en cada corte (solo es el nombre que le da scikit-learn; este valor es el que usa por defecto en clasificación)</dd>
 <dt>√</dt><dd>raíz cuadrada</dd>
 <dt>nº de columnas</dt><dd>cuántas medidas tiene cada fila (en Iris, 4)</dd>
 </dl>
@@ -347,6 +367,7 @@ len(set(mostra))                                         # filas distintas que h
 <!-- ============ 4 ============ -->
 <h2 id="s4">4 · Construye un bosque a mano</h2>
 <div class="idea"><b>Idea:</b> se usa <code>DecisionTreeClassifier</code> como pieza, pero el <b>bootstrap</b> y la <b>votación</b> los haces tú, para ver que no hay magia escondida.</div>
+<p>Código: repite 50 veces «sortea filas con devolución, entrena un árbol, anota sus predicciones» y al final, para cada flor, coge la clase más votada. El código es para ver que no hay magia; no hace falta entenderlo línea a línea.</p>
 <pre>rng = np.random.RandomState(42)
 prediccions = np.zeros((n_arbres, len(X_examen)), dtype=int)
 for i in range(n_arbres):
@@ -362,7 +383,7 @@ vot_majoria, _ = stats.mode(prediccions, axis=0, keepdims=False)   # la clase m�
 <!-- ============ 5 ============ -->
 <h2 id="s5">5 · El caso incómodo de Iris</h2>
 <div class="idea"><b>Idea:</b> en Iris el bosque sale <b>peor</b> que el árbol solo, y no es un error de código. Iris es un conjunto minúsculo y fácil (150 flores, 4 columnas, grupos que casi se separan a ojo): no hay margen para mejorar, y el bosque solo añade ruido, porque cada árbol ve un poco menos de filas y un poco menos de columnas. <b>Los bosques ganan cuando hay mucho que aprovechar</b>: muchas columnas, relaciones complicadas y ruido que confunde a un árbol.</div>
-<p>Montamos un problema así con <code>make_classification</code>: 2 000 muestras, 20 columnas, de las que solo 5 informan de verdad (5 son combinaciones de las otras y 10 son ruido puro), más un 5 % de etiquetas cambiadas. Resultados reales del cuaderno:</p>
+<p>Montamos un problema así con <code>make_classification</code>: 2 000 muestras, 20 columnas, de las que solo 5 informan de verdad (5 son combinaciones de las otras y 10 son ruido puro), más un 5 % de etiquetas cambiadas. Es como un examen de 20 preguntas donde solo 5 sirven, 5 repiten lo mismo con otras palabras y 10 son basura. Resultados reales del cuaderno: <b>el árbol solo acierta el <span class="hr">82.3 %</span> y el bosque el <span class="hg">88.7 %</span></b>.</p>
 <div class="w" id="w5a"></div>
 <p>Con 20 columnas, ruido y relaciones que un solo corte no captura, el árbol sin límite de profundidad <b>se sobreajusta</b> y el bosque lo supera con claridad. <b>Un modelo más complicado no gana siempre</b>: gana cuando hay suficiente «ruido independiente» para que votar ayude.</p>
 
@@ -372,12 +393,13 @@ vot_majoria, _ = stats.mode(prediccions, axis=0, keepdims=False)   # la clase m�
 
 <!-- ============ 6 ============ -->
 <h2 id="s6">6 · Qué columnas usa más el bosque</h2>
-<div class="idea"><b>Idea:</b> un bosque entrenado te dice <b>qué columnas ha usado más</b> para decidir. Es el atributo <code>feature_importances_</code> (las importancias suman 1).</div>
+<div class="idea"><b>Idea:</b> la importancia de una medida es cuánto la ha usado el bosque para decidir; todas las importancias suman 1. Es el atributo <code>feature_importances_</code>.</div>
+<p>Código: entrena un bosque de 100 árboles y lista las medidas de más a menos importante. No hace falta entenderlo línea a línea.</p>
 <pre>rf = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=42).fit(X_entrena, y_entrena)
 pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)</pre>
 <p>Las del pétalo pesan mucho más que las del sépalo: justo las que ya se eligieron a ojo en el cuaderno de la demostración. <b>Haz clic en una barra</b>.</p>
 <div class="w" id="w6a"></div>
-<p><b>Aviso honesto:</b> esta medida tiene un <b>sesgo conocido</b>: tiende a dar más importancia a las columnas con <b>muchos valores distintos</b> (continuas), aunque no sean las que mejor explican el problema, simplemente porque tienen más puntos de corte posibles. No es una medida perfecta, es una pista.</p>
+<p><b>Aviso honesto:</b> esta medida tiene un <b>sesgo conocido</b>: tiende a dar más importancia a las columnas con <b>muchos valores distintos</b>, como una regla con más marcas, aunque no sean las que mejor explican el problema, simplemente porque tienen más puntos de corte posibles. Úsala como pista, no como verdad.</p>
 <p>Para saber si dicen algo sensato hace falta un problema donde <b>conozcamos la respuesta</b>. <code>make_classification</code> con <code>shuffle=False</code> ordena las columnas: primero las 5 informativas, luego las 5 redundantes (combinaciones de las informativas) y al final las 10 de ruido puro. Bosque de 200 árboles, barras coloreadas por tipo:</p>
 <div class="w" id="w6b"></div>
 <p>Las de ruido quedan todas abajo; las informativas y las redundantes, arriba y mezcladas: el bosque no distingue una columna «original» de una que es combinación de otras, porque llevan la <b>misma información</b>. La importancia dice <b>qué ha usado</b> el bosque, no <b>qué causa</b> la etiqueta.</p>
@@ -387,21 +409,22 @@ pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
 <p>Cuatro ejercicios, en orden. Aquí van la idea de cada uno y, al final de la página, lo que te tiene que salir. El 7.4 ya lo tienes jugable en el apartado 2.2.</p>
 
 <h3>7.1 · ¿Cuántos árboles hacen falta?</h3>
-<p>Entrena boscos con <code>n_estimators</code> = 1, 5, 10, 25, 50, 100, 200 sobre Iris y dibuja la exactitud en el examen. ¿A partir de cuántos árboles deja de valer la pena? Una manera de medirlo: una <b>banda de ±1 punto</b> alrededor de la exactitud del último valor y el primer <i>n</i> a partir del cual la curva ya no sale de ella (círculo rojo). Elige la curva: una <b>inventada</b> (la del cuaderno) y la <b>mía</b> con Iris.</p>
+<p>Entrena boscos con <code>n_estimators</code> (el número de árboles) = 1, 5, 10, 25, 50, 100, 200 sobre Iris y dibuja la exactitud en el examen. ¿A partir de cuántos árboles deja de valer la pena? Una manera de medirlo: una <b>banda de ±1 punto</b> alrededor de la exactitud del último valor y el primer <i>n</i> a partir del cual la curva ya no sale de ella (círculo rojo). Elige la curva: una <b>inventada</b> (la del cuaderno) y la <b>mía</b> con Iris.</p>
 <div class="w" id="w7a"></div>
 
 <h3>7.2 · Árbol contra bosque con Wine</h3>
-<p>Con <code>load_wine()</code> (13 columnas, 3 clases), mismos parámetros que con Iris. Antes de decir quién gana, mira <b>cuánto se mueve la exactitud solo con cambiar la partición</b>: un árbol sobre datos <b>inventados</b> (mitades de luna, 180 puntos), evaluado con 40 particiones distintas (<code>random_state</code> de 0 a 39). La línea roja es la que habrías visto con una sola partición; el ancho del histograma es el ruido que tiene cualquier comparación hecha así.</p>
+<p>Con <code>load_wine()</code> (13 columnas, 3 clases), mismos parámetros que con Iris. Antes de decir quién gana, mira <b>cuánto se mueve la exactitud solo con cambiar la partición</b> (la partición es el sorteo de qué flores van a clase y cuáles al examen): un árbol sobre datos <b>inventados</b> (mitades de luna, 180 puntos), evaluado con 40 particiones distintas (<code>random_state</code> = la semilla del sorteo: con la misma sale siempre lo mismo; aquí de 0 a 39). La línea roja es la que habrías visto con una sola partición; el ancho del histograma es el ruido que tiene cualquier comparación hecha así.</p>
 <div class="w" id="w7b"></div>
 
 <h3>7.3 · El precio de tantos árboles</h3>
-<p>Mide cuánto tarda un bosque de 10 árboles y uno de 500 con <code>time.time()</code> y decide si compensa. Idea de cómo medir: aquí no hay bosque, cronometramos una ordenación de vectores de varios tamaños, <b>cinco veces cada uno</b> (con <code>performance.now()</code>, el equivalente en JavaScript). Las cinco medidas de un mismo tamaño no salen iguales: por eso conviene repetir y quedarse con la media o la mediana. Pulsa para cronometrar en tu máquina.</p>
+<p>Mide cuánto tarda un bosque de 10 árboles y uno de 500 con <code>time.time()</code> y decide si compensa. Idea de cómo medir: aquí no hay bosque, cronometramos una ordenación de vectores de varios tamaños, <b>cinco veces cada uno</b> (con <code>performance.now()</code>, el equivalente en JavaScript). Las cinco medidas de un mismo tamaño no salen iguales: por eso conviene repetir y quedarse con la media o la mediana (el valor que queda justo en medio al ordenar las medidas). Pulsa para cronometrar en tu máquina.</p>
 <div class="w" id="w7c"></div>
 
 <!-- ============ RESUMEN ============ -->
 <h2 id="res">Resumen en una tabla</h2>
 <div class="scroll">
 <table class="sum">
+<caption style="text-align:left;font-size:14px;color:var(--muted);padding:8px 10px">Palabras de scikit-learn en llano: <code>random_state</code> = semilla del sorteo (misma semilla, mismo resultado) · <code>stratify</code> = mantener las proporciones de cada clase al repartir · <code>n_estimators</code> = número de árboles · partición = reparto clase/examen · mediana = el valor del medio.</caption>
 <tr><th>Concepto</th><th>Qué es</th><th>Numpy / sklearn</th><th>Número para comprobar</th></tr>
 <tr><td><b>Votar</b></td><td>La mayoría de clasificadores independientes acierta más que uno</td><td><code>vots.sum(axis=1) &gt; n / 2</code></td><td>100 al 60 % → 97.2 % (exacto 97.29 %)</td></tr>
 <tr><td><b>Independencia</b></td><td>Si los errores coinciden, votar no ayuda</td><td><code>np.where(copia, primero, propio)</code></td><td>copiando al 80 % → ≈ 61 %</td></tr>
@@ -416,8 +439,8 @@ pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
 
 <h3>Ejercicios del cuaderno: lo que te tiene que salir</h3>
 <ul>
-<li><b>7.1</b> (Iris, <code>random_state=42</code>, profundidad sin límite; mi ejecución con scikit-learn 1.9.1): 1 → 86.7 %, 5 → 91.1 %, 10 → 91.1 %, 25 → 88.9 %, 50 → 88.9 %, 100 → 88.9 %, 200 → 91.1 %. Con 45 flores, una sola flor son 2.2 puntos: la curva es casi plana y ruidosa, así que «deja de valer la pena» ya a partir de unos 5 árboles. Tu curva puede salir distinta según versión y semilla.</li>
-<li><b>7.2</b> (Wine, 70/30, <code>stratify</code>, <code>random_state=42</code>, <code>max_depth=3</code>): un árbol <b>96.3 %</b> (52 de 54), el bosque <b>100 %</b> (54 de 54). Gana el bosque, como en el punto 5: 13 columnas y relaciones más ricas que en Iris. Aun así, una flor de diferencia son 1.9 puntos: no te fíes de una sola partición.</li>
+<li><b>7.1</b> (Iris, <code>random_state=42</code> = semilla fija,profundidad sin límite; mi ejecución con scikit-learn 1.9.1): 1 → 86.7 %, 5 → 91.1 %, 10 → 91.1 %, 25 → 88.9 %, 50 → 88.9 %, 100 → 88.9 %, 200 → 91.1 %. Con 45 flores, una sola flor son 2.2 puntos: la curva es casi plana y ruidosa, así que «deja de valer la pena» ya a partir de unos 5 árboles. Tu curva puede salir distinta según versión y semilla.</li>
+<li><b>7.2</b> (Wine, 70/30, <code>stratify</code> = que cada especie esté en las mismas proporciones en clase y examen, <code>random_state=42</code> = semilla fija para repetir el mismo sorteo, <code>max_depth=3</code> = el árbol solo puede hacer 3 preguntas seguidas): un árbol <b>96.3 %</b> (52 de 54), el bosque <b>100 %</b> (54 de 54). Gana el bosque, como en el punto 5: 13 columnas y relaciones más ricas que en Iris. Aun así, una flor de diferencia son 1.9 puntos: no te fíes de una sola partición.</li>
 <li><b>7.3</b>: el tiempo crece más o menos <b>en proporción al número de árboles</b> (500 árboles tardan unas 50 veces lo de 10). Los segundos exactos dependen de tu máquina. Con Iris casi no compensa: ya has visto que más árboles no mejoran.</li>
 <li><b>7.4</b> (copiar el 80 % del primero): la mayoría acierta <b>≈ 61 %</b> (0.6108 con la semilla 42), contra el <b>97.2 %</b> del caso independiente. Sin independencia, 100 clasificadores valen casi lo mismo que uno.</li>
 </ul>
